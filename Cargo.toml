@@ -1,5 +1,7 @@
 [workspace]
 
 members = [
-    "basic-training",
+    "actix-web",
+    "sandbox-1",
+    "sandbox-2",
 ]
