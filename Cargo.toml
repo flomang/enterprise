@@ -2,6 +2,8 @@
 
 members = [
     "actix-web",
+    "exchange",
     "sandbox-1",
     "sandbox-2",
+    "sandbox-3",
 ]
