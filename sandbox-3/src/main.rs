@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 fn largest<T>(list: &[T]) -> T 
 where 
     T:  PartialOrd + Copy
@@ -61,6 +63,44 @@ pub fn notify(item: &impl Summary) {
     println!("Breaking news! {}", item.summarize());
 }
 
+// lifetimes
+// 1.
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+
+// 2.
+struct ImportantExcerpt<'a> {
+    part: &'a str,
+}
+
+impl<'a> ImportantExcerpt<'a> {
+    fn level(&self) -> i32 {
+        3
+    }
+}
+
+fn longest_with_an_announcement<'a, T>(
+    x: &'a str,
+    y: &'a str,
+    ann: T,
+) -> &'a str
+where
+    T: Display,
+{
+    println!("Announcement! {}", ann);
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+
+
 fn main() {
     let number_list = vec![34, 50, 25, 100, 65];
 
@@ -75,4 +115,30 @@ fn main() {
     let tweet = returns_summarizable(); 
 
     println!("1 new tweet: {}", tweet.summarize());
+    
+    //lifetimes
+    let string1 = String::from("abcd");
+    let string2 = "xyz";
+
+    let result = longest(string1.as_str(), string2);
+    println!("The longest string is {}", result);
+
+    // lifetimes scoping
+    {
+        let string1 = String::from("long string is long");
+        let string2 = String::from("xyz");
+        let result = longest(string1.as_str(), string2.as_str());
+        println!("The longest string is {}", result);
+    }
+
+    // lifetime struct
+    let novel = String::from("Call me Ishmael. Some years ago...");
+    let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+    let excerpt = ImportantExcerpt {
+        part: first_sentence,
+    };
+    println!("excerpt is {}", excerpt.part);
+
+    let result = longest_with_an_announcement(string1.as_str(), string2, "Today is someone's birthday!");
+    println!("The longest string is {}", result);
 }

@@ -24,32 +24,32 @@ pub enum BrokerAsset {
 }
 
 
-fn parse_asset(asset: &str) -> Option<BrokerAsset> {
-    // please keep these organized while editing
-    match asset {
-        // sorted alpha
-        "ADA" => Some(BrokerAsset::ADA),
-        "BTC" => Some(BrokerAsset::BTC),
-        "DOT" => Some(BrokerAsset::DOT),
-        "ETH" => Some(BrokerAsset::ETH),
-        "EUR" => Some(BrokerAsset::EUR),
-        "GRIN" => Some(BrokerAsset::GRIN),
-        "UNI" => Some(BrokerAsset::UNI),
-        "USD" => Some(BrokerAsset::USD),
-        _ => None,
-    }
-}
+// fn parse_asset(asset: &str) -> Option<BrokerAsset> {
+//     // please keep these organized while editing
+//     match asset {
+//         // sorted alpha
+//         "ADA" => Some(BrokerAsset::ADA),
+//         "BTC" => Some(BrokerAsset::BTC),
+//         "DOT" => Some(BrokerAsset::DOT),
+//         "ETH" => Some(BrokerAsset::ETH),
+//         "EUR" => Some(BrokerAsset::EUR),
+//         "GRIN" => Some(BrokerAsset::GRIN),
+//         "UNI" => Some(BrokerAsset::UNI),
+//         "USD" => Some(BrokerAsset::USD),
+//         _ => None,
+//     }
+// }
 
 
 fn main() {
-    let btc_asset = parse_asset("BTC").unwrap();
-    let usd_asset = parse_asset("USD").unwrap();
-    let eth_asset = parse_asset("USD").unwrap();
+    let btc_asset = BrokerAsset::BTC;
+    let usd_asset = BrokerAsset::USD;
+    //let eth_asset = BrokerAsset::ETH;
 
     let mut markets: HashMap<String, Orderbook<BrokerAsset>> = HashMap::new();
-    markets.insert(String::from("BTC-USD"), Orderbook::new(btc_asset, usd_asset));
-    markets.insert(String::from("ETH-USD"), Orderbook::new(eth_asset, usd_asset));
-    markets.insert(String::from("ETH-BTC"), Orderbook::new(eth_asset, btc_asset));
+    markets.insert(String::from("BTC-USD"), Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD));
+    markets.insert(String::from("ETH-USD"), Orderbook::new(BrokerAsset::ETH, BrokerAsset::USD));
+    markets.insert(String::from("ETH-BTC"), Orderbook::new(BrokerAsset::ETH, BrokerAsset::BTC));
 
 
     /* create order requests
