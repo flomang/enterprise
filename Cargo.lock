@@ -264,6 +264,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix_web"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -330,13 +337,6 @@ name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
-
-[[package]]
-name = "basic-training"
-version = "0.1.0"
-dependencies = [
- "actix-web",
-]
 
 [[package]]
 name = "bitflags"
@@ -1221,15 +1221,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 
 [[package]]
-name = "sandbox-1"
+name = "sandbox_1"
 version = "0.1.0"
 
 [[package]]
-name = "sandbox-2"
+name = "sandbox_2"
 version = "0.1.0"
 
 [[package]]
-name = "sandbox-3"
+name = "sandbox_3"
 version = "0.1.0"
 
 [[package]]
