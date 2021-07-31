@@ -3,6 +3,7 @@
 members = [
     "actix_web",
     "exchange",
+    "minigrep",
     "sandbox_1",
     "sandbox_2",
     "sandbox_3",
