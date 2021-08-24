@@ -1,25 +1,68 @@
-use std::fs::File;
-use std::io;
-//use std::io::ErrorKind;
-use std::io::Read;
+use std::thread;
+use std::time::Duration;
 
 
+struct Cacher<T>
+where
+    T: Fn(u32) -> u32,
+{
+    calculation: T,
+    value: Option<u32>,
+}
 
-fn read_username_from_file() -> Result<String, io::Error> {
-    let mut s = String::new();
-    File::open("hello.txt")?.read_to_string(&mut s)?;
-    Ok(s)
+impl<T> Cacher<T>
+where
+    T: Fn(u32) -> u32,
+{
+    fn new(calculation: T) -> Cacher<T> {
+        Cacher {
+            calculation,
+            value: None,
+        }
+    }
+
+    fn value(&mut self, arg: u32) -> u32 {
+        match self.value {
+            Some(v) => v,
+            None => {
+                let v = (self.calculation)(arg);
+                self.value = Some(v);
+                v
+            }
+        }
+    }
+}
+
+fn simulated_expensive_calculation(intensity: u32) -> u32 {
+    println!("calculating slowly...");
+    thread::sleep(Duration::from_secs(2));
+    intensity
+}
+
+fn generate_workout(intensity: u32, random_number: u32) {
+    let mut expensive_closure = Cacher::new(|num: u32| -> u32 {
+        println!("calculating slowly...");
+        thread::sleep(Duration::from_secs(2));
+        num
+    });
+
+    if intensity < 25 {
+        println!("Today, do {} pushups!", expensive_closure.value(intensity));
+        println!("Next, do {} situps!", expensive_closure.value(intensity));
+    } else {
+        if random_number == 3 {
+            println!("Take a break today! Remember to stay hydrated!");
+        } else {
+            println!("Today, run for {} minutes!", expensive_closure.value(intensity));
+        }
+    }
 }
 
 fn main() {
-    //let f = File::open("hello.txt").unwrap_or_else(|error| {
-    //    if error.kind() == ErrorKind::NotFound {
-    //        File::create("hello.txt").unwrap_or_else(|error| {
-    //            panic!("Problem creating the file: {:?}", error);
-    //        })
-    //    } else {
-    //        panic!("Problem opening the file: {:?}", error);
-    //    }
-    //});
-    read_username_from_file().expect("I expected this!"); 
+    let simulated_user_specified_value = 30;
+    let simulated_random_number = 7;
+
+    generate_workout(simulated_user_specified_value, simulated_random_number);
+
+    println!("done");
 }
