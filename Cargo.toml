@@ -1,10 +1,10 @@
 [workspace]
 
 members = [
-    "actix_web",
+    "actix-web",
     "exchange",
     "minigrep",
-    "sandbox_1",
-    "sandbox_2",
-    "sandbox_3",
+    "sandbox-one",
+    "sandbox-two",
+    "sandbox-three",
 ]

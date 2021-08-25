@@ -1,3 +1,6 @@
+//! # minigrep 
+//!
+//! `minigrep` is a tool that searches a file for a string query.
 use std::error::Error;
 use std::fs;
 use std::env;
