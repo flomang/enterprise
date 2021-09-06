@@ -5,8 +5,11 @@ members = [
     "exchange",
     "minigrep",
     "sandbox-exchange",
-    "sandbox-one",
     "sandbox-smart-pointers",
+    "sandbox-threading",
+    "sandbox-one",
+    "sandbox-oop",
     "sandbox-two",
     "sandbox-three",
+    "sandbox-twenty",
 ]
