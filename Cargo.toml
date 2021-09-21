@@ -4,6 +4,7 @@ members = [
     "actix-web",
     "exchange",
     "minigrep",
+    "prophet",
     "sandbox-exchange",
     "sandbox-smart-pointers",
     "sandbox-threading",
@@ -11,5 +12,5 @@ members = [
     "sandbox-oop",
     "sandbox-two",
     "sandbox-three",
-    "sandbox-twenty",
+    "sandbox-twenty"
 ]
