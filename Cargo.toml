@@ -3,6 +3,7 @@
 members = [
     "actix-web",
     "exchange",
+    "iot-one",
     "minigrep",
     "prophet",
     "sandbox-exchange",
