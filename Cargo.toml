@@ -6,6 +6,7 @@ members = [
     "iot-one",
     "minigrep",
     "prophet",
+    "sandbox-bevy",
     "sandbox-exchange",
     "sandbox-smart-pointers",
     "sandbox-threading",

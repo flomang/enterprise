@@ -3598,6 +3598,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sandbox-bevy"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "sandbox-exchange"
 version = "0.1.0"
 dependencies = [
