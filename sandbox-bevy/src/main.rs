@@ -75,61 +75,6 @@ impl Size {
     }
 }
 
-pub struct SnakePlugin;
-
-impl Plugin for SnakePlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource( WindowDescriptor { 
-                title: "Snake!".to_string(), 
-                width: 500.0,                 
-                height: 500.0,                
-                ..Default::default()         
-            })
-            .insert_resource(SnakeSegments::default()) 
-            .insert_resource(LastTailPosition::default())
-            .add_event::<GrowthEvent>()
-            .add_event::<GameOverEvent>()
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(FixedTimestep::step(1.0))
-                    .with_system(food_spawner.system()),
-            )
-            .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
-            .add_startup_system(setup.system())
-            .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
-            .add_system(
-                snake_movement_input
-                    .system()
-                    .label(SnakeMovement::Input)
-                    .before(SnakeMovement::Movement),
-            )
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(FixedTimestep::step(0.750))
-                    .with_system(snake_movement.system().label(SnakeMovement::Movement))
-                    .with_system(
-                        snake_eating
-                            .system()
-                            .label(SnakeMovement::Eating)
-                            .after(SnakeMovement::Movement),
-                    )
-                    .with_system(
-                        snake_growth
-                            .system()
-                            .label(SnakeMovement::Growth)
-                            .after(SnakeMovement::Eating),
-                    )
-            )
-            .add_system(game_over.system().after(SnakeMovement::Movement))
-            .add_system_set_to_stage(
-                CoreStage::PostUpdate,
-                SystemSet::new()
-                    .with_system(position_translation.system())
-                    .with_system(size_scaling.system()),
-            );
-    }
-}
-
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(Materials {
@@ -346,7 +291,54 @@ fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Tra
 
 fn main() {
     App::build()
-    .add_plugin(SnakePlugin)
+    .insert_resource( WindowDescriptor { 
+        title: "Snake!".to_string(), 
+        width: 500.0,                 
+        height: 500.0,                
+        ..Default::default()         
+    })
+    .insert_resource(SnakeSegments::default()) 
+    .insert_resource(LastTailPosition::default())
+    .add_event::<GrowthEvent>()
+    .add_event::<GameOverEvent>()
+    .add_system_set(
+        SystemSet::new()
+            .with_run_criteria(FixedTimestep::step(1.0))
+            .with_system(food_spawner.system()),
+    )
+    .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
+    .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
+    .add_startup_system(setup.system())
     .add_plugins(DefaultPlugins)
+    .add_system(
+        snake_movement_input
+            .system()
+            .label(SnakeMovement::Input)
+            .before(SnakeMovement::Movement),
+    )
+    .add_system_set(
+        SystemSet::new()
+            .with_run_criteria(FixedTimestep::step(0.750))
+            .with_system(snake_movement.system().label(SnakeMovement::Movement))
+            .with_system(
+                snake_eating
+                    .system()
+                    .label(SnakeMovement::Eating)
+                    .after(SnakeMovement::Movement),
+            )
+            .with_system(
+                snake_growth
+                    .system()
+                    .label(SnakeMovement::Growth)
+                    .after(SnakeMovement::Eating),
+            )
+    )
+    .add_system(game_over.system().after(SnakeMovement::Movement))
+    .add_system_set_to_stage(
+        CoreStage::PostUpdate,
+        SystemSet::new()
+            .with_system(position_translation.system())
+            .with_system(size_scaling.system()),
+    )
     .run();
 }
