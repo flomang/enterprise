@@ -1,22 +1,27 @@
 use bevy::prelude::*;
 use bevy::render::pass::ClearColor;
 use bevy::core::FixedTimestep;
-
 use rand::prelude::random;
-
 
 const ARENA_WIDTH: u32 = 10;
 const ARENA_HEIGHT: u32 = 10;
 
+struct Food;
+struct SnakeSegment;
+struct GrowthEvent;
+struct GameOverEvent;
 
 #[derive(Default)]
-struct LastTailPosition(Option<Position>);
+struct SnakeSegments(Vec<Entity>);
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
 struct Position {
     x: i32,
     y: i32,
 }
+
+#[derive(Default)]
+struct LastTailPosition(Option<Position>);
 
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum SnakeMovement {
@@ -25,6 +30,17 @@ pub enum SnakeMovement {
     Eating,
     Growth,
 }
+
+struct SnakeHead {
+    direction: Direction,
+}
+
+struct Materials {
+    head_material: Handle<ColorMaterial>,
+    segment_material: Handle<ColorMaterial>, 
+    food_material: Handle<ColorMaterial>, 
+}
+
 
 #[derive(PartialEq, Copy, Clone)]
 enum Direction {
@@ -45,20 +61,11 @@ impl Direction {
     }
 }
 
-struct Food;
-struct SnakeSegment;
-struct GrowthEvent;
-struct GameOverEvent;
-
-
-
-#[derive(Default)]
-struct SnakeSegments(Vec<Entity>);
-
 struct Size {
     width: f32,
     height: f32,
 }
+
 impl Size {
     pub fn square(x: f32) -> Self {
         Self {
@@ -66,17 +73,6 @@ impl Size {
             height: x,
         }
     }
-}
-
-
-struct SnakeHead {
-    direction: Direction,
-}
-
-struct Materials {
-    head_material: Handle<ColorMaterial>,
-    segment_material: Handle<ColorMaterial>, 
-    food_material: Handle<ColorMaterial>, 
 }
 
 pub struct SnakePlugin;
@@ -203,42 +199,6 @@ fn food_spawner(
         .insert(Size::square(0.8));
 }
 
-
-fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut SnakeHead>) {
-    if let Some(mut head) = heads.iter_mut().next() {
-        let dir: Direction = if keyboard_input.pressed(KeyCode::Left) {
-            Direction::Left
-        } else if keyboard_input.pressed(KeyCode::Down) {
-            Direction::Down
-        } else if keyboard_input.pressed(KeyCode::Up) {
-            Direction::Up
-        } else if keyboard_input.pressed(KeyCode::Right) {
-            Direction::Right
-        } else {
-            head.direction
-        };
-        if dir != head.direction.opposite() {
-            head.direction = dir;
-        }
-    }
-}
-
-fn snake_eating(
-    mut commands: Commands,
-    mut growth_writer: EventWriter<GrowthEvent>,
-    food_positions: Query<(Entity, &Position), With<Food>>,
-    head_positions: Query<&Position, With<SnakeHead>>,
-) {
-    for head_pos in head_positions.iter() {
-        for (ent, food_pos) in food_positions.iter() {
-            if food_pos == head_pos {
-                commands.entity(ent).despawn();
-                growth_writer.send(GrowthEvent);
-            }
-        }
-    }
-}
-
 fn snake_movement(
     segments: ResMut<SnakeSegments>,
     mut heads: Query<(Entity, &SnakeHead)>,
@@ -292,20 +252,38 @@ fn snake_movement(
     }
 }
 
-
-fn game_over(
-    mut commands: Commands,
-    mut reader: EventReader<GameOverEvent>,
-    materials: Res<Materials>,
-    segments_res: ResMut<SnakeSegments>,
-    food: Query<Entity, With<Food>>,
-    segments: Query<Entity, With<SnakeSegment>>,
-) {
-    if reader.iter().next().is_some() {
-        for ent in food.iter().chain(segments.iter()) {
-            commands.entity(ent).despawn();
+fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut SnakeHead>) {
+    if let Some(mut head) = heads.iter_mut().next() {
+        let dir: Direction = if keyboard_input.pressed(KeyCode::Left) {
+            Direction::Left
+        } else if keyboard_input.pressed(KeyCode::Down) {
+            Direction::Down
+        } else if keyboard_input.pressed(KeyCode::Up) {
+            Direction::Up
+        } else if keyboard_input.pressed(KeyCode::Right) {
+            Direction::Right
+        } else {
+            head.direction
+        };
+        if dir != head.direction.opposite() {
+            head.direction = dir;
         }
-        spawn_snake(commands, materials, segments_res);
+    }
+}
+
+fn snake_eating(
+    mut commands: Commands,
+    mut growth_writer: EventWriter<GrowthEvent>,
+    food_positions: Query<(Entity, &Position), With<Food>>,
+    head_positions: Query<&Position, With<SnakeHead>>,
+) {
+    for head_pos in head_positions.iter() {
+        for (ent, food_pos) in food_positions.iter() {
+            if food_pos == head_pos {
+                commands.entity(ent).despawn();
+                growth_writer.send(GrowthEvent);
+            }
+        }
     }
 }
 
@@ -322,6 +300,22 @@ fn snake_growth(
             &materials.segment_material,
             last_tail_position.0.unwrap(),
         ));
+    }
+}
+
+fn game_over(
+    mut commands: Commands,
+    mut reader: EventReader<GameOverEvent>,
+    materials: Res<Materials>,
+    segments_res: ResMut<SnakeSegments>,
+    food: Query<Entity, With<Food>>,
+    segments: Query<Entity, With<SnakeSegment>>,
+) {
+    if reader.iter().next().is_some() {
+        for ent in food.iter().chain(segments.iter()) {
+            commands.entity(ent).despawn();
+        }
+        spawn_snake(commands, materials, segments_res);
     }
 }
 
