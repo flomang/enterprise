@@ -33,6 +33,7 @@ pub enum SnakeMovement {
 
 struct SnakeHead {
     direction: Direction,
+    input_direction: Direction,
 }
 
 struct Materials {
@@ -114,6 +115,7 @@ fn spawn_snake(
             })
             .insert(SnakeHead {
                 direction: Direction::Up,
+                input_direction: Direction::Up,
             })
             .insert(SnakeSegment)
             .insert(Position { x: 3, y: 3 })
@@ -218,17 +220,19 @@ fn snake_movement(
 fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut SnakeHead>) {
     if let Some(mut head) = heads.iter_mut().next() {
         let dir: Direction = if keyboard_input.pressed(KeyCode::Left) {
-            Direction::Left
-        } else if keyboard_input.pressed(KeyCode::Down) {
-            Direction::Down
-        } else if keyboard_input.pressed(KeyCode::Up) {
-            Direction::Up
-        } else if keyboard_input.pressed(KeyCode::Right) {
-            Direction::Right
-        } else {
-            head.direction
-        };
-        if dir != head.direction.opposite() {
+                Direction::Left
+            } else if keyboard_input.pressed(KeyCode::Down) {
+                Direction::Down
+            } else if keyboard_input.pressed(KeyCode::Up) {
+                Direction::Up
+            } else if keyboard_input.pressed(KeyCode::Right) {
+                Direction::Right
+            } else {
+                head.direction
+            };
+
+        if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
+            head.input_direction = dir;
             head.direction = dir;
         }
     }
