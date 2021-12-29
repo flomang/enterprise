@@ -3,8 +3,10 @@ use bevy::render::pass::ClearColor;
 use bevy::core::FixedTimestep;
 use rand::prelude::random;
 
-const ARENA_WIDTH: u32 = 10;
-const ARENA_HEIGHT: u32 = 10;
+const WINDOW_WIDTH: f32 = 1000.0;
+const WINDOW_HEIGHT: f32 = 1000.0;
+const ARENA_WIDTH: u32 = 100;
+const ARENA_HEIGHT: u32 = 100;
 
 struct Food;
 struct SnakeSegment;
@@ -315,8 +317,8 @@ fn main() {
     App::build()
     .insert_resource( WindowDescriptor { 
         title: "Snake!".to_string(), 
-        width: 500.0,                 
-        height: 500.0,                
+        width: WINDOW_WIDTH,                 
+        height: WINDOW_HEIGHT,                
         ..Default::default()         
     })
     .insert_resource(SnakeSegments::default()) 
