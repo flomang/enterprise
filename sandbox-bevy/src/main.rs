@@ -130,17 +130,35 @@ fn spawn_snake(
 fn food_spawner(
     mut commands: Commands,
     materials: Res<Materials>,
+    mut positions: Query<&mut Position>,
+    segments: ResMut<SnakeSegments>,
 ) {
+    let segment_positions = segments
+        .0
+        .iter()
+        .map(|e| *positions.get_mut(*e).unwrap())
+        .collect::<Vec<Position>>();
+
+    let mut food_position = Position {
+        x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+    };
+
+    // food position can't be on the snake
+    while segment_positions.contains(&food_position) {
+        food_position = Position {
+            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        };
+    }
+
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.food_material.clone(),
             ..Default::default()
         })
         .insert(Food)
-        .insert(Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
-        })
+        .insert(food_position)
         .insert(Size::square(0.8));
 }
 
