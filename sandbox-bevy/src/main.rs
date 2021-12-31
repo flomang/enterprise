@@ -90,6 +90,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
 fn spawn_segment(
     mut commands: Commands,
+    _material: &Handle<ColorMaterial>,
     position: Position,
 ) -> Entity {
     let shape = shapes::RegularPolygon {
@@ -101,7 +102,7 @@ fn spawn_segment(
     commands
         .spawn_bundle(GeometryBuilder::build_as(
             &shape,
-            ShapeColors::outlined(Color::GREEN, Color::BLACK),
+            ShapeColors::outlined(Color::rgb(0.0, 1.0, 0.0), Color::BLACK),
             DrawMode::Outlined {
                 fill_options: FillOptions::default(),
                 outline_options: StrokeOptions::default().with_line_width(0.0),
@@ -115,6 +116,7 @@ fn spawn_segment(
 
 fn spawn_snake(
     mut commands: Commands,
+    materials: Res<Materials>,
     mut segments: ResMut<SnakeSegments>,
 ) {
     let shape = shapes::RegularPolygon {
@@ -143,6 +145,7 @@ fn spawn_snake(
             .id(),
         spawn_segment(
             commands,
+            &materials.segment_material,
             Position { x: 3, y: 2 },
         ),
     ];
@@ -283,6 +286,7 @@ fn snake_growth(
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
             commands,
+            &materials.segment_material,
             last_tail_position.0.unwrap(),
         ));
     }
@@ -300,7 +304,7 @@ fn game_over(
         for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
-        spawn_snake(commands, segments_res);
+        spawn_snake(commands, materials, segments_res);
     }
 }
 
@@ -359,7 +363,7 @@ fn main() {
     )
     .add_system_set(
         SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(0.150))
+            .with_run_criteria(FixedTimestep::step(0.050))
             .with_system(snake_movement.system().label(SnakeMovement::Movement))
             .with_system(
                 snake_eating
