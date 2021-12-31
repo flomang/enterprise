@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_prototype_lyon::prelude::*;
 use bevy::render::pass::ClearColor;
 use bevy::core::FixedTimestep;
 use rand::prelude::random;
@@ -89,43 +90,59 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
 fn spawn_segment(
     mut commands: Commands,
-    material: &Handle<ColorMaterial>,
     position: Position,
 ) -> Entity {
+    let shape = shapes::RegularPolygon {
+        sides: 8,
+        feature: shapes::RegularPolygonFeature::Radius(4.0),
+        ..shapes::RegularPolygon::default()
+    };
+
     commands
-        .spawn_bundle(SpriteBundle {
-            material: material.clone(),
-            ..Default::default()
-        })
+        .spawn_bundle(GeometryBuilder::build_as(
+            &shape,
+            ShapeColors::outlined(Color::GREEN, Color::BLACK),
+            DrawMode::Outlined {
+                fill_options: FillOptions::default(),
+                outline_options: StrokeOptions::default().with_line_width(0.0),
+            },
+            Transform::default(),
+        ))
         .insert(SnakeSegment)
         .insert(position)
-        .insert(Size::square(0.65))
         .id()
 }
 
 fn spawn_snake(
     mut commands: Commands,
-    materials: Res<Materials>,
     mut segments: ResMut<SnakeSegments>,
 ) {
+    let shape = shapes::RegularPolygon {
+        sides: 6,
+        feature: shapes::RegularPolygonFeature::Radius(5.0),
+        ..shapes::RegularPolygon::default()
+    };
+
     segments.0 = vec![
         commands
-            .spawn_bundle(SpriteBundle {
-                material: materials.head_material.clone(),
-                sprite: Sprite::new(Vec2::new(10.0, 10.0)),
-                ..Default::default()
-            })
+            .spawn_bundle(GeometryBuilder::build_as(
+                &shape,
+                ShapeColors::outlined(Color::GREEN, Color::BLACK),
+                DrawMode::Outlined {
+                    fill_options: FillOptions::default(),
+                    outline_options: StrokeOptions::default().with_line_width(0.0),
+                },
+                Transform::default(),
+            ))
             .insert(SnakeHead {
                 direction: Direction::Up,
                 input_direction: Direction::Up,
             })
             .insert(SnakeSegment)
             .insert(Position { x: 3, y: 3 })
-            .insert(Size::square(0.8))
             .id(),
         spawn_segment(
             commands,
-            &materials.segment_material,
             Position { x: 3, y: 2 },
         ),
     ];
@@ -266,7 +283,6 @@ fn snake_growth(
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
             commands,
-            &materials.segment_material,
             last_tail_position.0.unwrap(),
         ));
     }
@@ -284,7 +300,7 @@ fn game_over(
         for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
-        spawn_snake(commands, materials, segments_res);
+        spawn_snake(commands, segments_res);
     }
 }
 
@@ -334,6 +350,7 @@ fn main() {
     .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
     .add_startup_system(setup.system())
     .add_plugins(DefaultPlugins)
+    .add_plugin(ShapePlugin)
     .add_system(
         snake_movement_input
             .system()
@@ -342,7 +359,7 @@ fn main() {
     )
     .add_system_set(
         SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(0.750))
+            .with_run_criteria(FixedTimestep::step(0.150))
             .with_system(snake_movement.system().label(SnakeMovement::Movement))
             .with_system(
                 snake_eating
