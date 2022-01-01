@@ -10,6 +10,7 @@ const ARENA_WIDTH: u32 = 100;
 const ARENA_HEIGHT: u32 = 100;
 
 struct Food;
+struct Poison;
 struct SnakeSegment;
 struct GrowthEvent;
 struct GameOverEvent;
@@ -40,12 +41,10 @@ struct SnakeHead {
 }
 
 struct Materials {
-    //head_material: Handle<ColorMaterial>,
-    //segment_material: Handle<ColorMaterial>, 
-    //food_material: Handle<ColorMaterial>, 
     head_shape: shapes::RegularPolygon,
     segment_shape: shapes::RegularPolygon,
     food_shape: shapes::RegularPolygon,
+    poison_shape: shapes::RegularPolygon,
 }
 
 
@@ -89,12 +88,17 @@ fn setup(mut commands: Commands) {
         ..shapes::RegularPolygon::default()
     };
     let snake_segment = shapes::RegularPolygon {
-        sides: 8,
+        sides: 6,
         feature: shapes::RegularPolygonFeature::Radius(4.0),
         ..shapes::RegularPolygon::default()
     };
     let food = shapes::RegularPolygon {
         sides: 3,
+        feature: shapes::RegularPolygonFeature::Radius(6.0),
+        ..shapes::RegularPolygon::default()
+    };
+    let poison = shapes::RegularPolygon {
+        sides: 8,
         feature: shapes::RegularPolygonFeature::Radius(6.0),
         ..shapes::RegularPolygon::default()
     };
@@ -104,6 +108,7 @@ fn setup(mut commands: Commands) {
         head_shape: snake_head,
         segment_shape: snake_segment,
         food_shape: food,
+        poison_shape: poison,
     });
 }
 
@@ -205,6 +210,46 @@ fn food_spawner(
         .insert(Size::square(0.8));
 }
 
+fn poison_spawner(
+    mut commands: Commands,
+    materials: Res<Materials>,
+    mut positions: Query<&mut Position>,
+    segments: ResMut<SnakeSegments>,
+) {
+    let segment_positions = segments
+        .0
+        .iter()
+        .map(|e| *positions.get_mut(*e).unwrap())
+        .collect::<Vec<Position>>();
+
+    let mut position = Position {
+        x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+    };
+
+    // food position can't be on the snake
+    while segment_positions.contains(&position) {
+        position = Position {
+            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        };
+    }
+
+    commands
+        .spawn_bundle(GeometryBuilder::build_as(
+            &materials.poison_shape,
+            ShapeColors::outlined(Color::BLACK, Color::RED),
+            DrawMode::Outlined {
+                fill_options: FillOptions::default(),
+                outline_options: StrokeOptions::default().with_line_width(1.0),
+            },
+            Transform::default(),
+        ))
+        .insert(Poison)
+        .insert(position)
+        .insert(Size::square(0.8));
+}
+
 fn snake_movement(
     segments: ResMut<SnakeSegments>,
     mut heads: Query<(Entity, &SnakeHead)>,
@@ -295,6 +340,23 @@ fn snake_eating(
     }
 }
 
+fn snake_dying(
+    mut commands: Commands,
+    mut game_over_writer: EventWriter<GameOverEvent>,
+    poison_positions: Query<(Entity, &Position), With<Poison>>,
+    head_positions: Query<&Position, With<SnakeHead>>,
+) {
+    for head_pos in head_positions.iter() {
+        for (ent, pos) in poison_positions.iter() {
+            if pos == head_pos {
+                commands.entity(ent).despawn();
+                game_over_writer.send(GameOverEvent);
+            }
+        }
+    }
+}
+
+
 fn snake_growth(
     commands: Commands,
     last_tail_position: Res<LastTailPosition>,
@@ -369,6 +431,11 @@ fn main() {
             .with_run_criteria(FixedTimestep::step(1.0))
             .with_system(food_spawner.system()),
     )
+    .add_system_set(
+        SystemSet::new()
+            .with_run_criteria(FixedTimestep::step(3.0))
+            .with_system(poison_spawner.system()),
+    )
     .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
     .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
     .add_startup_system(setup.system())
@@ -388,6 +455,11 @@ fn main() {
                 snake_eating
                     .system()
                     .label(SnakeMovement::Eating)
+                    .after(SnakeMovement::Movement),
+            )
+            .with_system(
+                snake_dying
+                    .system()
                     .after(SnakeMovement::Movement),
             )
             .with_system(
