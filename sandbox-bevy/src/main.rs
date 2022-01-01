@@ -176,11 +176,22 @@ fn food_spawner(
         };
     }
 
+    let shape = shapes::RegularPolygon {
+        sides: 3,
+        feature: shapes::RegularPolygonFeature::Radius(6.0),
+        ..shapes::RegularPolygon::default()
+    };
+
     commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.food_material.clone(),
-            ..Default::default()
-        })
+        .spawn_bundle(GeometryBuilder::build_as(
+            &shape,
+            ShapeColors::outlined(Color::BLACK, Color::PURPLE),
+            DrawMode::Outlined {
+                fill_options: FillOptions::default(),
+                outline_options: StrokeOptions::default().with_line_width(1.0),
+            },
+            Transform::default(),
+        ))
         .insert(Food)
         .insert(food_position)
         .insert(Size::square(0.8));
