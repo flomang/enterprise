@@ -40,9 +40,12 @@ struct SnakeHead {
 }
 
 struct Materials {
-    head_material: Handle<ColorMaterial>,
-    segment_material: Handle<ColorMaterial>, 
-    food_material: Handle<ColorMaterial>, 
+    //head_material: Handle<ColorMaterial>,
+    //segment_material: Handle<ColorMaterial>, 
+    //food_material: Handle<ColorMaterial>, 
+    head_shape: shapes::RegularPolygon,
+    segment_shape: shapes::RegularPolygon,
+    food_shape: shapes::RegularPolygon,
 }
 
 
@@ -79,25 +82,36 @@ impl Size {
     }
 }
 
-fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands) {
+    let snake_head = shapes::RegularPolygon {
+        sides: 6,
+        feature: shapes::RegularPolygonFeature::Radius(5.0),
+        ..shapes::RegularPolygon::default()
+    };
+    let snake_segment = shapes::RegularPolygon {
+        sides: 8,
+        feature: shapes::RegularPolygonFeature::Radius(4.0),
+        ..shapes::RegularPolygon::default()
+    };
+    let food = shapes::RegularPolygon {
+        sides: 3,
+        feature: shapes::RegularPolygonFeature::Radius(6.0),
+        ..shapes::RegularPolygon::default()
+    };
+
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(Materials {
-        head_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into()),
-        segment_material: materials.add(Color::rgb(0.3, 0.3, 0.3).into()), 
-        food_material: materials.add(Color::rgb(1.0, 0.0, 1.0).into()),
+        head_shape: snake_head,
+        segment_shape: snake_segment,
+        food_shape: food,
     });
 }
 
 fn spawn_segment(
     mut commands: Commands,
-    _material: &Handle<ColorMaterial>,
+    shape: shapes::RegularPolygon,
     position: Position,
 ) -> Entity {
-    let shape = shapes::RegularPolygon {
-        sides: 8,
-        feature: shapes::RegularPolygonFeature::Radius(4.0),
-        ..shapes::RegularPolygon::default()
-    };
 
     commands
         .spawn_bundle(GeometryBuilder::build_as(
@@ -119,16 +133,16 @@ fn spawn_snake(
     materials: Res<Materials>,
     mut segments: ResMut<SnakeSegments>,
 ) {
-    let shape = shapes::RegularPolygon {
-        sides: 6,
-        feature: shapes::RegularPolygonFeature::Radius(5.0),
-        ..shapes::RegularPolygon::default()
-    };
+    //let shape = shapes::RegularPolygon {
+    //    sides: 6,
+    //    feature: shapes::RegularPolygonFeature::Radius(5.0),
+    //    ..shapes::RegularPolygon::default()
+    //};
 
     segments.0 = vec![
         commands
             .spawn_bundle(GeometryBuilder::build_as(
-                &shape,
+                &materials.head_shape,
                 ShapeColors::outlined(Color::GREEN, Color::BLACK),
                 DrawMode::Outlined {
                     fill_options: FillOptions::default(),
@@ -145,7 +159,7 @@ fn spawn_snake(
             .id(),
         spawn_segment(
             commands,
-            &materials.segment_material,
+            materials.segment_shape,
             Position { x: 3, y: 2 },
         ),
     ];
@@ -176,15 +190,9 @@ fn food_spawner(
         };
     }
 
-    let shape = shapes::RegularPolygon {
-        sides: 3,
-        feature: shapes::RegularPolygonFeature::Radius(6.0),
-        ..shapes::RegularPolygon::default()
-    };
-
     commands
         .spawn_bundle(GeometryBuilder::build_as(
-            &shape,
+            &materials.food_shape,
             ShapeColors::outlined(Color::BLACK, Color::PURPLE),
             DrawMode::Outlined {
                 fill_options: FillOptions::default(),
@@ -297,7 +305,7 @@ fn snake_growth(
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
             commands,
-            &materials.segment_material,
+            materials.segment_shape,
             last_tail_position.0.unwrap(),
         ));
     }
