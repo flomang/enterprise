@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
-use bevy::render::pass::ClearColor;
 use bevy::core::FixedTimestep;
+use bevy::prelude::*;
+use bevy::render::pass::ClearColor;
+use bevy_prototype_lyon::prelude::*;
 use rand::prelude::random;
 
 const WINDOW_WIDTH: f32 = 1000.0;
@@ -53,7 +53,6 @@ struct Materials {
     poison_shape: shapes::RegularPolygon,
     wormhole_shape: shapes::RegularPolygon,
 }
-
 
 #[derive(PartialEq, Copy, Clone)]
 enum Direction {
@@ -129,7 +128,6 @@ fn spawn_segment(
     shape: shapes::RegularPolygon,
     position: Position,
 ) -> Entity {
-
     commands
         .spawn_bundle(GeometryBuilder::build_as(
             &shape,
@@ -168,11 +166,7 @@ fn spawn_snake(
             .insert(SnakeSegment)
             .insert(Position { x: 3, y: 3 })
             .id(),
-        spawn_segment(
-            commands,
-            materials.segment_shape,
-            Position { x: 3, y: 2 },
-        ),
+        spawn_segment(commands, materials.segment_shape, Position { x: 3, y: 2 }),
     ];
 }
 
@@ -273,7 +267,7 @@ fn wormhole_spawner(
         y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
     };
 
-    // can't spawn on snake 
+    // can't spawn on snake
     while segment_positions.contains(&position) {
         position = Position {
             x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
@@ -352,16 +346,16 @@ fn snake_movement(
 fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut SnakeHead>) {
     if let Some(mut head) = heads.iter_mut().next() {
         let dir: Direction = if keyboard_input.pressed(KeyCode::Left) {
-                Direction::Left
-            } else if keyboard_input.pressed(KeyCode::Down) {
-                Direction::Down
-            } else if keyboard_input.pressed(KeyCode::Up) {
-                Direction::Up
-            } else if keyboard_input.pressed(KeyCode::Right) {
-                Direction::Right
-            } else {
-                head.direction
-            };
+            Direction::Left
+        } else if keyboard_input.pressed(KeyCode::Down) {
+            Direction::Down
+        } else if keyboard_input.pressed(KeyCode::Up) {
+            Direction::Up
+        } else if keyboard_input.pressed(KeyCode::Right) {
+            Direction::Right
+        } else {
+            head.direction
+        };
 
         if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
             head.input_direction = dir;
@@ -418,7 +412,6 @@ fn snake_dying(
     }
 }
 
-
 fn snake_growth(
     commands: Commands,
     last_tail_position: Res<LastTailPosition>,
@@ -436,19 +429,16 @@ fn snake_growth(
 }
 
 fn snake_warp(
-    _commands: Commands,
+    mut commands: Commands,
+    mut segments: ResMut<SnakeSegments>,
     mut warp_reader: EventReader<WarpEvent>,
 ) {
     if warp_reader.iter().next().is_some() {
-        print!("do something!");
-        //if let Some(seg) = segments.0.last() {
-        //    //commands.entity(seg).despawn();
-        //}
-        //segments.0.push(spawn_segment(
-        //    commands,
-        //    materials.segment_shape,
-        //    last_tail_position.0.unwrap(),
-        //));
+        if segments.0.len() > 1 {
+            if let Some(seg) = segments.0.pop() {
+                commands.entity(seg).despawn();
+            }
+        }
     }
 }
 
@@ -464,7 +454,10 @@ fn game_over(
 ) {
     if reader.iter().next().is_some() {
         // TODO make this more readable
-        for ent in wormhole.iter().chain(poison.iter().chain(food.iter().chain(segments.iter()))) {
+        for ent in wormhole
+            .iter()
+            .chain(poison.iter().chain(food.iter().chain(segments.iter())))
+        {
             commands.entity(ent).despawn();
         }
 
@@ -499,81 +492,69 @@ fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Tra
 
 fn main() {
     App::build()
-    .insert_resource( WindowDescriptor { 
-        title: "Snake!".to_string(), 
-        width: WINDOW_WIDTH,                 
-        height: WINDOW_HEIGHT,                
-        ..Default::default()         
-    })
-    .insert_resource(SnakeSegments::default()) 
-    .insert_resource(LastTailPosition::default())
-    .add_event::<GrowthEvent>()
-    .add_event::<GameOverEvent>()
-    .add_event::<WarpEvent>()
-    .add_system_set(
-        SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(1.0))
-            .with_system(food_spawner.system()),
-    )
-    .add_system_set(
-        SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(3.0))
-            .with_system(poison_spawner.system()),
-    )
-    .add_system_set(
-        SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(3.0))
-            .with_system(wormhole_spawner.system()),
-    )
-    .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
-    .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
-    .add_startup_system(setup.system())
-    .add_plugins(DefaultPlugins)
-    .add_plugin(ShapePlugin)
-    .add_system(
-        snake_movement_input
-            .system()
-            .label(SnakeMovement::Input)
-            .before(SnakeMovement::Movement),
-    )
-    .add_system_set(
-        SystemSet::new()
-            .with_run_criteria(FixedTimestep::step(0.050))
-            .with_system(snake_movement.system().label(SnakeMovement::Movement))
-            .with_system(
-                snake_eating
-                    .system()
-                    .label(SnakeMovement::Eating)
-                    .after(SnakeMovement::Movement),
-            )
-            .with_system(
-                snake_dying
-                    .system()
-                    .after(SnakeMovement::Movement),
-            )
-            .with_system(
-                snake_transporting
-                    .system()
-                    .after(SnakeMovement::Movement),
-            )
-            .with_system(
-                snake_warp
-                    .system()
-                    .after(SnakeMovement::Movement),
-            )
-            .with_system(
-                snake_growth
-                    .system()
-                    .label(SnakeMovement::Growth)
-                    .after(SnakeMovement::Eating),
-            )
-    )
-    .add_system(game_over.system().after(SnakeMovement::Movement))
-    .add_system_set_to_stage(
-        CoreStage::PostUpdate,
-        SystemSet::new()
-            .with_system(position_translation.system())
-            .with_system(size_scaling.system()),
-    )
-    .run();
+        .insert_resource(WindowDescriptor {
+            title: "Snake!".to_string(),
+            width: WINDOW_WIDTH,
+            height: WINDOW_HEIGHT,
+            ..Default::default()
+        })
+        .insert_resource(SnakeSegments::default())
+        .insert_resource(LastTailPosition::default())
+        .add_event::<GrowthEvent>()
+        .add_event::<GameOverEvent>()
+        .add_event::<WarpEvent>()
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(1.0))
+                .with_system(food_spawner.system()),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(3.0))
+                .with_system(poison_spawner.system()),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(3.0))
+                .with_system(wormhole_spawner.system()),
+        )
+        .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
+        .add_startup_stage("game_setup", SystemStage::single(spawn_snake.system()))
+        .add_startup_system(setup.system())
+        .add_plugins(DefaultPlugins)
+        .add_plugin(ShapePlugin)
+        .add_system(
+            snake_movement_input
+                .system()
+                .label(SnakeMovement::Input)
+                .before(SnakeMovement::Movement),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(0.050))
+                .with_system(snake_movement.system().label(SnakeMovement::Movement))
+                .with_system(
+                    snake_eating
+                        .system()
+                        .label(SnakeMovement::Eating)
+                        .after(SnakeMovement::Movement),
+                )
+                .with_system(snake_dying.system().after(SnakeMovement::Movement))
+                .with_system(snake_transporting.system().after(SnakeMovement::Movement))
+                .with_system(snake_warp.system().after(SnakeMovement::Movement))
+                .with_system(
+                    snake_growth
+                        .system()
+                        .label(SnakeMovement::Growth)
+                        .after(SnakeMovement::Eating),
+                ),
+        )
+        .add_system(game_over.system().after(SnakeMovement::Movement))
+        .add_system_set_to_stage(
+            CoreStage::PostUpdate,
+            SystemSet::new()
+                .with_system(position_translation.system())
+                .with_system(size_scaling.system()),
+        )
+        .run();
 }
