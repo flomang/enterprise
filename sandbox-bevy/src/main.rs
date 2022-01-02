@@ -379,12 +379,14 @@ fn game_over(
     materials: Res<Materials>,
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
+    poison: Query<Entity, With<Poison>>,
     segments: Query<Entity, With<SnakeSegment>>,
 ) {
     if reader.iter().next().is_some() {
-        for ent in food.iter().chain(segments.iter()) {
+        for ent in poison.iter().chain(food.iter().chain(segments.iter())) {
             commands.entity(ent).despawn();
         }
+
         spawn_snake(commands, materials, segments_res);
     }
 }
