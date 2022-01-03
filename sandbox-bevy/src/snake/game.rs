@@ -3,86 +3,12 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use rand::prelude::random;
 
-pub const WINDOW_WIDTH: f32 = 1000.0;
-pub const WINDOW_HEIGHT: f32 = 1000.0;
-pub const ARENA_WIDTH: u32 = 100;
-pub const ARENA_HEIGHT: u32 = 100;
-
-pub struct Food;
-pub struct Poison;
-pub struct Wormhole;
-pub struct SnakeSegment;
-
 use super::events;
+use super::SnakeSegments;
+use super::LastTailPosition;
+use super::Food;
+use super::Poison;
 
-#[derive(Default)]
-pub struct SnakeSegments(Vec<Entity>);
-
-#[derive(Default)]
-pub struct Wormholes(Vec<Entity>);
-
-#[derive(Default)]
-pub struct LastTailPosition(Option<Position>);
-
-#[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum SnakeMovement {
-    Input,
-    Movement,
-    Eating,
-    Growth,
-}
-
-pub struct SnakeHead {
-    direction: Direction,
-    input_direction: Direction,
-}
-
-pub struct Materials {
-    head_shape: shapes::RegularPolygon,
-    segment_shape: shapes::RegularPolygon,
-    food_shape: shapes::RegularPolygon,
-    poison_shape: shapes::RegularPolygon,
-    wormhole_shape: shapes::RegularPolygon,
-}
-
-#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Position {
-    x: i32,
-    y: i32,
-}
-
-#[derive(PartialEq, Copy, Clone)]
-enum Direction {
-    Left,
-    Up,
-    Right,
-    Down,
-}
-
-impl Direction {
-    fn opposite(self) -> Self {
-        match self {
-            Self::Left => Self::Right,
-            Self::Right => Self::Left,
-            Self::Up => Self::Down,
-            Self::Down => Self::Up,
-        }
-    }
-}
-
-pub struct Size {
-    width: f32,
-    height: f32,
-}
-
-impl Size {
-    pub fn square(x: f32) -> Self {
-        Self {
-            width: x,
-            height: x,
-        }
-    }
-}
 
 pub fn setup(mut commands: Commands) {
     let snake_head = shapes::RegularPolygon {
@@ -107,7 +33,7 @@ pub fn setup(mut commands: Commands) {
     };
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.insert_resource(Materials {
+    commands.insert_resource(super::Materials {
         head_shape: snake_head,
         segment_shape: snake_segment,
         food_shape: food,
@@ -123,7 +49,7 @@ pub fn setup(mut commands: Commands) {
 pub fn spawn_segment(
     mut commands: Commands,
     shape: shapes::RegularPolygon,
-    position: Position,
+    position: super::Position,
 ) -> Entity {
     commands
         .spawn_bundle(GeometryBuilder::build_as(
@@ -135,14 +61,14 @@ pub fn spawn_segment(
             },
             Transform::default(),
         ))
-        .insert(SnakeSegment)
+        .insert(super::SnakeSegment)
         .insert(position)
         .id()
 }
 
 pub fn spawn_snake(
     mut commands: Commands,
-    materials: Res<Materials>,
+    materials: Res<super::Materials>,
     mut segments: ResMut<SnakeSegments>,
 ) {
     segments.0 = vec![
@@ -156,39 +82,39 @@ pub fn spawn_snake(
                 },
                 Transform::default(),
             ))
-            .insert(SnakeHead {
-                direction: Direction::Up,
-                input_direction: Direction::Up,
+            .insert(super::SnakeHead {
+                direction: super::Direction::Up,
+                input_direction: super::Direction::Up,
             })
-            .insert(SnakeSegment)
-            .insert(Position { x: 3, y: 3 })
+            .insert(super::SnakeSegment)
+            .insert(super::Position { x: 3, y: 3 })
             .id(),
-        spawn_segment(commands, materials.segment_shape, Position { x: 3, y: 2 }),
+        spawn_segment(commands, materials.segment_shape, super::Position { x: 3, y: 2 }),
     ];
 }
 
 pub fn food_spawner(
     mut commands: Commands,
-    materials: Res<Materials>,
-    mut positions: Query<&mut Position>,
+    materials: Res<super::Materials>,
+    mut positions: Query<&mut super::Position>,
     segments: ResMut<SnakeSegments>,
 ) {
     let segment_positions = segments
         .0
         .iter()
         .map(|e| *positions.get_mut(*e).unwrap())
-        .collect::<Vec<Position>>();
+        .collect::<Vec<super::Position>>();
 
-    let mut food_position = Position {
-        x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+    let mut food_position = super::Position {
+        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
     // food position can't be on the snake
     while segment_positions.contains(&food_position) {
-        food_position = Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        food_position = super::Position {
+            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
         };
     }
 
@@ -204,31 +130,31 @@ pub fn food_spawner(
         ))
         .insert(Food)
         .insert(food_position)
-        .insert(Size::square(0.8));
+        .insert(super::Size::square(0.8));
 }
 
 pub fn poison_spawner(
     mut commands: Commands,
-    materials: Res<Materials>,
-    mut positions: Query<&mut Position>,
+    materials: Res<super::Materials>,
+    mut positions: Query<&mut super::Position>,
     segments: ResMut<SnakeSegments>,
 ) {
     let segment_positions = segments
         .0
         .iter()
         .map(|e| *positions.get_mut(*e).unwrap())
-        .collect::<Vec<Position>>();
+        .collect::<Vec<super::Position>>();
 
-    let mut position = Position {
-        x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+    let mut position = super::Position {
+        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
     // food position can't be on the snake
     while segment_positions.contains(&position) {
-        position = Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        position = super::Position {
+            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
         };
     }
 
@@ -244,31 +170,31 @@ pub fn poison_spawner(
         ))
         .insert(Poison)
         .insert(position)
-        .insert(Size::square(0.8));
+        .insert(super::Size::square(0.8));
 }
 
 pub fn wormhole_spawner(
     mut commands: Commands,
-    materials: Res<Materials>,
-    mut positions: Query<&mut Position>,
+    materials: Res<super::Materials>,
+    mut positions: Query<&mut super::Position>,
     segments: ResMut<SnakeSegments>,
 ) {
     let segment_positions = segments
         .0
         .iter()
         .map(|e| *positions.get_mut(*e).unwrap())
-        .collect::<Vec<Position>>();
+        .collect::<Vec<super::Position>>();
 
-    let mut position = Position {
-        x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+    let mut position = super::Position {
+        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
     // can't spawn on snake
     while segment_positions.contains(&position) {
-        position = Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        position = super::Position {
+            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
         };
     }
 
@@ -282,16 +208,16 @@ pub fn wormhole_spawner(
             },
             Transform::default(),
         ))
-        .insert(Wormhole)
+        .insert(super::Wormhole)
         .insert(position)
-        .insert(Size::square(0.8));
+        .insert(super::Size::square(0.8));
 }
 
 pub fn snake_movement(
     segments: ResMut<SnakeSegments>,
-    mut heads: Query<(Entity, &SnakeHead)>,
+    mut heads: Query<(Entity, &super::SnakeHead)>,
     mut last_tail_position: ResMut<LastTailPosition>,
-    mut positions: Query<&mut Position>,
+    mut positions: Query<&mut super::Position>,
     mut game_over_writer: EventWriter<events::GameOverEvent>,
 ) {
     if let Some((head_entity, head)) = heads.iter_mut().next() {
@@ -299,28 +225,28 @@ pub fn snake_movement(
             .0
             .iter()
             .map(|e| *positions.get_mut(*e).unwrap())
-            .collect::<Vec<Position>>();
+            .collect::<Vec<super::Position>>();
         let mut head_pos = positions.get_mut(head_entity).unwrap();
 
         match &head.direction {
-            Direction::Left => {
+            super::Direction::Left => {
                 head_pos.x -= 1;
             }
-            Direction::Right => {
+            super::Direction::Right => {
                 head_pos.x += 1;
             }
-            Direction::Up => {
+            super::Direction::Up => {
                 head_pos.y += 1;
             }
-            Direction::Down => {
+            super::Direction::Down => {
                 head_pos.y -= 1;
             }
         };
 
         if head_pos.x < 0
             || head_pos.y < 0
-            || head_pos.x as u32 >= ARENA_WIDTH
-            || head_pos.y as u32 >= ARENA_HEIGHT
+            || head_pos.x as u32 >= super::ARENA_WIDTH
+            || head_pos.y as u32 >= super::ARENA_HEIGHT
         {
             game_over_writer.send(events::GameOverEvent);
         }
@@ -340,16 +266,16 @@ pub fn snake_movement(
     }
 }
 
-pub fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut SnakeHead>) {
+pub fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut super::SnakeHead>) {
     if let Some(mut head) = heads.iter_mut().next() {
-        let dir: Direction = if keyboard_input.pressed(KeyCode::Left) {
-            Direction::Left
+        let dir: super::Direction = if keyboard_input.pressed(KeyCode::Left) {
+            super::Direction::Left
         } else if keyboard_input.pressed(KeyCode::Down) {
-            Direction::Down
+            super::Direction::Down
         } else if keyboard_input.pressed(KeyCode::Up) {
-            Direction::Up
+            super::Direction::Up
         } else if keyboard_input.pressed(KeyCode::Right) {
-            Direction::Right
+            super::Direction::Right
         } else {
             head.direction
         };
@@ -364,8 +290,8 @@ pub fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Quer
 pub fn snake_eating(
     mut commands: Commands,
     mut growth_writer: EventWriter<events::GrowthEvent>,
-    food_positions: Query<(Entity, &Position), With<Food>>,
-    head_positions: Query<&Position, With<SnakeHead>>,
+    food_positions: Query<(Entity, &super::Position), With<Food>>,
+    head_positions: Query<&super::Position, With<super::SnakeHead>>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, food_pos) in food_positions.iter() {
@@ -380,8 +306,8 @@ pub fn snake_eating(
 pub fn snake_transporting(
     mut commands: Commands,
     mut warp_writer: EventWriter<events::WarpEvent>,
-    warp_positions: Query<(Entity, &Position), With<Wormhole>>,
-    head_positions: Query<&Position, With<SnakeHead>>,
+    warp_positions: Query<(Entity, &super::Position), With<super::Wormhole>>,
+    head_positions: Query<&super::Position, With<super::SnakeHead>>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, pos) in warp_positions.iter() {
@@ -396,8 +322,8 @@ pub fn snake_transporting(
 pub fn snake_dying(
     mut commands: Commands,
     mut game_over_writer: EventWriter<events::GameOverEvent>,
-    poison_positions: Query<(Entity, &Position), With<Poison>>,
-    head_positions: Query<&Position, With<SnakeHead>>,
+    poison_positions: Query<(Entity, &super::Position), With<Poison>>,
+    head_positions: Query<&super::Position, With<super::SnakeHead>>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, pos) in poison_positions.iter() {
@@ -414,7 +340,7 @@ pub fn snake_growth(
     last_tail_position: Res<LastTailPosition>,
     mut segments: ResMut<SnakeSegments>,
     mut growth_reader: EventReader<events::GrowthEvent>,
-    materials: Res<Materials>,
+    materials: Res<super::Materials>,
 ) {
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
@@ -441,12 +367,12 @@ pub fn snake_warp(
 pub fn game_over(
     mut commands: Commands,
     mut reader: EventReader<events::GameOverEvent>,
-    materials: Res<Materials>,
+    materials: Res<super::Materials>,
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
     poison: Query<Entity, With<Poison>>,
-    wormhole: Query<Entity, With<Wormhole>>,
-    segments: Query<Entity, With<SnakeSegment>>,
+    wormhole: Query<Entity, With<super::Wormhole>>,
+    segments: Query<Entity, With<super::SnakeSegment>>,
 ) {
     if reader.iter().next().is_some() {
         // TODO make this more readable
@@ -465,13 +391,13 @@ pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
     let window = windows.get_primary().unwrap();
     for (sprite_size, mut sprite) in q.iter_mut() {
         sprite.size = Vec2::new(
-            sprite_size.width / ARENA_WIDTH as f32 * window.width() as f32,
-            sprite_size.height / ARENA_HEIGHT as f32 * window.height() as f32,
+            sprite_size.width / super::ARENA_WIDTH as f32 * window.width() as f32,
+            sprite_size.height / super::ARENA_HEIGHT as f32 * window.height() as f32,
         );
     }
 }
 
-pub fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Transform)>) {
+pub fn position_translation(windows: Res<Windows>, mut q: Query<(&super::Position, &mut Transform)>) {
     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
         let tile_size = bound_window / bound_game;
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
@@ -479,8 +405,8 @@ pub fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut
     let window = windows.get_primary().unwrap();
     for (pos, mut transform) in q.iter_mut() {
         transform.translation = Vec3::new(
-            convert(pos.x as f32, window.width() as f32, ARENA_WIDTH as f32),
-            convert(pos.y as f32, window.height() as f32, ARENA_HEIGHT as f32),
+            convert(pos.x as f32, window.width() as f32, super::ARENA_WIDTH as f32),
+            convert(pos.y as f32, window.height() as f32, super::ARENA_HEIGHT as f32),
             0.0,
         );
     }
