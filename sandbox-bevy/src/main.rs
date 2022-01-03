@@ -14,21 +14,14 @@ struct Poison;
 struct Wormhole;
 struct SnakeSegment;
 
-struct GrowthEvent;
-struct GameOverEvent;
-struct WarpEvent;
+mod snake;
+use snake::events;
 
 #[derive(Default)]
 struct SnakeSegments(Vec<Entity>);
 
 #[derive(Default)]
 struct Wormholes(Vec<Entity>);
-
-#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
-struct Position {
-    x: i32,
-    y: i32,
-}
 
 #[derive(Default)]
 struct LastTailPosition(Option<Position>);
@@ -52,6 +45,12 @@ struct Materials {
     food_shape: shapes::RegularPolygon,
     poison_shape: shapes::RegularPolygon,
     wormhole_shape: shapes::RegularPolygon,
+}
+
+#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
+struct Position {
+    x: i32,
+    y: i32,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -295,7 +294,7 @@ fn snake_movement(
     mut heads: Query<(Entity, &SnakeHead)>,
     mut last_tail_position: ResMut<LastTailPosition>,
     mut positions: Query<&mut Position>,
-    mut game_over_writer: EventWriter<GameOverEvent>,
+    mut game_over_writer: EventWriter<events::GameOverEvent>,
 ) {
     if let Some((head_entity, head)) = heads.iter_mut().next() {
         let segment_positions = segments
@@ -325,11 +324,11 @@ fn snake_movement(
             || head_pos.x as u32 >= ARENA_WIDTH
             || head_pos.y as u32 >= ARENA_HEIGHT
         {
-            game_over_writer.send(GameOverEvent);
+            game_over_writer.send(events::GameOverEvent);
         }
 
         if segment_positions.contains(&head_pos) {
-            game_over_writer.send(GameOverEvent);
+            game_over_writer.send(events::GameOverEvent);
         }
 
         segment_positions
@@ -366,7 +365,7 @@ fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&m
 
 fn snake_eating(
     mut commands: Commands,
-    mut growth_writer: EventWriter<GrowthEvent>,
+    mut growth_writer: EventWriter<events::GrowthEvent>,
     food_positions: Query<(Entity, &Position), With<Food>>,
     head_positions: Query<&Position, With<SnakeHead>>,
 ) {
@@ -374,7 +373,7 @@ fn snake_eating(
         for (ent, food_pos) in food_positions.iter() {
             if food_pos == head_pos {
                 commands.entity(ent).despawn();
-                growth_writer.send(GrowthEvent);
+                growth_writer.send(events::GrowthEvent);
             }
         }
     }
@@ -382,7 +381,7 @@ fn snake_eating(
 
 fn snake_transporting(
     mut commands: Commands,
-    mut warp_writer: EventWriter<WarpEvent>,
+    mut warp_writer: EventWriter<events::WarpEvent>,
     warp_positions: Query<(Entity, &Position), With<Wormhole>>,
     head_positions: Query<&Position, With<SnakeHead>>,
 ) {
@@ -390,7 +389,7 @@ fn snake_transporting(
         for (ent, pos) in warp_positions.iter() {
             if pos == head_pos {
                 commands.entity(ent).despawn();
-                warp_writer.send(WarpEvent);
+                warp_writer.send(events::WarpEvent);
             }
         }
     }
@@ -398,7 +397,7 @@ fn snake_transporting(
 
 fn snake_dying(
     mut commands: Commands,
-    mut game_over_writer: EventWriter<GameOverEvent>,
+    mut game_over_writer: EventWriter<events::GameOverEvent>,
     poison_positions: Query<(Entity, &Position), With<Poison>>,
     head_positions: Query<&Position, With<SnakeHead>>,
 ) {
@@ -406,7 +405,7 @@ fn snake_dying(
         for (ent, pos) in poison_positions.iter() {
             if pos == head_pos {
                 commands.entity(ent).despawn();
-                game_over_writer.send(GameOverEvent);
+                game_over_writer.send(events::GameOverEvent);
             }
         }
     }
@@ -416,7 +415,7 @@ fn snake_growth(
     commands: Commands,
     last_tail_position: Res<LastTailPosition>,
     mut segments: ResMut<SnakeSegments>,
-    mut growth_reader: EventReader<GrowthEvent>,
+    mut growth_reader: EventReader<events::GrowthEvent>,
     materials: Res<Materials>,
 ) {
     if growth_reader.iter().next().is_some() {
@@ -431,20 +430,19 @@ fn snake_growth(
 fn snake_warp(
     mut commands: Commands,
     mut segments: ResMut<SnakeSegments>,
-    mut warp_reader: EventReader<WarpEvent>,
+    mut warp_reader: EventReader<events::WarpEvent>,
 ) {
-    if warp_reader.iter().next().is_some() {
-        if segments.0.len() > 1 {
-            if let Some(seg) = segments.0.pop() {
-                commands.entity(seg).despawn();
-            }
+    // on warp event and if there are more than 1 segments for the snake
+    if warp_reader.iter().next().is_some() && segments.0.len() > 1 {
+        if let Some(seg) = segments.0.pop() {
+            commands.entity(seg).despawn();
         }
     }
 }
 
 fn game_over(
     mut commands: Commands,
-    mut reader: EventReader<GameOverEvent>,
+    mut reader: EventReader<events::GameOverEvent>,
     materials: Res<Materials>,
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
@@ -500,9 +498,9 @@ fn main() {
         })
         .insert_resource(SnakeSegments::default())
         .insert_resource(LastTailPosition::default())
-        .add_event::<GrowthEvent>()
-        .add_event::<GameOverEvent>()
-        .add_event::<WarpEvent>()
+        .add_event::<events::GrowthEvent>()
+        .add_event::<events::GameOverEvent>()
+        .add_event::<events::WarpEvent>()
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
