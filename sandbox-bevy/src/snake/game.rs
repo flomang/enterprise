@@ -129,8 +129,7 @@ pub fn food_spawner(
             Transform::default(),
         ))
         .insert(Food)
-        .insert(food_position)
-        .insert(super::Size::square(0.8));
+        .insert(food_position);
 }
 
 pub fn poison_spawner(
@@ -169,8 +168,7 @@ pub fn poison_spawner(
             Transform::default(),
         ))
         .insert(Poison)
-        .insert(position)
-        .insert(super::Size::square(0.8));
+        .insert(position);
 }
 
 pub fn wormhole_spawner(
@@ -209,8 +207,7 @@ pub fn wormhole_spawner(
             Transform::default(),
         ))
         .insert(super::Wormhole)
-        .insert(position)
-        .insert(super::Size::square(0.8));
+        .insert(position);
 }
 
 pub fn snake_movement(

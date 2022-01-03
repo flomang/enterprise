@@ -69,17 +69,3 @@ impl Direction {
         }
     }
 }
-
-pub struct Size {
-    //width: f32,
-    //height: f32,
-}
-
-impl Size {
-    pub fn square(_x: f32) -> Self {
-        Self {
-            //width: x,
-            //height: x,
-        }
-    }
-}
