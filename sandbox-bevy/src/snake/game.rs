@@ -32,6 +32,27 @@ fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBund
     )
 }
 
+// return random optional position
+fn random_position(
+    entities: Query<Entity, With<super::Position>>,
+    mut positions: Query<&mut super::Position>,
+) -> Option<super::Position> {
+    let entity_positions = entities
+        .iter()
+        .map(|e| *positions.get_mut(e).unwrap())
+        .collect::<Vec<super::Position>>();
+
+    let position = super::Position {
+        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
+    };
+
+    match entity_positions.contains(&position) {
+        true => None,
+        false => Some(position),
+    }
+}
+
 pub fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
@@ -82,19 +103,10 @@ pub fn spawn_food(
     mut commands: Commands,
     materials: Res<super::Materials>,
     entities: Query<Entity, With<super::Position>>,
-    mut positions: Query<&mut super::Position>,
+    positions: Query<&mut super::Position>,
 ) {
-    let entity_positions = entities
-        .iter()
-        .map(|e| *positions.get_mut(e).unwrap())
-        .collect::<Vec<super::Position>>();
-
-    let position = super::Position {
-        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-    };
-
-    if !entity_positions.contains(&position) {
+    // can't spawn on existing entity
+    if let Some(position) = random_position(entities, positions) {
         commands
             .spawn_bundle(shape_factory(&materials.food))
             .insert(Food)
@@ -106,20 +118,10 @@ pub fn spawn_poison(
     mut commands: Commands,
     materials: Res<super::Materials>,
     entities: Query<Entity, With<super::Position>>,
-    mut positions: Query<&mut super::Position>,
+    positions: Query<&mut super::Position>,
 ) {
-    let entity_positions = entities
-        .iter()
-        .map(|e| *positions.get_mut(e).unwrap())
-        .collect::<Vec<super::Position>>();
-
-    let position = super::Position {
-        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-    };
-
     // can't spawn on existing entity
-    if !entity_positions.contains(&position) {
+    if let Some(position) = random_position(entities, positions) {
         commands
             .spawn_bundle(shape_factory(&materials.poison))
             .insert(super::Poison)
@@ -131,20 +133,10 @@ pub fn spawn_wormhole(
     mut commands: Commands,
     materials: Res<super::Materials>,
     entities: Query<Entity, With<super::Position>>,
-    mut positions: Query<&mut super::Position>,
+    positions: Query<&mut super::Position>,
 ) {
-    let entity_positions = entities
-        .iter()
-        .map(|e| *positions.get_mut(e).unwrap())
-        .collect::<Vec<super::Position>>();
-
-    let position = super::Position {
-        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-        y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-    };
-
     // can't spawn on existing entity
-    if !entity_positions.contains(&position) {
+    if let Some(position) = random_position(entities, positions) {
         commands
             .spawn_bundle(shape_factory(&materials.wormhole))
             .insert(super::Wormhole)

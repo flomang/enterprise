@@ -21,17 +21,17 @@ fn main() {
         .add_event::<events::WarpEvent>()
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(1.0))
+                .with_run_criteria(FixedTimestep::step(3.3))
                 .with_system(snake::game::spawn_food.system()),
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(3.0))
+                .with_run_criteria(FixedTimestep::step(15.4))
                 .with_system(snake::game::spawn_poison.system()),
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(3.0))
+                .with_run_criteria(FixedTimestep::step(9.1))
                 .with_system(snake::game::spawn_wormhole.system()),
         )
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
