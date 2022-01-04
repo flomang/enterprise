@@ -50,11 +50,11 @@ pub struct Shape {
 }
 
 pub struct Materials {
-    head_shape: Shape,
-    segment_shape: Shape,
-    food_shape: Shape,
-    poison_shape: Shape,
-    wormhole_shape: Shape,
+    snake_head: Shape,
+    snake_segment: Shape,
+    food: Shape,
+    poison: Shape,
+    wormhole: Shape,
 }
 
 #[derive(PartialEq, Copy, Clone)]

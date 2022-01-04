@@ -16,11 +16,11 @@ fn regular_polygon_colored(sides: usize, radius: f32, outline: Color, fill: Colo
             ..shapes::RegularPolygon::default()
         },
         outline: outline,
-        fill: fill, 
+        fill: fill,
     }
 }
 
-fn shape_factory(shape: &super::Shape) ->  bevy_prototype_lyon::entity::ShapeBundle {
+fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBundle {
     GeometryBuilder::build_as(
         &shape.shape,
         ShapeColors::outlined(shape.fill, shape.outline),
@@ -35,15 +35,15 @@ fn shape_factory(shape: &super::Shape) ->  bevy_prototype_lyon::entity::ShapeBun
 pub fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
-        head_shape: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
-        segment_shape: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
-        food_shape: regular_polygon_colored(3, 6.0, Color::PURPLE, Color::BLACK),
-        poison_shape: regular_polygon_colored(8, 6.0, Color::RED, Color::BLACK),
-        wormhole_shape: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
+        snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
+        snake_segment: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
+        food: regular_polygon_colored(3, 6.0, Color::PURPLE, Color::BLACK),
+        poison: regular_polygon_colored(8, 3.0, Color::RED, Color::BLACK),
+        wormhole: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
     });
 }
 
-pub fn spawn_segment(
+pub fn spawn_snake_segment(
     mut commands: Commands,
     shape: &super::Shape,
     position: super::Position,
@@ -62,7 +62,7 @@ pub fn spawn_snake(
 ) {
     segments.0 = vec![
         commands
-            .spawn_bundle(shape_factory(&materials.head_shape))
+            .spawn_bundle(shape_factory(&materials.snake_head))
             .insert(super::SnakeHead {
                 direction: super::Direction::Up,
                 input_direction: super::Direction::Up,
@@ -70,105 +70,86 @@ pub fn spawn_snake(
             .insert(super::SnakeSegment)
             .insert(super::Position { x: 3, y: 3 })
             .id(),
-        spawn_segment(
+        spawn_snake_segment(
             commands,
-            &materials.segment_shape,
+            &materials.snake_segment,
             super::Position { x: 3, y: 2 },
         ),
     ];
 }
 
-pub fn food_spawner(
+pub fn spawn_food(
     mut commands: Commands,
     materials: Res<super::Materials>,
+    entities: Query<Entity, With<super::Position>>,
     mut positions: Query<&mut super::Position>,
-    segments: ResMut<SnakeSegments>,
 ) {
-    let segment_positions = segments
-        .0
+    let entity_positions = entities
         .iter()
-        .map(|e| *positions.get_mut(*e).unwrap())
+        .map(|e| *positions.get_mut(e).unwrap())
         .collect::<Vec<super::Position>>();
 
-    let mut food_position = super::Position {
+    let position = super::Position {
         x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
         y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
-    // food position can't be on the snake
-    while segment_positions.contains(&food_position) {
-        food_position = super::Position {
-            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-        };
+    if !entity_positions.contains(&position) {
+        commands
+            .spawn_bundle(shape_factory(&materials.food))
+            .insert(Food)
+            .insert(position);
     }
-
-    commands
-        .spawn_bundle(shape_factory(&materials.food_shape))
-        .insert(Food)
-        .insert(food_position);
 }
 
-pub fn poison_spawner(
+pub fn spawn_poison(
     mut commands: Commands,
     materials: Res<super::Materials>,
+    entities: Query<Entity, With<super::Position>>,
     mut positions: Query<&mut super::Position>,
-    segments: ResMut<SnakeSegments>,
 ) {
-    let segment_positions = segments
-        .0
+    let entity_positions = entities
         .iter()
-        .map(|e| *positions.get_mut(*e).unwrap())
+        .map(|e| *positions.get_mut(e).unwrap())
         .collect::<Vec<super::Position>>();
 
-    let mut position = super::Position {
+    let position = super::Position {
         x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
         y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
-    // food position can't be on the snake
-    while segment_positions.contains(&position) {
-        position = super::Position {
-            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-        };
+    // can't spawn on existing entity
+    if !entity_positions.contains(&position) {
+        commands
+            .spawn_bundle(shape_factory(&materials.poison))
+            .insert(super::Poison)
+            .insert(position);
     }
-
-    commands
-        .spawn_bundle(shape_factory(&materials.poison_shape))
-        .insert(Poison)
-        .insert(position);
 }
 
-pub fn wormhole_spawner(
+pub fn spawn_wormhole(
     mut commands: Commands,
     materials: Res<super::Materials>,
+    entities: Query<Entity, With<super::Position>>,
     mut positions: Query<&mut super::Position>,
-    segments: ResMut<SnakeSegments>,
 ) {
-    let segment_positions = segments
-        .0
+    let entity_positions = entities
         .iter()
-        .map(|e| *positions.get_mut(*e).unwrap())
+        .map(|e| *positions.get_mut(e).unwrap())
         .collect::<Vec<super::Position>>();
 
-    let mut position = super::Position {
+    let position = super::Position {
         x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
         y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
-    // can't spawn on snake
-    while segment_positions.contains(&position) {
-        position = super::Position {
-            x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
-        };
+    // can't spawn on existing entity
+    if !entity_positions.contains(&position) {
+        commands
+            .spawn_bundle(shape_factory(&materials.wormhole))
+            .insert(super::Wormhole)
+            .insert(position);
     }
-
-    commands
-        .spawn_bundle(shape_factory(&materials.wormhole_shape))
-        .insert(super::Wormhole)
-        .insert(position);
 }
 
 pub fn snake_movement(
@@ -304,9 +285,9 @@ pub fn snake_growth(
     materials: Res<super::Materials>,
 ) {
     if growth_reader.iter().next().is_some() {
-        segments.0.push(spawn_segment(
+        segments.0.push(spawn_snake_segment(
             commands,
-            &materials.segment_shape,
+            &materials.snake_segment,
             last_tail_position.0.unwrap(),
         ));
     }

@@ -22,17 +22,17 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
-                .with_system(snake::game::food_spawner.system()),
+                .with_system(snake::game::spawn_food.system()),
         )
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(3.0))
-                .with_system(snake::game::poison_spawner.system()),
+                .with_system(snake::game::spawn_poison.system()),
         )
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(3.0))
-                .with_system(snake::game::wormhole_spawner.system()),
+                .with_system(snake::game::spawn_wormhole.system()),
         )
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .add_startup_stage("game_setup", SystemStage::single(snake::game::spawn_snake.system()))
