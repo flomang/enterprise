@@ -43,12 +43,18 @@ pub struct SnakeHead {
     input_direction: Direction,
 }
 
+pub struct Shape {
+    shape: shapes::RegularPolygon, 
+    outline: Color,
+    fill: Color,
+}
+
 pub struct Materials {
-    head_shape: shapes::RegularPolygon,
-    segment_shape: shapes::RegularPolygon,
-    food_shape: shapes::RegularPolygon,
-    poison_shape: shapes::RegularPolygon,
-    wormhole_shape: shapes::RegularPolygon,
+    head_shape: Shape,
+    segment_shape: Shape,
+    food_shape: Shape,
+    poison_shape: Shape,
+    wormhole_shape: Shape,
 }
 
 #[derive(PartialEq, Copy, Clone)]

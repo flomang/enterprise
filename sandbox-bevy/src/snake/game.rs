@@ -1,48 +1,55 @@
-
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use rand::prelude::random;
 
 use super::events;
-use super::SnakeSegments;
-use super::LastTailPosition;
 use super::Food;
+use super::LastTailPosition;
 use super::Poison;
+use super::SnakeSegments;
 
-fn regular_polygon(sides: usize, radius: f32) -> shapes::RegularPolygon {
-    shapes::RegularPolygon {
-        sides: sides,
-        feature: shapes::RegularPolygonFeature::Radius(radius),
-        ..shapes::RegularPolygon::default()
+fn regular_polygon_colored(sides: usize, radius: f32, outline: Color, fill: Color) -> super::Shape {
+    super::Shape {
+        shape: shapes::RegularPolygon {
+            sides: sides,
+            feature: shapes::RegularPolygonFeature::Radius(radius),
+            ..shapes::RegularPolygon::default()
+        },
+        outline: outline,
+        fill: fill, 
     }
-} 
+}
+
+fn shape_factory(shape: &super::Shape) ->  bevy_prototype_lyon::entity::ShapeBundle {
+    GeometryBuilder::build_as(
+        &shape.shape,
+        ShapeColors::outlined(shape.fill, shape.outline),
+        DrawMode::Outlined {
+            fill_options: FillOptions::default(),
+            outline_options: StrokeOptions::default().with_line_width(1.0),
+        },
+        Transform::default(),
+    )
+}
 
 pub fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
-        head_shape: regular_polygon(6, 5.0), 
-        segment_shape: regular_polygon(6, 4.0),
-        food_shape: regular_polygon(3, 6.0),
-        poison_shape: regular_polygon(8, 6.0), 
-        wormhole_shape: regular_polygon(12, 6.0), 
+        head_shape: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
+        segment_shape: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
+        food_shape: regular_polygon_colored(3, 6.0, Color::PURPLE, Color::BLACK),
+        poison_shape: regular_polygon_colored(8, 6.0, Color::RED, Color::BLACK),
+        wormhole_shape: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
     });
 }
 
 pub fn spawn_segment(
     mut commands: Commands,
-    shape: shapes::RegularPolygon,
+    shape: &super::Shape,
     position: super::Position,
 ) -> Entity {
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &shape,
-            ShapeColors::outlined(Color::rgb(0.0, 1.0, 0.0), Color::BLACK),
-            DrawMode::Outlined {
-                fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(0.0),
-            },
-            Transform::default(),
-        ))
+        .spawn_bundle(shape_factory(shape))
         .insert(super::SnakeSegment)
         .insert(position)
         .id()
@@ -55,15 +62,7 @@ pub fn spawn_snake(
 ) {
     segments.0 = vec![
         commands
-            .spawn_bundle(GeometryBuilder::build_as(
-                &materials.head_shape,
-                ShapeColors::outlined(Color::GREEN, Color::BLACK),
-                DrawMode::Outlined {
-                    fill_options: FillOptions::default(),
-                    outline_options: StrokeOptions::default().with_line_width(0.0),
-                },
-                Transform::default(),
-            ))
+            .spawn_bundle(shape_factory(&materials.head_shape))
             .insert(super::SnakeHead {
                 direction: super::Direction::Up,
                 input_direction: super::Direction::Up,
@@ -71,7 +70,11 @@ pub fn spawn_snake(
             .insert(super::SnakeSegment)
             .insert(super::Position { x: 3, y: 3 })
             .id(),
-        spawn_segment(commands, materials.segment_shape, super::Position { x: 3, y: 2 }),
+        spawn_segment(
+            commands,
+            &materials.segment_shape,
+            super::Position { x: 3, y: 2 },
+        ),
     ];
 }
 
@@ -101,15 +104,7 @@ pub fn food_spawner(
     }
 
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &materials.food_shape,
-            ShapeColors::outlined(Color::BLACK, Color::PURPLE),
-            DrawMode::Outlined {
-                fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(1.0),
-            },
-            Transform::default(),
-        ))
+        .spawn_bundle(shape_factory(&materials.food_shape))
         .insert(Food)
         .insert(food_position);
 }
@@ -140,15 +135,7 @@ pub fn poison_spawner(
     }
 
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &materials.poison_shape,
-            ShapeColors::outlined(Color::BLACK, Color::RED),
-            DrawMode::Outlined {
-                fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(1.0),
-            },
-            Transform::default(),
-        ))
+        .spawn_bundle(shape_factory(&materials.poison_shape))
         .insert(Poison)
         .insert(position);
 }
@@ -179,15 +166,7 @@ pub fn wormhole_spawner(
     }
 
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &materials.wormhole_shape,
-            ShapeColors::outlined(Color::BLACK, Color::BLUE),
-            DrawMode::Outlined {
-                fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(1.0),
-            },
-            Transform::default(),
-        ))
+        .spawn_bundle(shape_factory(&materials.wormhole_shape))
         .insert(super::Wormhole)
         .insert(position);
 }
@@ -245,7 +224,10 @@ pub fn snake_movement(
     }
 }
 
-pub fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut heads: Query<&mut super::SnakeHead>) {
+pub fn snake_movement_input(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut heads: Query<&mut super::SnakeHead>,
+) {
     if let Some(mut head) = heads.iter_mut().next() {
         let dir: super::Direction = if keyboard_input.pressed(KeyCode::Left) {
             super::Direction::Left
@@ -324,7 +306,7 @@ pub fn snake_growth(
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
             commands,
-            materials.segment_shape,
+            &materials.segment_shape,
             last_tail_position.0.unwrap(),
         ));
     }
@@ -376,7 +358,10 @@ pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
     }
 }
 
-pub fn position_translation(windows: Res<Windows>, mut q: Query<(&super::Position, &mut Transform)>) {
+pub fn position_translation(
+    windows: Res<Windows>,
+    mut q: Query<(&super::Position, &mut Transform)>,
+) {
     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
         let tile_size = bound_window / bound_game;
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
@@ -384,8 +369,16 @@ pub fn position_translation(windows: Res<Windows>, mut q: Query<(&super::Positio
     let window = windows.get_primary().unwrap();
     for (pos, mut transform) in q.iter_mut() {
         transform.translation = Vec3::new(
-            convert(pos.x as f32, window.width() as f32, super::ARENA_WIDTH as f32),
-            convert(pos.y as f32, window.height() as f32, super::ARENA_HEIGHT as f32),
+            convert(
+                pos.x as f32,
+                window.width() as f32,
+                super::ARENA_WIDTH as f32,
+            ),
+            convert(
+                pos.y as f32,
+                window.height() as f32,
+                super::ARENA_HEIGHT as f32,
+            ),
             0.0,
         );
     }
