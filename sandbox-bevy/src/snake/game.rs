@@ -9,40 +9,22 @@ use super::LastTailPosition;
 use super::Food;
 use super::Poison;
 
+fn regular_polygon(sides: usize, radius: f32) -> shapes::RegularPolygon {
+    shapes::RegularPolygon {
+        sides: sides,
+        feature: shapes::RegularPolygonFeature::Radius(radius),
+        ..shapes::RegularPolygon::default()
+    }
+} 
 
 pub fn setup(mut commands: Commands) {
-    let snake_head = shapes::RegularPolygon {
-        sides: 6,
-        feature: shapes::RegularPolygonFeature::Radius(5.0),
-        ..shapes::RegularPolygon::default()
-    };
-    let snake_segment = shapes::RegularPolygon {
-        sides: 6,
-        feature: shapes::RegularPolygonFeature::Radius(4.0),
-        ..shapes::RegularPolygon::default()
-    };
-    let food = shapes::RegularPolygon {
-        sides: 3,
-        feature: shapes::RegularPolygonFeature::Radius(6.0),
-        ..shapes::RegularPolygon::default()
-    };
-    let poison = shapes::RegularPolygon {
-        sides: 8,
-        feature: shapes::RegularPolygonFeature::Radius(6.0),
-        ..shapes::RegularPolygon::default()
-    };
-
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
-        head_shape: snake_head,
-        segment_shape: snake_segment,
-        food_shape: food,
-        poison_shape: poison,
-        wormhole_shape: shapes::RegularPolygon {
-            sides: 12,
-            feature: shapes::RegularPolygonFeature::Radius(6.0),
-            ..shapes::RegularPolygon::default()
-        },
+        head_shape: regular_polygon(6, 5.0), 
+        segment_shape: regular_polygon(6, 4.0),
+        food_shape: regular_polygon(3, 6.0),
+        poison_shape: regular_polygon(8, 6.0), 
+        wormhole_shape: regular_polygon(12, 6.0), 
     });
 }
 
