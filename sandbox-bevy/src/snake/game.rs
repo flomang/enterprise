@@ -53,7 +53,22 @@ fn random_position(
     }
 }
 
-pub fn setup(mut commands: Commands) {
+
+pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<ColorMaterial>>) {
+    let texture_handle = asset_server.load("images/neon-pizza-logo.png");
+    //let pizza = SpriteBundle {
+    //    material: materials.add(texture_handle.into()),
+    //    sprite: Sprite {
+    //        // Flip the logo to the left
+    //        flip_x: true,
+    //        // And don't flip it upside-down ( the default )
+    //        flip_y: false,
+    //        ..Default::default()
+    //    },
+    //    ..Default::default()
+    //}; 
+
+
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
         snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
@@ -61,6 +76,7 @@ pub fn setup(mut commands: Commands) {
         food: regular_polygon_colored(3, 6.0, Color::PURPLE, Color::BLACK),
         poison: regular_polygon_colored(8, 3.0, Color::RED, Color::BLACK),
         wormhole: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
+        pizza:  materials.add(texture_handle.into()),
     });
 }
 
@@ -105,10 +121,18 @@ pub fn spawn_food(
     entities: Query<Entity, With<super::Position>>,
     positions: Query<&mut super::Position>,
 ) {
+    let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
+
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
         commands
-            .spawn_bundle(shape_factory(&materials.food))
+            //.spawn_bundle(shape_factory(&materials.food))
+            .spawn_bundle(SpriteBundle {
+                material: materials.pizza.clone(),
+                sprite: Sprite::new(Vec2::new(24., 24.)),
+                transform,
+                ..Default::default()
+            })
             .insert(Food)
             .insert(position);
     }

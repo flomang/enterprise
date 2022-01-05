@@ -55,6 +55,7 @@ pub struct Materials {
     food: Shape,
     poison: Shape,
     wormhole: Shape,
+    pizza: Handle<ColorMaterial>,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -75,3 +76,20 @@ impl Direction {
         }
     }
 }
+
+// Keeps the textures and materials for Arrows
+// pub struct MaterialResource {
+//     pizza_texture: Handle<ColorMaterial>,
+// }
+
+// impl FromWorld for MaterialResource {
+//     fn from_world(world: &mut World) -> Self {
+//         let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+//         let asset_server = world.get_resource::<AssetServer>().unwrap();
+
+//         let pizza_handle = asset_server.load("images/neon-pizza-logo.png");
+//         MaterialResource {
+//             pizza_texture: materials.add(pizza_handle.into()),
+//         }
+//     }
+// }
