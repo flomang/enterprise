@@ -63,30 +63,24 @@ fn random_position(
     }
 }
 
-
-pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<ColorMaterial>>) {
-    let texture_handle = asset_server.load("images/neon-pizza-logo.png");
-    //let pizza = SpriteBundle {
-    //    material: materials.add(texture_handle.into()),
-    //    sprite: Sprite {
-    //        // Flip the logo to the left
-    //        flip_x: true,
-    //        // And don't flip it upside-down ( the default )
-    //        flip_y: false,
-    //        ..Default::default()
-    //    },
-    //    ..Default::default()
-    //}; 
-
+pub fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let cherry_handle = asset_server.load("images/note.png");
+    let pizza_handle = asset_server.load("images/neon-pizza-logo.png");
+    let pill_handle = asset_server.load("images/skull.png");
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
         snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
         snake_segment: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
-        food: regular_polygon_colored(3, 6.0, Color::PURPLE, Color::BLACK),
         poison: regular_polygon_colored(8, 3.0, Color::RED, Color::BLACK),
         wormhole: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
-        pizza:  materials.add(texture_handle.into()),
+        cherry: materials.add(cherry_handle.into()),
+        pill: materials.add(pill_handle.into()),
+        pizza: materials.add(pizza_handle.into()),
     });
 }
 
@@ -149,7 +143,7 @@ pub fn spawn_poison(
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
         commands
-            .spawn_bundle(shape_factory(&materials.poison))
+            .spawn_bundle(sprite_factory(&materials.pill))
             .insert(super::Poison)
             .insert(position);
     }
@@ -164,7 +158,7 @@ pub fn spawn_wormhole(
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
         commands
-            .spawn_bundle(shape_factory(&materials.wormhole))
+            .spawn_bundle(sprite_factory(&materials.cherry))
             .insert(super::Wormhole)
             .insert(position);
     }

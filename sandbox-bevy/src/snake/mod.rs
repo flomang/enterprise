@@ -52,9 +52,10 @@ pub struct Shape {
 pub struct Materials {
     snake_head: Shape,
     snake_segment: Shape,
-    food: Shape,
     poison: Shape,
     wormhole: Shape,
+    cherry: Handle<ColorMaterial>,
+    pill: Handle<ColorMaterial>,
     pizza: Handle<ColorMaterial>,
 }
 
