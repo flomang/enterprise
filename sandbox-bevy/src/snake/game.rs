@@ -32,6 +32,16 @@ fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBund
     )
 }
 
+fn sprite_factory(material: &Handle<ColorMaterial>) -> SpriteBundle {
+    let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
+    SpriteBundle {
+        material: material.clone(),
+        sprite: Sprite::new(Vec2::new(24., 24.)),
+        transform,
+        ..Default::default()
+    }
+}
+
 // return random optional position
 fn random_position(
     entities: Query<Entity, With<super::Position>>,
@@ -121,18 +131,10 @@ pub fn spawn_food(
     entities: Query<Entity, With<super::Position>>,
     positions: Query<&mut super::Position>,
 ) {
-    let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
-
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
         commands
-            //.spawn_bundle(shape_factory(&materials.food))
-            .spawn_bundle(SpriteBundle {
-                material: materials.pizza.clone(),
-                sprite: Sprite::new(Vec2::new(24., 24.)),
-                transform,
-                ..Default::default()
-            })
+            .spawn_bundle(sprite_factory(&materials.pizza))
             .insert(Food)
             .insert(position);
     }
