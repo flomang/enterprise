@@ -18,14 +18,11 @@ fn main() {
         .insert_resource(snake::LastTailPosition::default())
         .add_event::<events::GrowthEvent>()
         .add_event::<events::GameOverEvent>()
-        .add_event::<events::WarpEvent>()
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(3.3))
-                .with_system(snake::game::spawn_food.system()),
-        )
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
-        .add_startup_stage("game_setup", SystemStage::single(snake::game::spawn_snake.system()))
+        .add_startup_stage(
+            "game_setup",
+            SystemStage::single(snake::game::spawn_snake.system()),
+        )
         .add_startup_system(snake::game::setup.system())
         .add_plugins(DefaultPlugins)
         .add_plugin(ShapePlugin)
@@ -37,24 +34,40 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(3.3))
+                .with_system(snake::game::spawn_food.system())
+                .label(snake::FoodState::Spawn),
+        )
+        .add_system_set(
+            SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
-                .with_system(snake::game::food_movement.system()
-                .label(snake::FoodMovement::Movement))
+                .with_system(
+                    snake::game::food_movement
+                        .system()
+                        .label(snake::FoodState::Movement),
+                )
+                .after(snake::FoodState::Spawn),
         )
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.050))
-                .with_system(snake::game::snake_movement.system().label(snake::SnakeMovement::Movement))
+                .with_system(
+                    snake::game::snake_movement
+                        .system()
+                        .label(snake::SnakeMovement::Movement),
+                )
                 .with_system(
                     snake::game::snake_eating
                         .system()
                         .label(snake::SnakeMovement::Eating)
                         .after(snake::SnakeMovement::Movement)
-                        .before(snake::FoodMovement::Movement),
+                        .before(snake::FoodState::Movement),
                 )
-                .with_system(snake::game::snake_dying.system().after(snake::SnakeMovement::Movement))
-                .with_system(snake::game::snake_transporting.system().after(snake::SnakeMovement::Movement))
-                .with_system(snake::game::snake_warp.system().after(snake::SnakeMovement::Movement))
+                .with_system(
+                    snake::game::snake_dying
+                        .system()
+                        .after(snake::SnakeMovement::Movement),
+                )
                 .with_system(
                     snake::game::snake_growth
                         .system()
@@ -62,7 +75,11 @@ fn main() {
                         .after(snake::SnakeMovement::Eating),
                 ),
         )
-        .add_system(snake::game::game_over.system().after(snake::SnakeMovement::Movement))
+        .add_system(
+            snake::game::game_over
+                .system()
+                .after(snake::SnakeMovement::Movement),
+        )
         .add_system_set_to_stage(
             CoreStage::PostUpdate,
             SystemSet::new()

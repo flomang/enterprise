@@ -285,21 +285,21 @@ pub fn snake_eating(
     }
 }
 
-pub fn snake_transporting(
-    mut commands: Commands,
-    mut warp_writer: EventWriter<events::WarpEvent>,
-    warp_positions: Query<(Entity, &super::Position), With<super::Wormhole>>,
-    head_positions: Query<&super::Position, With<super::SnakeHead>>,
-) {
-    for head_pos in head_positions.iter() {
-        for (ent, pos) in warp_positions.iter() {
-            if pos == head_pos {
-                commands.entity(ent).despawn();
-                warp_writer.send(events::WarpEvent);
-            }
-        }
-    }
-}
+// pub fn snake_transporting(
+//     mut commands: Commands,
+//     mut warp_writer: EventWriter<events::WarpEvent>,
+//     warp_positions: Query<(Entity, &super::Position), With<super::Wormhole>>,
+//     head_positions: Query<&super::Position, With<super::SnakeHead>>,
+// ) {
+//     for head_pos in head_positions.iter() {
+//         for (ent, pos) in warp_positions.iter() {
+//             if pos == head_pos {
+//                 commands.entity(ent).despawn();
+//                 warp_writer.send(events::WarpEvent);
+//             }
+//         }
+//     }
+// }
 
 pub fn snake_dying(
     mut commands: Commands,
@@ -333,18 +333,18 @@ pub fn snake_growth(
     }
 }
 
-pub fn snake_warp(
-    mut commands: Commands,
-    mut segments: ResMut<SnakeSegments>,
-    mut warp_reader: EventReader<events::WarpEvent>,
-) {
-    // on warp event and if there are more than 1 segments for the snake
-    if warp_reader.iter().next().is_some() && segments.0.len() > 1 {
-        if let Some(seg) = segments.0.pop() {
-            commands.entity(seg).despawn();
-        }
-    }
-}
+// pub fn snake_warp(
+//     mut commands: Commands,
+//     mut segments: ResMut<SnakeSegments>,
+//     mut warp_reader: EventReader<events::WarpEvent>,
+// ) {
+//     // on warp event and if there are more than 1 segments for the snake
+//     if warp_reader.iter().next().is_some() && segments.0.len() > 1 {
+//         if let Some(seg) = segments.0.pop() {
+//             commands.entity(seg).despawn();
+//         }
+//     }
+// }
 
 pub fn game_over(
     mut commands: Commands,
@@ -352,15 +352,13 @@ pub fn game_over(
     materials: Res<super::Materials>,
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
-    poison: Query<Entity, With<Poison>>,
-    wormhole: Query<Entity, With<super::Wormhole>>,
     segments: Query<Entity, With<super::SnakeSegment>>,
 ) {
     if reader.iter().next().is_some() {
         // TODO make this more readable
-        for ent in wormhole
+        for ent in food 
             .iter()
-            .chain(poison.iter().chain(food.iter().chain(segments.iter())))
+            .chain(segments.iter())
         {
             commands.entity(ent).despawn();
         }

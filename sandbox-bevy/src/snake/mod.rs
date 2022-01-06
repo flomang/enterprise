@@ -20,9 +20,6 @@ pub struct Position {
 pub struct SnakeSegments(Vec<Entity>);
 
 #[derive(Default)]
-pub struct Wormholes(Vec<Entity>);
-
-#[derive(Default)]
 pub struct LastTailPosition(Option<Position>);
 
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
@@ -34,13 +31,13 @@ pub enum SnakeMovement {
 }
 
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum FoodMovement {
+pub enum FoodState {
     Movement,
+    Spawn,
 }
 
 pub struct Food;
 pub struct Poison;
-pub struct Wormhole;
 pub struct SnakeSegment;
 
 pub struct SnakeHead {
@@ -78,20 +75,3 @@ impl Direction {
         }
     }
 }
-
-// Keeps the textures and materials for Arrows
-// pub struct MaterialResource {
-//     pizza_texture: Handle<ColorMaterial>,
-// }
-
-// impl FromWorld for MaterialResource {
-//     fn from_world(world: &mut World) -> Self {
-//         let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
-//         let asset_server = world.get_resource::<AssetServer>().unwrap();
-
-//         let pizza_handle = asset_server.load("images/neon-pizza-logo.png");
-//         MaterialResource {
-//             pizza_texture: materials.add(pizza_handle.into()),
-//         }
-//     }
-// }
