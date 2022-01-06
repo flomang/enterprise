@@ -33,6 +33,11 @@ pub enum SnakeMovement {
     Growth,
 }
 
+#[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
+pub enum FoodMovement {
+    Movement,
+}
+
 pub struct Food;
 pub struct Poison;
 pub struct Wormhole;
@@ -52,10 +57,6 @@ pub struct Shape {
 pub struct Materials {
     snake_head: Shape,
     snake_segment: Shape,
-    poison: Shape,
-    wormhole: Shape,
-    cherry: Handle<ColorMaterial>,
-    pill: Handle<ColorMaterial>,
     pizza: Handle<ColorMaterial>,
 }
 

@@ -43,7 +43,27 @@ fn sprite_factory(material: &Handle<ColorMaterial>) -> SpriteBundle {
 }
 
 // return random optional position
-fn random_position(
+// fn random_position(
+//     entities: Query<Entity, With<super::Position>>,
+//     mut positions: Query<&mut super::Position>,
+// ) -> Option<super::Position> {
+//     let entity_positions = entities
+//         .iter()
+//         .map(|e| *positions.get_mut(e).unwrap())
+//         .collect::<Vec<super::Position>>();
+
+//     let position = super::Position {
+//         x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+//         y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
+//     };
+
+//     match entity_positions.contains(&position) {
+//         true => None,
+//         false => Some(position),
+//     }
+// }
+
+fn random_position_off_screen(
     entities: Query<Entity, With<super::Position>>,
     mut positions: Query<&mut super::Position>,
 ) -> Option<super::Position> {
@@ -53,7 +73,7 @@ fn random_position(
         .collect::<Vec<super::Position>>();
 
     let position = super::Position {
-        x: (random::<f32>() * super::ARENA_WIDTH as f32) as i32,
+        x: super::ARENA_WIDTH as i32,
         y: (random::<f32>() * super::ARENA_HEIGHT as f32) as i32,
     };
 
@@ -68,18 +88,12 @@ pub fn setup(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let cherry_handle = asset_server.load("images/note.png");
     let pizza_handle = asset_server.load("images/neon-pizza-logo.png");
-    let pill_handle = asset_server.load("images/skull.png");
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
         snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
         snake_segment: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
-        poison: regular_polygon_colored(8, 3.0, Color::RED, Color::BLACK),
-        wormhole: regular_polygon_colored(12, 6.0, Color::BLUE, Color::BLACK),
-        cherry: materials.add(cherry_handle.into()),
-        pill: materials.add(pill_handle.into()),
         pizza: materials.add(pizza_handle.into()),
     });
 }
@@ -126,7 +140,7 @@ pub fn spawn_food(
     positions: Query<&mut super::Position>,
 ) {
     // can't spawn on existing entity
-    if let Some(position) = random_position(entities, positions) {
+    if let Some(position) = random_position_off_screen(entities, positions) {
         commands
             .spawn_bundle(sprite_factory(&materials.pizza))
             .insert(Food)
@@ -134,41 +148,47 @@ pub fn spawn_food(
     }
 }
 
-pub fn spawn_poison(
-    mut commands: Commands,
-    materials: Res<super::Materials>,
-    entities: Query<Entity, With<super::Position>>,
-    positions: Query<&mut super::Position>,
-) {
-    // can't spawn on existing entity
-    if let Some(position) = random_position(entities, positions) {
-        commands
-            .spawn_bundle(sprite_factory(&materials.pill))
-            .insert(super::Poison)
-            .insert(position);
-    }
-}
+// pub fn spawn_poison(
+//     mut commands: Commands,
+//     materials: Res<super::Materials>,
+//     entities: Query<Entity, With<super::Position>>,
+//     positions: Query<&mut super::Position>,
+// ) {
+//     // can't spawn on existing entity
+//     if let Some(position) = random_position(entities, positions) {
+//         commands
+//             .spawn_bundle(sprite_factory(&materials.pill))
+//             .insert(super::Poison)
+//             .insert(position);
+//     }
+// }
 
-pub fn spawn_wormhole(
-    mut commands: Commands,
-    materials: Res<super::Materials>,
-    entities: Query<Entity, With<super::Position>>,
-    positions: Query<&mut super::Position>,
-) {
-    // can't spawn on existing entity
-    if let Some(position) = random_position(entities, positions) {
-        commands
-            .spawn_bundle(sprite_factory(&materials.cherry))
-            .insert(super::Wormhole)
-            .insert(position);
-    }
-}
+// pub fn spawn_wormhole(
+//     mut commands: Commands,
+//     materials: Res<super::Materials>,
+//     entities: Query<Entity, With<super::Position>>,
+//     positions: Query<&mut super::Position>,
+// ) {
+//     // can't spawn on existing entity
+//     if let Some(position) = random_position(entities, positions) {
+//         commands
+//             .spawn_bundle(sprite_factory(&materials.cherry))
+//             .insert(super::Wormhole)
+//             .insert(position);
+//     }
+// }
 
-pub fn test_movement(
+pub fn food_movement(
+    mut commands: Commands,
     mut query: Query<(Entity, &mut super::Position), With<Food>>,
 ){
-    for (_, mut pos) in query.iter_mut() {
+    for (ent, mut pos) in query.iter_mut() {
         pos.x -= 1;
+
+        // if offscreen despawssssss
+        if pos.x < 0 {
+            commands.entity(ent).despawn();
+        }
     }
 }
 

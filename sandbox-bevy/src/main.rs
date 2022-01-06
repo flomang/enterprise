@@ -24,16 +24,6 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(3.3))
                 .with_system(snake::game::spawn_food.system()),
         )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(15.4))
-                .with_system(snake::game::spawn_poison.system()),
-        )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(9.1))
-                .with_system(snake::game::spawn_wormhole.system()),
-        )
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .add_startup_stage("game_setup", SystemStage::single(snake::game::spawn_snake.system()))
         .add_startup_system(snake::game::setup.system())
@@ -47,14 +37,20 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(1.0))
+                .with_system(snake::game::food_movement.system()
+                .label(snake::FoodMovement::Movement))
+        )
+        .add_system_set(
+            SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.050))
-                .with_system(snake::game::test_movement.system())
                 .with_system(snake::game::snake_movement.system().label(snake::SnakeMovement::Movement))
                 .with_system(
                     snake::game::snake_eating
                         .system()
                         .label(snake::SnakeMovement::Eating)
-                        .after(snake::SnakeMovement::Movement),
+                        .after(snake::SnakeMovement::Movement)
+                        .before(snake::FoodMovement::Movement),
                 )
                 .with_system(snake::game::snake_dying.system().after(snake::SnakeMovement::Movement))
                 .with_system(snake::game::snake_transporting.system().after(snake::SnakeMovement::Movement))
