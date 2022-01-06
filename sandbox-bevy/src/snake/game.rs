@@ -180,12 +180,12 @@ pub fn spawn_food(
 
 pub fn food_movement(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut super::Position), With<Food>>,
+    mut query: Query<(Entity, &mut super::Position), Without<super::SnakeSegment>>,
 ){
     for (ent, mut pos) in query.iter_mut() {
         pos.x -= 1;
 
-        // if offscreen despawssssss
+        // if offscreen despawn entity
         if pos.x < 0 {
             commands.entity(ent).despawn();
         }
