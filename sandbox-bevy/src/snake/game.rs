@@ -164,6 +164,14 @@ pub fn spawn_wormhole(
     }
 }
 
+pub fn test_movement(
+    mut query: Query<(Entity, &mut super::Position), With<Food>>,
+){
+    for (_, mut pos) in query.iter_mut() {
+        pos.x -= 1;
+    }
+}
+
 pub fn snake_movement(
     segments: ResMut<SnakeSegments>,
     mut heads: Query<(Entity, &super::SnakeHead)>,
