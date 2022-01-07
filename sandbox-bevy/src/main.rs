@@ -51,11 +51,11 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.050))
-                // .with_system(
-                //     snake::game::snake_movement
-                //         .system()
-                //         .label(snake::SnakeMovement::Movement),
-                // )
+                .with_system(
+                     snake::game::snake_movement
+                         .system()
+                         .label(snake::SnakeMovement::Movement),
+                )
                 .with_system(
                     snake::game::snake_eating
                         .system()
