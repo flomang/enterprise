@@ -181,7 +181,7 @@ pub fn spawn_food(
 pub fn food_movement(
     mut commands: Commands,
     mut query: Query<(Entity, &mut super::Position), Without<super::SnakeSegment>>,
-){
+) {
     for (ent, mut pos) in query.iter_mut() {
         pos.x -= 1;
 
@@ -245,11 +245,40 @@ pub fn snake_movement(
     }
 }
 
+//pub fn snake_movement_input(
+//    keyboard_input: Res<Input<KeyCode>>,
+//    mut heads: Query<&mut super::SnakeHead>,
+//) {
+//    if let Some(mut head) = heads.iter_mut().next() {
+//        let dir: super::Direction = if keyboard_input.pressed(KeyCode::Left) {
+//            super::Direction::Left
+//        } else if keyboard_input.pressed(KeyCode::Down) {
+//            super::Direction::Down
+//        } else if keyboard_input.pressed(KeyCode::Up) {
+//            super::Direction::Up
+//        } else if keyboard_input.pressed(KeyCode::Right) {
+//            super::Direction::Right
+//        } else {
+//            head.direction
+//        };
+//
+//        if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
+//            head.input_direction = dir;
+//            head.direction = dir;
+//        }
+//    }
+//}
+
 pub fn snake_movement_input(
+    segments: ResMut<SnakeSegments>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut heads: Query<&mut super::SnakeHead>,
+    mut heads: Query<(Entity, &mut super::SnakeHead)>,
+    mut last_tail_position: ResMut<LastTailPosition>,
+    mut positions: Query<&mut super::Position>,
+    mut game_over_writer: EventWriter<events::GameOverEvent>,
 ) {
-    if let Some(mut head) = heads.iter_mut().next() {
+    if let Some((head_entity, mut head)) = heads.iter_mut().next() {
+        let mut keypressed = true;
         let dir: super::Direction = if keyboard_input.pressed(KeyCode::Left) {
             super::Direction::Left
         } else if keyboard_input.pressed(KeyCode::Down) {
@@ -259,15 +288,85 @@ pub fn snake_movement_input(
         } else if keyboard_input.pressed(KeyCode::Right) {
             super::Direction::Right
         } else {
+            keypressed = false;
             head.direction
         };
 
-        if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
-            head.input_direction = dir;
-            head.direction = dir;
+        if keypressed {
+            if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
+                head.input_direction = dir;
+                head.direction = dir;
+            }
+
+            let segment_positions = segments
+                .0
+                .iter()
+                .map(|e| *positions.get_mut(*e).unwrap())
+                .collect::<Vec<super::Position>>();
+            let mut head_pos = positions.get_mut(head_entity).unwrap();
+
+            match &head.direction {
+                super::Direction::Left => {
+                    head_pos.x -= 1;
+                }
+                super::Direction::Right => {
+                    head_pos.x += 1;
+                }
+                super::Direction::Up => {
+                    head_pos.y += 1;
+                }
+                super::Direction::Down => {
+                    head_pos.y -= 1;
+                }
+            };
+
+            if head_pos.x < 0
+                || head_pos.y < 0
+                || head_pos.x as u32 >= super::ARENA_WIDTH
+                || head_pos.y as u32 >= super::ARENA_HEIGHT
+            {
+                game_over_writer.send(events::GameOverEvent);
+            }
+
+            if segment_positions.contains(&head_pos) {
+                game_over_writer.send(events::GameOverEvent);
+            }
+
+            segment_positions
+                .iter()
+                .zip(segments.0.iter().skip(1))
+                .for_each(|(pos, segment)| {
+                    *positions.get_mut(*segment).unwrap() = *pos;
+                });
+
+            last_tail_position.0 = Some(*segment_positions.last().unwrap());
         }
     }
 }
+
+// pub fn snake_movement_input(
+//     keyboard_input: Res<Input<KeyCode>>,
+//     mut heads: Query<&mut super::SnakeHead>,
+// ) {
+//     if let Some(mut head) = heads.iter_mut().next() {
+//         let dir: super::Direction = if keyboard_input.pressed(KeyCode::Left) {
+//             super::Direction::Left
+//         } else if keyboard_input.pressed(KeyCode::Down) {
+//             super::Direction::Down
+//         } else if keyboard_input.pressed(KeyCode::Up) {
+//             super::Direction::Up
+//         } else if keyboard_input.pressed(KeyCode::Right) {
+//             super::Direction::Right
+//         } else {
+//             head.direction
+//         };
+
+//         if dir != head.direction.opposite() && dir != head.input_direction.opposite() {
+//             head.input_direction = dir;
+//             head.direction = dir;
+//         }
+//     }
+// }
 
 pub fn snake_eating(
     mut commands: Commands,
@@ -356,10 +455,7 @@ pub fn game_over(
 ) {
     if reader.iter().next().is_some() {
         // TODO make this more readable
-        for ent in food 
-            .iter()
-            .chain(segments.iter())
-        {
+        for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
 
