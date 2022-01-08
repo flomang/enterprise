@@ -1,26 +1,52 @@
 use std::collections::HashMap;
 
+pub struct Card {
+    order: u8,
+    title: String,
+    up: String,
+    reverse: String,
+}
+
+impl Card {
+    pub fn new(order: u8, title: String, up: String, reverse: String) -> Card {
+        Card{
+            order: order,
+            title: title,
+            up: up,
+            reverse: reverse,
+        }
+    }
+}
+
 pub struct MajorArcana {
-    cards: HashMap<u8, String>,
+    hash_map: HashMap<u8, String>,
+    cards: HashMap<u8, Card>,
 }
 
 impl MajorArcana {
     pub fn new() -> MajorArcana {
         MajorArcana{
-            cards: build_deck()
+            hash_map: build_deck(),
+            cards: HashMap::new(),
         }
     }
 
     // TODO sort by order
     pub fn sorted_keys(&self) -> Vec<&u8> {
-        let mut orders: Vec<&u8> = self.cards.keys().collect();
+        let mut orders: Vec<&u8> = self.hash_map.keys().collect();
         orders.sort();
         orders
     }
 
-    pub fn card_title(&self, order: i32) -> &String {
-        let title = &self.cards[&(order as u8)];
+    pub fn card_title(&self, order: u8) -> &String {
+        let title = &self.hash_map[&order];
         title
+    }
+
+    pub fn add_definition(&mut self, order: u8, up: String, reverse: String) {
+        let title = self.card_title(order);
+        let card = Card::new(order, title.clone(), up, reverse);
+        self.cards.insert(order, card);
     }
 }
 
