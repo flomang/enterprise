@@ -1,0 +1,134 @@
+[
+    {
+        "order": 0,
+        "title": "The Fool",
+        "up": "Folly, foolishness, extravagance.",
+        "reverse": "Hesitation, carelessness, trouble from ignoring foolishness."
+    },
+    {
+        "order": 1,
+        "title": "The Magician",
+        "up": "Skills, will power, self-confidence.",
+        "reverse": "Wrong use of same(shame), conciet, lack of skill."
+    },
+    {
+        "order": 2,
+        "title": "The High Priestess",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 3,
+        "title": "The Empress",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 4,
+        "title": "The Emperor",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 5,
+        "title": "The Hierophant",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 6,
+        "title": "The Lovers",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 7,
+        "title": "The Chariot",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 8,
+        "title": "Strength",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 9,
+        "title": "The Hermit",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 10,
+        "title": "Wheel of Fortune",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 11,
+        "title": "Justice",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 12,
+        "title": "The Hanged Man",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 13,
+        "title": "Death",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 14,
+        "title": "Temperance",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 15,
+        "title": "The Devil",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 16,
+        "title": "The Tower",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 17,
+        "title": "The Star",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 18,
+        "title": "The Moon",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 19,
+        "title": "The Sun",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 20,
+        "title": "Judgement",
+        "up": "",
+        "reverse": ""
+    },
+    {
+        "order": 21,
+        "title": "The Universe",
+        "up": "",
+        "reverse": ""
+    }
+]
