@@ -14,5 +14,6 @@ members = [
     "sandbox-oop",
     "sandbox-two",
     "sandbox-three",
-    "sandbox-twenty"
+    "sandbox-twenty",
+    "tarot"
 ]
