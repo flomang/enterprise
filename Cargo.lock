@@ -4086,6 +4086,7 @@ name = "tarot"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_prototype_lyon",
  "rand 0.7.3",
  "serde",
  "serde_json",
