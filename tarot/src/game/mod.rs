@@ -36,7 +36,7 @@ pub struct Materials {
     //the_sun: Handle<ColorMaterial>,
     //judgement: Handle<ColorMaterial>,
     //the_universe: Handle<ColorMaterial>,
-    cards: Vec<Handle<ColorMaterial>>,
+    cards: Vec<Handle<Image>>,
 }
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]

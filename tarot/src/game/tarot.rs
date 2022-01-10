@@ -41,20 +41,17 @@ use bevy::prelude::*;
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut cards = vec![];
-    for i in 0..22 {
+    for i in 0..1 {
         let image_path: &str = &format!("images/{order}.png", order = i);
-        let handle = asset_server.load(image_path);
-        let card = materials.add(handle.into());
-        cards.push(card);
+        let image = asset_server.load(image_path);
+        cards.push(image);
     }
-    let cover_handle = asset_server.load("images/cover.png");
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
-        cover: cover_handle,
+        cover: asset_server.load("images/cover.png"),
         cards: cards,
     });
 }
@@ -66,50 +63,16 @@ pub fn spawn_card(
     commands
         .spawn_bundle(SpriteBundle {
             texture: materials.cover.clone(),
+            //texture: materials.cards[0].clone(),
             sprite: Sprite {
                 // Flip the logo to the left
-                flip_x: true,
+                flip_x: false,
                 // And don't flip it upside-down ( the default )
                 flip_y: false,
+                custom_size: Some(Vec2::new(150.0, 200.0)),
                 ..Default::default()
             },
             ..Default::default()
         });
         //.insert(super::Card);
 }
-
-// pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
-//     let window = windows.get_primary().unwrap();
-//     for (sprite_size, mut sprite) in q.iter_mut() {
-//         sprite.size = Vec2::new(
-//             sprite_size.width / super::ARENA_WIDTH as f32 * window.width() as f32,
-//             sprite_size.height / super::ARENA_HEIGHT as f32 * window.height() as f32,
-//         );
-//     }
-// }
-
-// pub fn position_translation(
-//     windows: Res<Windows>,
-//     mut q: Query<(&super::Position, &mut Transform)>,
-// ) {
-//     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
-//         let tile_size = bound_window / bound_game;
-//         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
-//     }
-//     let window = windows.get_primary().unwrap();
-//     for (pos, mut transform) in q.iter_mut() {
-//         transform.translation = Vec3::new(
-//             convert(
-//                 pos.x as f32,
-//                 window.width() as f32,
-//                 super::ARENA_WIDTH as f32,
-//             ),
-//             convert(
-//                 pos.y as f32,
-//                 window.height() as f32,
-//                 super::ARENA_HEIGHT as f32,
-//             ),
-//             0.0,
-//         );
-//     }
-// }

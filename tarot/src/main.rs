@@ -42,30 +42,6 @@ fn main() {
              "game_setup",
              SystemStage::single(game::tarot::spawn_card.system()),
         )
-        // .add_system_set_to_stage(
-        //     CoreStage::PostUpdate,
-        //     SystemSet::new()
-        //         .with_system(game::tarot::position_translation.system())
-        //         .with_system(game::tarot::size_scaling.system()),
-        // )
         .run();
-    // App::new()
-    // .add_plugins(DefaultPlugins)
-    // .add_startup_system(setup)
-    // .run();
 }
 
-// fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-//     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-//     commands.spawn_bundle(SpriteBundle {
-//         texture: asset_server.load("images/0-fool.png"),
-//         sprite: Sprite {
-//             // Flip the logo to the left
-//             flip_x: true,
-//             // And don't flip it upside-down ( the default )
-//             flip_y: false,
-//             ..Default::default()
-//         },
-//         ..Default::default()
-//     });
-// }
