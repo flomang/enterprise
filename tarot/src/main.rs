@@ -1,19 +1,19 @@
 use bevy::prelude::*;
-use rand::seq::SliceRandom;
-use serde::Deserialize;
-use std::fs::File;
-use std::path::Path; // 0.7.2
+//use rand::seq::SliceRandom;
+//use serde::Deserialize;
+//use std::fs::File;
+//use std::path::Path; // 0.7.2
 
 mod game;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Card {
-    order: u8,
-    title: String,
-    up: String,
-    reverse: String,
-}
+//
+//#[derive(Debug, Deserialize)]
+//#[serde(rename_all = "camelCase")]
+//struct Card {
+//    order: u8,
+//    title: String,
+//    up: String,
+//    reverse: String,
+//}
 
 fn main() {
     // let json_file_path = Path::new("assets/cards/modern-magick.json");
@@ -28,7 +28,7 @@ fn main() {
     //     println!("reversed\t\n {}", random_card.reverse);
     // }
 
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(WindowDescriptor {
             title: "Tarot".to_string(),
@@ -37,16 +37,35 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
-        .add_startup_stage(
-            "game_setup",
-            SystemStage::single(game::tarot::spawn_card.system()),
-        )
         .add_startup_system(game::tarot::setup.system())
-        .add_system_set_to_stage(
-            CoreStage::PostUpdate,
-            SystemSet::new()
-                .with_system(game::tarot::position_translation.system())
-                .with_system(game::tarot::size_scaling.system()),
+        .add_startup_stage(
+             "game_setup",
+             SystemStage::single(game::tarot::spawn_card.system()),
         )
+        // .add_system_set_to_stage(
+        //     CoreStage::PostUpdate,
+        //     SystemSet::new()
+        //         .with_system(game::tarot::position_translation.system())
+        //         .with_system(game::tarot::size_scaling.system()),
+        // )
         .run();
+    // App::new()
+    // .add_plugins(DefaultPlugins)
+    // .add_startup_system(setup)
+    // .run();
 }
+
+// fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+//     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+//     commands.spawn_bundle(SpriteBundle {
+//         texture: asset_server.load("images/0-fool.png"),
+//         sprite: Sprite {
+//             // Flip the logo to the left
+//             flip_x: true,
+//             // And don't flip it upside-down ( the default )
+//             flip_y: false,
+//             ..Default::default()
+//         },
+//         ..Default::default()
+//     });
+// }

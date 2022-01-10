@@ -1,6 +1,6 @@
 //use std::collections::HashMap;
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+//use bevy_prototype_lyon::prelude::*;
 
 pub const WINDOW_WIDTH: f32 = 1000.0;
 pub const WINDOW_HEIGHT: f32 = 1000.0;
@@ -13,7 +13,30 @@ pub mod tarot;
 struct Card;
 
 pub struct Materials {
-    card_cover: Handle<ColorMaterial>,
+    cover: Handle<Image>,  
+    //the_fool: Handle<ColorMaterial>,
+    //the_magician: Handle<ColorMaterial>,
+    //the_high_priestess: Handle<ColorMaterial>,
+    //the_empress: Handle<ColorMaterial>,
+    //the_emperor: Handle<ColorMaterial>,
+    //the_hierophant: Handle<ColorMaterial>,
+    //the_lovers: Handle<ColorMaterial>,
+    //the_chariot: Handle<ColorMaterial>,
+    //strength: Handle<ColorMaterial>,
+    //the_hermit: Handle<ColorMaterial>,
+    //the_wheel_of_fortune: Handle<ColorMaterial>,
+    //justice: Handle<ColorMaterial>,
+    //the_hanged_man: Handle<ColorMaterial>,
+    //death: Handle<ColorMaterial>,
+    //temperance: Handle<ColorMaterial>,
+    //the_devil: Handle<ColorMaterial>,
+    //the_tower: Handle<ColorMaterial>,
+    //the_star: Handle<ColorMaterial>,
+    //the_moon: Handle<ColorMaterial>,
+    //the_sun: Handle<ColorMaterial>,
+    //judgement: Handle<ColorMaterial>,
+    //the_universe: Handle<ColorMaterial>,
+    cards: Vec<Handle<ColorMaterial>>,
 }
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
