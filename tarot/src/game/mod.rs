@@ -9,8 +9,6 @@ pub const ARENA_HEIGHT: u32 = 100;
 
 pub mod tarot;
 
-pub struct Card;
-
 pub struct Materials {
     cover: Handle<Image>,  
     //the_fool: Handle<ColorMaterial>,
@@ -42,6 +40,11 @@ pub struct Materials {
 pub struct Position {
     x: i32,
     y: i32,
+}
+
+#[derive(Default)]
+pub struct Card{
+    flipped: bool,
 }
 
 //pub struct Card<'a> {

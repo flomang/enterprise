@@ -60,19 +60,44 @@ pub fn setup(
     //    cards: cards,
     //});
     commands
-    .spawn_bundle(SpriteSheetBundle {
-        texture_atlas: texture_atlas_handle,
-        transform: Transform::from_scale(Vec3::splat(2.0)),
-        ..Default::default()
-    })
-    .insert(Timer::from_seconds(1., true));
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            transform: Transform::from_scale(Vec3::splat(2.0)),
+            ..Default::default()
+        })
+        .insert(Timer::from_seconds(1., true));
+
+    commands.insert_resource(super::Card{flipped: false});
 }
 
-pub fn spawn_card(
-    mut query: Query<(&mut TextureAtlasSprite)>,
-) {
+
+pub fn spawn_card(mut query: Query<(&mut TextureAtlasSprite)>) {
     let mut sprite = query.single_mut();
     sprite.index = 23;
+}
+
+pub fn flip_card(
+    mut card: ResMut<super::Card>,
+    mut query: Query<(&mut TextureAtlasSprite, &mut Transform)>) {
+    let (mut sprite, mut transform) = query.single_mut();
+    //println!("{}", transform.scale.x);
+    if transform.scale.x <= 2.0 && !card.flipped {
+        transform.scale.x -= 0.1;
+
+        if transform.scale.x < 0.0 {
+            transform.scale.x = 0.0;
+            card.flipped = true;
+            //sprite.index = 1;
+        }
+    } else {
+        transform.scale.x += 0.1;
+
+        if transform.scale.x > 2.0 {
+            transform.scale.x = 2.0;
+            card.flipped = false; 
+            //sprite.index = 23;
+        }
+    }
 }
 
 pub fn animate_sprite_system(
