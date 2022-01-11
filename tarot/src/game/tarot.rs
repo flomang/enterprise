@@ -69,24 +69,10 @@ pub fn setup(
 }
 
 pub fn spawn_card(
-    mut commands: Commands,
-    materials: Res<super::Materials>,
+    mut query: Query<(&mut TextureAtlasSprite)>,
 ) {
-    commands
-        .spawn_bundle(SpriteBundle {
-            texture: materials.cover.clone(),
-            //texture: materials.cards[0].clone(),
-            sprite: Sprite {
-                // Flip the logo to the left
-                flip_x: false,
-                // And don't flip it upside-down ( the default )
-                flip_y: false,
-                custom_size: Some(Vec2::new(150.0, 200.0)),
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-        //.insert(super::Card);
+    let mut sprite = query.single_mut();
+    sprite.index = 23;
 }
 
 pub fn animate_sprite_system(

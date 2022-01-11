@@ -38,11 +38,11 @@ fn main() {
         })
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .add_startup_system(game::tarot::setup)
-        .add_system(game::tarot::animate_sprite_system)
-        // .add_startup_stage(
-        //      "game_setup",
-        //      SystemStage::single(game::tarot::spawn_card.system()),
-        // )
+        //.add_system(game::tarot::animate_sprite_system)
+         .add_startup_stage(
+              "game_setup",
+              SystemStage::single(game::tarot::spawn_card.system()),
+         )
         .run();
 }
 
