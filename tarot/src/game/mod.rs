@@ -9,8 +9,7 @@ pub const ARENA_HEIGHT: u32 = 100;
 
 pub mod tarot;
 
-
-struct Card;
+pub struct Card;
 
 pub struct Materials {
     cover: Handle<Image>,  
