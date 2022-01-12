@@ -64,12 +64,14 @@ pub fn setup(
             texture_atlas: texture_atlas_handle,
             transform: Transform::from_scale(Vec3::splat(2.0)),
             ..Default::default()
-        })
-        .insert(Timer::from_seconds(1., true));
+        });
+        //.insert(Timer::from_seconds(0.025, true));
 
-    commands.insert_resource(super::Card{flipped: false});
+    commands.insert_resource(super::Card {
+        flip_card: false,
+        flipped: false,
+    });
 }
-
 
 pub fn spawn_card(mut query: Query<(&mut TextureAtlasSprite)>) {
     let mut sprite = query.single_mut();
@@ -78,38 +80,59 @@ pub fn spawn_card(mut query: Query<(&mut TextureAtlasSprite)>) {
 
 pub fn flip_card(
     mut card: ResMut<super::Card>,
-    mut query: Query<(&mut TextureAtlasSprite, &mut Transform)>) {
+    mut query: Query<(&mut TextureAtlasSprite, &mut Transform)>,
+) {
     let (mut sprite, mut transform) = query.single_mut();
-    //println!("{}", transform.scale.x);
-    if transform.scale.x <= 2.0 && !card.flipped {
-        transform.scale.x -= 0.1;
 
-        if transform.scale.x < 0.0 {
-            transform.scale.x = 0.0;
-            card.flipped = true;
-            //sprite.index = 1;
+    if card.flip_card {
+        if !card.flipped {
+            transform.scale.x -= 1.;
+
+            if transform.scale.x < 0.0 {
+                transform.scale.x = 0.0;
+                card.flipped = true;
+                sprite.index = 1;
+            }
+        } else {
+            transform.scale.x += 1.;
+
+            if transform.scale.x >= 2.0 {
+                transform.scale.x = 2.0;
+                //card.flipped = alse;
+                //card.flip_card = false;
+                //sprite.index = 23;
+            }
         }
-    } else {
-        transform.scale.x += 0.1;
+    }
 
-        if transform.scale.x > 2.0 {
-            transform.scale.x = 2.0;
-            card.flipped = false; 
-            //sprite.index = 23;
+    if !card.flip_card {
+        if card.flipped {
+            transform.scale.x -= 1.;
+
+            if transform.scale.x < 0.0 {
+                transform.scale.x = 0.0;
+                card.flipped = false;
+                sprite.index = 23;
+            }
+        } else {
+            transform.scale.x += 1.;
+
+            if transform.scale.x >= 2.0 {
+                transform.scale.x = 2.0;
+                //card.flipped = alse;
+                //card.flip_card = false;
+                //sprite.index = 23;
+            }
         }
     }
 }
 
-pub fn animate_sprite_system(
-    time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+pub fn mouse_click_system(
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut card: ResMut<super::Card>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
-        timer.tick(time.delta());
-        if timer.finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
-        }
+    if mouse_button_input.just_released(MouseButton::Left) {
+        card.flip_card = !card.flip_card;
+        info!("flip card");
     }
 }

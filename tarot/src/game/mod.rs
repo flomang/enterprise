@@ -44,6 +44,7 @@ pub struct Position {
 
 #[derive(Default)]
 pub struct Card{
+    flip_card: bool,
     flipped: bool,
 }
 
