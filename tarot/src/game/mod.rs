@@ -4,8 +4,8 @@ use bevy::prelude::*;
 
 pub const WINDOW_WIDTH: f32 = 1000.0;
 pub const WINDOW_HEIGHT: f32 = 1000.0;
-pub const ARENA_WIDTH: u32 = 100;
-pub const ARENA_HEIGHT: u32 = 100;
+pub const CARD_WIDTH: f32 = 129.0;
+pub const CARD_HEIGHT: f32 = 129.0;
 
 pub mod tarot;
 
@@ -36,11 +36,37 @@ pub struct Materials {
     cards: Vec<Handle<Image>>,
 }
 
-#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Position {
-    x: i32,
-    y: i32,
-}
+// #[derive(Default, Copy, Clone, PartialEq, Hash)]
+// pub struct Rect {
+//     x: f32,
+//     y: f32,
+//     width: f32,
+//     height: f32,
+// }
+
+// impl Rect {
+//     fn new(x: f32, y: f32, width: f32, height: f32) -> Rect {
+//         Rect{
+//             x: x,
+//             y: y,
+//             width: width,
+//             height: height,
+//         }
+//     }
+
+//     fn contains_point(self, x: f32, y: f32) -> bool {
+//         let x1 = self.x;
+//         let y1 = self.y;
+//         let x2 = x1 + self.width;
+//         let y2 = y1 + self.height; 
+
+//         if x > x1 && x < x2 && y > y1 && y < y2 {
+//             true
+//         } else {
+//             false
+//         }
+//     }
+// }
 
 #[derive(Default)]
 pub struct Card{

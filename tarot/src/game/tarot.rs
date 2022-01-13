@@ -48,7 +48,7 @@ pub fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let texture_handle = asset_server.load("images/cards.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(129., 129.), 6, 4);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(super::CARD_WIDTH, super::CARD_HEIGHT), 6, 4);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     //let mut cards = vec![];
@@ -68,20 +68,13 @@ pub fn setup(
     //});
     commands.spawn_bundle(SpriteSheetBundle {
         texture_atlas: texture_atlas_handle,
-        //transform: Transform::from_scale(Vec3::splat(2.0)),
         transform: Transform {
-            translation: Vec3::new(129., 129., 0.),
+            translation: Vec3::new(super::CARD_WIDTH, super::CARD_HEIGHT, 0.),
             rotation: Quat::IDENTITY,
             scale: Vec3::splat(2.0),
         },
         ..Default::default()
     });
-    //ssssssinsert(super::lib::Interactable {
-    //    groups: vec![Group(0)],
-    //    bounding_box: (Vec2::new(-12., -12.), Vec2::new(12., 12.)),
-    //    ..Default::default()
-    //  });
-    //.insert(Timer::from_seconds(0.025, true));
 
     commands.insert_resource(super::Card {
         flip_card: false,
