@@ -38,6 +38,10 @@ use bevy::prelude::*;
 //     }
 // }
 
+/// Used to help identify our main camera
+#[derive(Component)]
+pub struct MainCamera;
+
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -54,18 +58,30 @@ pub fn setup(
     //    cards.push(image);
     //}
 
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(MainCamera);
+
     //commands.insert_resource(super::Materials {
     //    cover: asset_server.load("images/cover.png"),
     //    cards: cards,
     //});
-    commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
-            transform: Transform::from_scale(Vec3::splat(2.0)),
-            ..Default::default()
-        });
-        //.insert(Timer::from_seconds(0.025, true));
+    commands.spawn_bundle(SpriteSheetBundle {
+        texture_atlas: texture_atlas_handle,
+        //transform: Transform::from_scale(Vec3::splat(2.0)),
+        transform: Transform {
+            translation: Vec3::new(129., 129., 0.),
+            rotation: Quat::IDENTITY,
+            scale: Vec3::splat(2.0),
+        },
+        ..Default::default()
+    });
+    //ssssssinsert(super::lib::Interactable {
+    //    groups: vec![Group(0)],
+    //    bounding_box: (Vec2::new(-12., -12.), Vec2::new(12., 12.)),
+    //    ..Default::default()
+    //  });
+    //.insert(Timer::from_seconds(0.025, true));
 
     commands.insert_resource(super::Card {
         flip_card: false,
@@ -127,12 +143,42 @@ pub fn flip_card(
     }
 }
 
-pub fn mouse_click_system(
-    mouse_button_input: Res<Input<MouseButton>>,
+pub fn handle_mouse_clicks(
+    mouse_input: Res<Input<MouseButton>>,
+    windows: Res<Windows>,
     mut card: ResMut<super::Card>,
+    mut query: Query<(&TextureAtlasSprite, &GlobalTransform)>,
+    q_camera: Query<&Transform, With<MainCamera>>,
 ) {
-    if mouse_button_input.just_released(MouseButton::Left) {
-        card.flip_card = !card.flip_card;
-        info!("flip card");
+    let win = windows.get_primary().expect("no primary window");
+    //let (_, transform) = query.single_mut();
+
+    if mouse_input.just_pressed(MouseButton::Left) {
+        //card.flip_card = !card.flip_card;
+        //println!("click at {:?}", win.cursor_position());
+
+        if let Some(pos) = win.cursor_position() {
+            let (_, transform) = query.single_mut();
+            let x1 = transform.translation.x - 129.0;
+            let y1 = transform.translation.y - 129.0;
+            let x2 = transform.translation.x + 129.0;
+            let y2 = transform.translation.y + 129.0;
+            println!("sprite ({}, {})", transform.translation.x - 129., transform.translation.y - 129.);
+
+            // get the size of the window
+            let size = Vec2::new(win.width() as f32, win.height() as f32);
+            // the default orthographic projection is in pixels from the center;
+            // just undo the translation
+            let p = pos - size / 2.0;
+            // assuming there is exactly one main camera entity, so this is OK
+            let camera_transform = q_camera.single();
+            // apply the camera transform
+            let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
+            eprintln!("World coords: x={} y={}", pos_wld.x, pos_wld.y);
+
+            if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
+                card.flip_card = !card.flip_card;
+            }
+        }
     }
 }

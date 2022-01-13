@@ -40,7 +40,7 @@ fn main() {
         .add_startup_system(game::tarot::setup)
         //.add_system(game::tarot::animate_sprite_system)
         .add_system(game::tarot::flip_card)
-        .add_system(game::tarot::mouse_click_system)
+        .add_system(game::tarot::handle_mouse_clicks)
         .add_startup_stage(
             "game_setup",
             SystemStage::single(game::tarot::spawn_card.system()),
