@@ -9,31 +9,55 @@ pub const CARD_HEIGHT: f32 = 129.0;
 
 pub mod tarot;
 
+#[derive(Default)]
+pub struct Cards(Vec<Entity>);
+
+#[derive(Component)]
+pub struct Rect{
+    x: f32,
+    y:f32,
+    width: f32,
+    height: f32,
+}
+
+//#[derive(Component)]
+#[derive(Component)]
+pub struct Card{
+    flip_card: bool,
+    flipped: bool,
+    rect: Rect,
+    // We can nest/include another bundle.
+    // Add the components for a standard Bevy Sprite:
+    //sprite: SpriteSheetBundle,
+}
+
+
 pub struct Materials {
-    cover: Handle<Image>,  
-    //the_fool: Handle<ColorMaterial>,
-    //the_magician: Handle<ColorMaterial>,
-    //the_high_priestess: Handle<ColorMaterial>,
-    //the_empress: Handle<ColorMaterial>,
-    //the_emperor: Handle<ColorMaterial>,
-    //the_hierophant: Handle<ColorMaterial>,
-    //the_lovers: Handle<ColorMaterial>,
-    //the_chariot: Handle<ColorMaterial>,
-    //strength: Handle<ColorMaterial>,
-    //the_hermit: Handle<ColorMaterial>,
-    //the_wheel_of_fortune: Handle<ColorMaterial>,
-    //justice: Handle<ColorMaterial>,
-    //the_hanged_man: Handle<ColorMaterial>,
-    //death: Handle<ColorMaterial>,
-    //temperance: Handle<ColorMaterial>,
-    //the_devil: Handle<ColorMaterial>,
-    //the_tower: Handle<ColorMaterial>,
-    //the_star: Handle<ColorMaterial>,
-    //the_moon: Handle<ColorMaterial>,
-    //the_sun: Handle<ColorMaterial>,
-    //judgement: Handle<ColorMaterial>,
-    //the_universe: Handle<ColorMaterial>,
-    cards: Vec<Handle<Image>>,
+    sprite_sheet: Handle<TextureAtlas>,
+//     cover: Handle<Image>,  
+//     //the_fool: Handle<ColorMaterial>,
+//     //the_magician: Handle<ColorMaterial>,
+//     //the_high_priestess: Handle<ColorMaterial>,
+//     //the_empress: Handle<ColorMaterial>,
+//     //the_emperor: Handle<ColorMaterial>,
+//     //the_hierophant: Handle<ColorMaterial>,
+//     //the_lovers: Handle<ColorMaterial>,
+//     //the_chariot: Handle<ColorMaterial>,
+//     //strength: Handle<ColorMaterial>,
+//     //the_hermit: Handle<ColorMaterial>,
+//     //the_wheel_of_fortune: Handle<ColorMaterial>,
+//     //justice: Handle<ColorMaterial>,
+//     //the_hanged_man: Handle<ColorMaterial>,
+//     //death: Handle<ColorMaterial>,
+//     //temperance: Handle<ColorMaterial>,
+//     //the_devil: Handle<ColorMaterial>,
+//     //the_tower: Handle<ColorMaterial>,
+//     //the_star: Handle<ColorMaterial>,
+//     //the_moon: Handle<ColorMaterial>,
+//     //the_sun: Handle<ColorMaterial>,
+//     //judgement: Handle<ColorMaterial>,
+//     //the_universe: Handle<ColorMaterial>,
+//     cards: Vec<Handle<Image>>,
 }
 
 // #[derive(Default, Copy, Clone, PartialEq, Hash)]
@@ -68,11 +92,11 @@ pub struct Materials {
 //     }
 // }
 
-#[derive(Default)]
-pub struct Card{
-    flip_card: bool,
-    flipped: bool,
-}
+// #[derive(Default)]
+// pub struct Card{
+//     flip_card: bool,
+//     flipped: bool,
+// }
 
 //pub struct Card<'a> {
 //    order: u8,

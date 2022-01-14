@@ -38,7 +38,6 @@ fn main() {
         })
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .add_startup_system(game::tarot::setup)
-        //.add_system(game::tarot::animate_sprite_system)
         .add_system(game::tarot::flip_card)
         .add_system(game::tarot::handle_mouse_clicks)
         .add_startup_stage(
