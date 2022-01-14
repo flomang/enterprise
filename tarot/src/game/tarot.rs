@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::Rng;
 
 /// Used to help identify our main camera
 #[derive(Component)]
@@ -31,87 +32,87 @@ pub fn spawn_card(
     materials: Res<super::Materials>,
     mut cards: ResMut<super::Cards>,
 ) {
-    let card = super::Card {
-        flip_card: false,
-        flipped: false,
-        rect: super::Rect {
-            x: 0.0,
-            y: 0.0,
-            width: super::CARD_WIDTH,
-            height: super::CARD_HEIGHT,
-        },
-    };
-
-    let entity = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index: 23,
-                ..Default::default()
+    for i in 0..3 {
+        let card = super::Card {
+            flip_card: false,
+            flipped: false,
+            rect: super::Rect {
+                x: -300.0 + (super::CARD_WIDTH * i as f32 * 2.0),
+                y: 0.0,
+                width: super::CARD_WIDTH,
+                height: super::CARD_HEIGHT,
             },
-            texture_atlas: materials.sprite_sheet.clone(),
-            transform: Transform {
-                //translation: Vec3::new(super::CARD_WIDTH, super::CARD_HEIGHT, (i as f32)),
-                scale: Vec3::new(2.0, 2.0, 1.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(card)
-        .id();
+        };
 
-    cards.0.push(entity);
+        let entity = commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    index: 23,
+                    ..Default::default()
+                },
+                texture_atlas: materials.sprite_sheet.clone(),
+                transform: Transform {
+                    translation: Vec3::new(card.rect.x, card.rect.y, i as f32),
+                    scale: Vec3::new(2.0, 2.0, 1.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .insert(card)
+            .id();
+
+        cards.0.push(entity);
+    }
 }
 
 pub fn flip_card(
     //mut reader: EventReader<super::CardFlipEvent>,
     mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
-    //mut cards: ResMut<super::Cards>,
 ) {
     //if reader.iter().next().is_some() {
-    let (mut sprite, mut transform, mut card) = query.single_mut();
+    for (mut sprite, mut transform, mut card) in query.iter_mut() {
+        if card.flip_card {
+            if !card.flipped {
+                transform.scale.x -= 1.;
 
-    if card.flip_card {
-        if !card.flipped {
-            transform.scale.x -= 1.;
+                if transform.scale.x < 0.0 {
+                    transform.scale.x = 0.0;
+                    card.flipped = true;
+                    sprite.index = rand::thread_rng().gen_range(1..23);
+                }
+            } else {
+                transform.scale.x += 1.;
 
-            if transform.scale.x < 0.0 {
-                transform.scale.x = 0.0;
-                card.flipped = true;
-                sprite.index = 1;
+                if transform.scale.x >= 2.0 {
+                    transform.scale.x = 2.0;
+                    //card.flipped = alse;
+                    //card.flip_card = false;
+                    //sprite.index = 23;
+                }
             }
-        } else {
-            transform.scale.x += 1.;
+        }
 
-            if transform.scale.x >= 2.0 {
-                transform.scale.x = 2.0;
-                //card.flipped = alse;
-                //card.flip_card = false;
-                //sprite.index = 23;
+        if !card.flip_card {
+            if card.flipped {
+                transform.scale.x -= 1.;
+
+                if transform.scale.x < 0.0 {
+                    transform.scale.x = 0.0;
+                    card.flipped = false;
+                    sprite.index = 23;
+                }
+            } else {
+                transform.scale.x += 1.;
+
+                if transform.scale.x >= 2.0 {
+                    transform.scale.x = 2.0;
+                    //card.flipped = alse;
+                    //card.flip_card = false;
+                    //sprite.index = 23;
+                }
             }
         }
     }
-
-    if !card.flip_card {
-        if card.flipped {
-            transform.scale.x -= 1.;
-
-            if transform.scale.x < 0.0 {
-                transform.scale.x = 0.0;
-                card.flipped = false;
-                sprite.index = 23;
-            }
-        } else {
-            transform.scale.x += 1.;
-
-            if transform.scale.x >= 2.0 {
-                transform.scale.x = 2.0;
-                //card.flipped = alse;
-                //card.flip_card = false;
-                //sprite.index = 23;
-            }
-        }
-    }
-    //}
 }
 
 pub fn handle_mouse_clicks(
