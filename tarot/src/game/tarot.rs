@@ -37,7 +37,7 @@ pub fn spawn_card(
             flip_card: false,
             flipped: false,
             rect: super::Rect {
-                x: -300.0 + (super::CARD_WIDTH * i as f32 * 2.0),
+                x: -250.0 + (super::CARD_WIDTH * i as f32 * 2.0),
                 y: 0.0,
                 width: super::CARD_WIDTH,
                 height: super::CARD_HEIGHT,
@@ -76,9 +76,17 @@ pub fn flip_card(
                 transform.scale.x -= 1.;
 
                 if transform.scale.x < 0.0 {
+                    // random up or reversed orientation
+                    let radians = if rand::random() {
+                        std::f32::consts::PI
+                    } else {
+                        0.0
+                    };
+
                     transform.scale.x = 0.0;
                     card.flipped = true;
                     sprite.index = rand::thread_rng().gen_range(1..23);
+                    transform.rotation = Quat::from_rotation_z(radians);
                 }
             } else {
                 transform.scale.x += 1.;
