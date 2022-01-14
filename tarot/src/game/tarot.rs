@@ -96,7 +96,8 @@ pub fn flip_card(
 
                     transform.scale.x = 0.0;
                     card.flipped = true;
-                    sprite.index = card_index;
+                    // plus 1 here to skip the first sprite in the sheet
+                    sprite.index = card_index + 1;
                     transform.rotation = Quat::from_rotation_z(radians);
                 }
             } else {
@@ -119,7 +120,8 @@ pub fn flip_card(
                     transform.scale.x = 0.0;
                     card.flipped = false;
                     // return card index to shoe
-                    shoe.0.push(sprite.index);
+                    // remember the index is offset by 1 in the spritesheet
+                    shoe.0.push(sprite.index - 1);
                     // show card cover
                     sprite.index = 23;
                 }
