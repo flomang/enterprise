@@ -38,6 +38,7 @@ fn main() {
         })
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .insert_resource(game::Cards::default())
+        .insert_resource(game::Shoe::default())
         .add_event::<game::CardFlipEvent>()
         .add_startup_system(game::tarot::setup)
         .add_system(game::tarot::flip_card)

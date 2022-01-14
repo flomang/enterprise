@@ -31,6 +31,7 @@ pub fn spawn_card(
     mut commands: Commands,
     materials: Res<super::Materials>,
     mut cards: ResMut<super::Cards>,
+    mut shoe: ResMut<super::Shoe>,
 ) {
     for i in 0..3 {
         let card = super::Card {
@@ -63,11 +64,18 @@ pub fn spawn_card(
 
         cards.0.push(entity);
     }
+    let mut vec = Vec::new();
+    for i in 0..22 {
+        vec.push(i as usize);
+    }
+    shoe.0 = vec;
+
 }
 
 pub fn flip_card(
     //mut reader: EventReader<super::CardFlipEvent>,
     mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
+    mut shoe: ResMut<super::Shoe>,
 ) {
     //if reader.iter().next().is_some() {
     for (mut sprite, mut transform, mut card) in query.iter_mut() {
@@ -82,10 +90,13 @@ pub fn flip_card(
                     } else {
                         0.0
                     };
+                    let card_num = shoe.0.len();
+                    let shoe_index = rand::thread_rng().gen_range(0..card_num); 
+                    let card_index = shoe.0.remove(shoe_index);
 
                     transform.scale.x = 0.0;
                     card.flipped = true;
-                    sprite.index = rand::thread_rng().gen_range(1..23);
+                    sprite.index = card_index;
                     transform.rotation = Quat::from_rotation_z(radians);
                 }
             } else {
@@ -107,6 +118,9 @@ pub fn flip_card(
                 if transform.scale.x < 0.0 {
                     transform.scale.x = 0.0;
                     card.flipped = false;
+                    // return card index to shoe
+                    shoe.0.push(sprite.index);
+                    // show card cover
                     sprite.index = 23;
                 }
             } else {
