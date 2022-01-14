@@ -26,8 +26,23 @@ pub fn setup(
     });
 }
 
-pub fn spawn_card(mut commands: Commands, materials: Res<super::Materials>) {
-    commands
+pub fn spawn_card(
+    mut commands: Commands,
+    materials: Res<super::Materials>,
+    mut cards: ResMut<super::Cards>,
+) {
+    let card = super::Card {
+        flip_card: false,
+        flipped: false,
+        rect: super::Rect {
+            x: 0.0,
+            y: 0.0,
+            width: super::CARD_WIDTH,
+            height: super::CARD_HEIGHT,
+        },
+    };
+
+    let entity = commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
                 index: 23,
@@ -41,19 +56,18 @@ pub fn spawn_card(mut commands: Commands, materials: Res<super::Materials>) {
             },
             ..Default::default()
         })
-        .insert(super::Card {
-            flip_card: false,
-            flipped: false,
-            rect: super::Rect {
-                x: 0.0,
-                y: 0.0,
-                width: super::CARD_WIDTH,
-                height: super::CARD_HEIGHT,
-            },
-        });
+        .insert(card)
+        .id();
+
+    cards.0.push(entity);
 }
 
-pub fn flip_card(mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>) {
+pub fn flip_card(
+    //mut reader: EventReader<super::CardFlipEvent>,
+    mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
+    //mut cards: ResMut<super::Cards>,
+) {
+    //if reader.iter().next().is_some() {
     let (mut sprite, mut transform, mut card) = query.single_mut();
 
     if card.flip_card {
@@ -97,6 +111,7 @@ pub fn flip_card(mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut
             }
         }
     }
+    //}
 }
 
 pub fn handle_mouse_clicks(
@@ -104,18 +119,12 @@ pub fn handle_mouse_clicks(
     windows: Res<Windows>,
     mut query: Query<&mut super::Card>,
     q_camera: Query<&Transform, With<MainCamera>>,
+    //mut card_flip_writer: EventWriter<super::CardFlipEvent>,
 ) {
     let win = windows.get_primary().expect("no primary window");
 
     if mouse_input.just_pressed(MouseButton::Left) {
         if let Some(pos) = win.cursor_position() {
-            let mut card = query.single_mut();
-            let x1 = card.rect.x - card.rect.width;
-            let y1 = card.rect.y - card.rect.height;
-            let x2 = card.rect.x + card.rect.width;
-            let y2 = card.rect.y + card.rect.height;
-            //println!("sprite ({}, {})", transform.translation.x - 129., transform.translation.y - 129.);
-
             // get the size of the window
             let size = Vec2::new(win.width() as f32, win.height() as f32);
             // the default orthographic projection is in pixels from the center;
@@ -127,8 +136,17 @@ pub fn handle_mouse_clicks(
             let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
             //eprintln!("World coords: x={} y={}", pos_wld.x, pos_wld.y);
 
-            if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
-                card.flip_card = !card.flip_card;
+            for mut card in query.iter_mut() {
+                //let mut card = query.single_mut();
+                let x1 = card.rect.x - card.rect.width;
+                let y1 = card.rect.y - card.rect.height;
+                let x2 = card.rect.x + card.rect.width;
+                let y2 = card.rect.y + card.rect.height;
+
+                if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
+                    card.flip_card = !card.flip_card;
+                    //card_flip_writer.send(super::CardFlipEvent);
+                }
             }
         }
     }

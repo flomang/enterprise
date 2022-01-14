@@ -7,6 +7,8 @@ pub const WINDOW_HEIGHT: f32 = 1000.0;
 pub const CARD_WIDTH: f32 = 129.0;
 pub const CARD_HEIGHT: f32 = 129.0;
 
+pub struct CardFlipEvent;
+
 pub mod tarot;
 
 #[derive(Default)]
