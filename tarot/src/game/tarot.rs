@@ -5,6 +5,18 @@ use rand::Rng;
 #[derive(Component)]
 pub struct MainCamera;
 
+// fn setup(mut state: ResMut<State>, asset_server: Res<AssetServer>) {
+//     state.handle = asset_server.load("cards/modern-magick.ron");
+// }
+
+// fn print_on_load(mut state: ResMut<State>, custom_assets: ResMut<Assets<CatalogAsset>>) {
+//     let custom_asset = custom_assets.get(&state.handle);
+//     if state.printed || custom_asset.is_none() {
+//         return;
+//     info!("Custom asset loaded: {:?}", custom_asset.unwrap());
+//     state.printed = true;
+// }
+
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -24,6 +36,7 @@ pub fn setup(
 
     commands.insert_resource(super::Materials {
         sprite_sheet: texture_atlases.add(texture_atlas).into(),
+        card_catalog: asset_server.load("cards/modern-magick.ron"),
     });
 }
 
@@ -69,13 +82,14 @@ pub fn spawn_card(
         vec.push(i as usize);
     }
     shoe.0 = vec;
-
 }
 
 pub fn flip_card(
     //mut reader: EventReader<super::CardFlipEvent>,
     mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
     mut shoe: ResMut<super::Shoe>,
+    materials: Res<super::Materials>,
+    catalog_assets: ResMut<Assets<super::CatalogAsset>>,
 ) {
     //if reader.iter().next().is_some() {
     for (mut sprite, mut transform, mut card) in query.iter_mut() {
@@ -91,7 +105,7 @@ pub fn flip_card(
                         0.0
                     };
                     let card_num = shoe.0.len();
-                    let shoe_index = rand::thread_rng().gen_range(0..card_num); 
+                    let shoe_index = rand::thread_rng().gen_range(0..card_num);
                     let card_index = shoe.0.remove(shoe_index);
 
                     transform.scale.x = 0.0;
@@ -99,6 +113,19 @@ pub fn flip_card(
                     // plus 1 here to skip the first sprite in the sheet
                     sprite.index = card_index + 1;
                     transform.rotation = Quat::from_rotation_z(radians);
+
+                    let custom_asset = catalog_assets.get(&materials.card_catalog);
+                    let card_asset = custom_asset.unwrap();
+                    let el_asset = &card_asset.cards[card_index]; 
+                    let order = &el_asset.order;
+                    let title = &el_asset.title;
+                    if radians > 0.0 {
+                        info!("order: {} title: {} reverse: {}", order, title, el_asset.reverse);
+                        &el_asset.reverse
+                    } else {
+                    info!("order: {} title: {} up: {}", order, title, el_asset.up);
+                        &el_asset.up
+                    };
                 }
             } else {
                 transform.scale.x += 1.;
