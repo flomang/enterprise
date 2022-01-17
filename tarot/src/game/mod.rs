@@ -30,10 +30,18 @@ pub struct Rect{
     height: f32,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum CardState{
+    Down,
+    Up,
+    TransitionDown,
+    TransitionUp,
+}
+
 #[derive(Component)]
 pub struct Card{
-    flip_card: bool,
     flipped: bool,
+    state: CardState, 
     rect: Rect,
 }
 
