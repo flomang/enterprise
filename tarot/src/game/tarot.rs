@@ -5,18 +5,6 @@ use rand::Rng;
 #[derive(Component)]
 pub struct MainCamera;
 
-// fn setup(mut state: ResMut<State>, asset_server: Res<AssetServer>) {
-//     state.handle = asset_server.load("cards/modern-magick.ron");
-// }
-
-// fn print_on_load(mut state: ResMut<State>, custom_assets: ResMut<Assets<CatalogAsset>>) {
-//     let custom_asset = custom_assets.get(&state.handle);
-//     if state.printed || custom_asset.is_none() {
-//         return;
-//     info!("Custom asset loaded: {:?}", custom_asset.unwrap());
-//     state.printed = true;
-// }
-
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -120,11 +108,9 @@ pub fn flip_card(
                     let order = &el_asset.order;
                     let title = &el_asset.title;
                     if radians > 0.0 {
-                        info!("order: {} title: {} reverse: {}", order, title, el_asset.reverse);
-                        &el_asset.reverse
+                        info!("{} ({}) Reverse: {}", title, order, el_asset.reverse);
                     } else {
-                    info!("order: {} title: {} up: {}", order, title, el_asset.up);
-                        &el_asset.up
+                        info!("{} ({}) Up: {}", title, order, el_asset.up);
                     };
                 }
             } else {
@@ -169,9 +155,9 @@ pub fn flip_card(
 pub fn handle_mouse_clicks(
     mouse_input: Res<Input<MouseButton>>,
     windows: Res<Windows>,
-    mut query: Query<&mut super::Card>,
+    mut query: Query<(Entity, &mut super::Card)>,
     q_camera: Query<&Transform, With<MainCamera>>,
-    //mut card_flip_writer: EventWriter<super::CardFlipEvent>,
+    mut card_flip_writer: EventWriter<super::CardFlipEvent>,
 ) {
     let win = windows.get_primary().expect("no primary window");
 
@@ -188,7 +174,7 @@ pub fn handle_mouse_clicks(
             let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
             //eprintln!("World coords: x={} y={}", pos_wld.x, pos_wld.y);
 
-            for mut card in query.iter_mut() {
+            for (entity, mut card) in query.iter_mut() {
                 //let mut card = query.single_mut();
                 let x1 = card.rect.x - card.rect.width;
                 let y1 = card.rect.y - card.rect.height;
@@ -197,7 +183,7 @@ pub fn handle_mouse_clicks(
 
                 if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
                     card.flip_card = !card.flip_card;
-                    //card_flip_writer.send(super::CardFlipEvent);
+                    card_flip_writer.send(super::CardFlipEvent{entity: entity});
                 }
             }
         }

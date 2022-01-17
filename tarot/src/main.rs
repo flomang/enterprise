@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_asset_ron::*;
+
 mod game;
 
 fn main() {
@@ -25,3 +26,13 @@ fn main() {
         )
         .run();
 }
+
+// fn flip_system(
+//     //mut commands: Commands,
+//     mut reader: EventReader<game::CardFlipEvent>,
+//     //mut query: Query<(&mut Transform, &mut game::Card)>,
+// ) {
+//     for event in reader.iter() {
+//         info!("flip entity: {}", event.entity.id());
+//     }
+// }
