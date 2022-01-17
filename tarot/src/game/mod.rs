@@ -1,11 +1,7 @@
-use bevy::{
-    prelude::*,
-    reflect::TypeUuid,
-};
+use bevy::{prelude::*, reflect::TypeUuid};
 use serde::Deserialize;
 //use bevy_prototype_lyon::prelude::*;
 pub mod tarot;
-
 
 pub const WINDOW_WIDTH: f32 = 1000.0;
 pub const WINDOW_HEIGHT: f32 = 1000.0;
@@ -23,15 +19,30 @@ pub struct Cards(Vec<Entity>);
 pub struct Shoe(Vec<usize>);
 
 #[derive(Component)]
-pub struct Rect{
+pub struct Rect {
     x: f32,
-    y:f32,
+    y: f32,
     width: f32,
     height: f32,
 }
 
+impl Rect {
+    pub fn contains(&self, x: f32, y:f32) -> bool {
+        let x1 = self.x - self.width;
+        let y1 = self.y - self.height;
+        let x2 = self.x + self.width;
+        let y2 = self.y + self.height;
+
+        if x > x1 && x < x2 && y > y1 && y < y2 {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum CardState{
+pub enum CardState {
     Down,
     Up,
     FlipDown,
@@ -41,8 +52,8 @@ pub enum CardState{
 }
 
 #[derive(Component)]
-pub struct Card{
-    state: CardState, 
+pub struct Card {
+    state: CardState,
     rect: Rect,
 }
 

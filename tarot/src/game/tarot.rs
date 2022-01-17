@@ -170,13 +170,7 @@ pub fn handle_mouse_clicks(
             //eprintln!("World coords: x={} y={}", pos_wld.x, pos_wld.y);
 
             for (entity, mut card) in query.iter_mut() {
-                //let mut card = query.single_mut();
-                let x1 = card.rect.x - card.rect.width;
-                let y1 = card.rect.y - card.rect.height;
-                let x2 = card.rect.x + card.rect.width;
-                let y2 = card.rect.y + card.rect.height;
-
-                if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
+                if card.rect.contains(pos_wld.x, pos_wld.y) {
                     if card.state == super::CardState::Down {
                         card.state = super::CardState::FlipUp;
                     } else if card.state == super::CardState::Up {
