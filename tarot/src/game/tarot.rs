@@ -36,7 +36,6 @@ pub fn spawn_card(
 ) {
     for i in 0..3 {
         let card = super::Card {
-            flipped: false,
             state: super::CardState::Down,
             rect: super::Rect {
                 x: -250.0 + (super::CARD_WIDTH * i as f32 * 2.0),
@@ -81,72 +80,69 @@ pub fn flip_card(
 ) {
     //if reader.iter().next().is_some() {
     for (mut sprite, mut transform, mut card) in query.iter_mut() {
-        if card.flipped {
-            match card.state {
-                super::CardState::Down => {
-                    transform.scale.x -= 1.;
+        match card.state {
+            super::CardState::FlipUp => {
+                transform.scale.x -= 1.;
 
-                    if transform.scale.x < 0.0 {
-                        // random up or reversed orientation
-                        let radians = if rand::random() {
-                            std::f32::consts::PI
-                        } else {
-                            0.0
-                        };
-                        let card_num = shoe.0.len();
-                        let shoe_index = rand::thread_rng().gen_range(0..card_num);
-                        let card_index = shoe.0.remove(shoe_index);
+                if transform.scale.x < 0.0 {
+                    // random up or reversed orientation
+                    let radians = if rand::random() {
+                        std::f32::consts::PI
+                    } else {
+                        0.0
+                    };
+                    let card_num = shoe.0.len();
+                    let shoe_index = rand::thread_rng().gen_range(0..card_num);
+                    let card_index = shoe.0.remove(shoe_index);
 
-                        transform.scale.x = 0.0;
-                        card.state = super::CardState::TransitionUp;
-                        // plus 1 here to skip the first sprite in the sheet
-                        sprite.index = card_index + 1;
-                        transform.rotation = Quat::from_rotation_z(radians);
+                    transform.scale.x = 0.0;
+                    card.state = super::CardState::TransitionUp;
+                    // plus 1 here to skip the first sprite in the sheet
+                    sprite.index = card_index + 1;
+                    transform.rotation = Quat::from_rotation_z(radians);
 
-                        let custom_asset = catalog_assets.get(&materials.card_catalog);
-                        let card_asset = custom_asset.unwrap();
-                        let el_asset = &card_asset.cards[card_index];
-                        let order = &el_asset.order;
-                        let title = &el_asset.title;
-                        if radians > 0.0 {
-                            info!("{} ({}) Reverse: {}", title, order, el_asset.reverse);
-                        } else {
-                            info!("{} ({}) Up: {}", title, order, el_asset.up);
-                        };
-                    }
-                }
-                super::CardState::TransitionUp => {
-                    transform.scale.x += 1.;
-
-                    if transform.scale.x >= 2.0 {
-                        transform.scale.x = 2.0;
-                        card.state = super::CardState::Up;
-                        card.flipped = false;
-                    }
-                }
-                super::CardState::Up => {
-                    transform.scale.x -= 1.;
-
-                    if transform.scale.x < 0.0 {
-                        transform.scale.x = 0.0;
-                        card.state = super::CardState::TransitionDown;
-                        // return card index to shoe
-                        // remember the index is offset by 1 in the spritesheet
-                        shoe.0.push(sprite.index - 1);
-                        // show card cover
-                        sprite.index = 23;
-                    }
-                }
-                super::CardState::TransitionDown => {
-                    transform.scale.x += 1.;
-
-                    if transform.scale.x >= 2.0 {
-                        transform.scale.x = 2.0;
-                        card.state = super::CardState::Down;
-                        card.flipped = false
-                    }
+                    let custom_asset = catalog_assets.get(&materials.card_catalog);
+                    let card_asset = custom_asset.unwrap();
+                    let el_asset = &card_asset.cards[card_index];
+                    let order = &el_asset.order;
+                    let title = &el_asset.title;
+                    if radians > 0.0 {
+                        info!("{} ({}) Reverse: {}", title, order, el_asset.reverse);
+                    } else {
+                        info!("{} ({}) Up: {}", title, order, el_asset.up);
+                    };
                 }
             }
+            super::CardState::TransitionUp => {
+                transform.scale.x += 1.;
+
+                if transform.scale.x >= 2.0 {
+                    transform.scale.x = 2.0;
+                    card.state = super::CardState::Up;
+                }
+            }
+            super::CardState::FlipDown => {
+                transform.scale.x -= 1.;
+
+                if transform.scale.x < 0.0 {
+                    transform.scale.x = 0.0;
+                    // return card index to shoe
+                    // remember the index is offset by 1 in the spritesheet
+                    shoe.0.push(sprite.index - 1);
+                    // show card cover
+                    sprite.index = 23;
+                    card.state = super::CardState::TransitionDown;
+                }
+            }
+            super::CardState::TransitionDown => {
+                transform.scale.x += 1.;
+
+                if transform.scale.x >= 2.0 {
+                    transform.scale.x = 2.0;
+                    card.state = super::CardState::Down;
+                }
+            }
+            _ => (),
         }
     }
 }
@@ -181,7 +177,11 @@ pub fn handle_mouse_clicks(
                 let y2 = card.rect.y + card.rect.height;
 
                 if pos_wld.x > x1 && pos_wld.x < x2 && pos_wld.y > y1 && pos_wld.y < y2 {
-                    card.flipped = true;
+                    if card.state == super::CardState::Down {
+                        card.state = super::CardState::FlipUp;
+                    } else if card.state == super::CardState::Up {
+                        card.state = super::CardState::FlipDown;
+                    }
                     card_flip_writer.send(super::CardFlipEvent { entity: entity });
                 }
             }

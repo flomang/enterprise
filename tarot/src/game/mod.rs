@@ -34,13 +34,14 @@ pub struct Rect{
 pub enum CardState{
     Down,
     Up,
+    FlipDown,
+    FlipUp,
     TransitionDown,
     TransitionUp,
 }
 
 #[derive(Component)]
 pub struct Card{
-    flipped: bool,
     state: CardState, 
     rect: Rect,
 }
