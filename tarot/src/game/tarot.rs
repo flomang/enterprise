@@ -9,6 +9,7 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut shoe: ResMut<super::Shoe>,
 ) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
@@ -26,13 +27,16 @@ pub fn setup(
         sprite_sheet: texture_atlases.add(texture_atlas).into(),
         card_catalog: asset_server.load("cards/modern-magick.ron"),
     });
+
+    // init shoe values
+    let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
+    shoe.0 = vec;
 }
 
 pub fn spawn_card(
     mut commands: Commands,
     materials: Res<super::Materials>,
     mut cards: ResMut<super::Cards>,
-    mut shoe: ResMut<super::Shoe>,
 ) {
     for i in 0..3 {
         let card = super::Card {
@@ -64,11 +68,6 @@ pub fn spawn_card(
 
         cards.0.push(entity);
     }
-    let mut vec = Vec::new();
-    for i in 0..22 {
-        vec.push(i as usize);
-    }
-    shoe.0 = vec;
 }
 
 pub fn flip_card(
