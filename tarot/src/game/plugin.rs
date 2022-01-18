@@ -158,26 +158,6 @@ fn setup(
     // init shoe values
     let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
     shoe.0 = vec;
-
-    commands
-        // First create a `NodeBundle` for centering what we want to display
-        .spawn_bundle(NodeBundle {
-            style: Style {
-                // This will center the current node
-                margin: Rect::all(Val::Auto),
-                // This will display its children in a column, from top to bottom. Unlike
-                // in Flexbox, Bevy origin is on bottom left, so the vertical axis is reversed
-                flex_direction: FlexDirection::ColumnReverse,
-                // `align_items` will align children on the cross axis. Here the main axis is
-                // vertical (column), so the cross axis is horizontal. This will center the
-                // children
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-            color: Color::BLACK.into(),
-            ..Default::default()
-        })
-        .insert(OnGameScreen);
 }
 
 fn spawn_card(
@@ -212,6 +192,7 @@ fn spawn_card(
             })
             .insert(card)
             .id();
+
         cards.0.push(entity);
     }
 }
