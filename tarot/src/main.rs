@@ -2,10 +2,17 @@ use bevy::prelude::*;
 use bevy_asset_ron::*;
 
 mod game;
+use game::menu;
+use game::splash;
+use game::plugin;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(RonAssetPlugin::<game::CatalogAsset>::new(&["ron"]))
+        // Insert as resource the initial value for the settings resources
+        .insert_resource(game::DisplayQuality::Medium)
+        .insert_resource(game::Volume(7))
         .insert_resource(WindowDescriptor {
             title: "Tarot".to_string(),
             width: game::WINDOW_WIDTH,
@@ -15,24 +22,19 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .insert_resource(game::Cards::default())
         .insert_resource(game::Shoe::default())
-        .add_plugin(RonAssetPlugin::<game::CatalogAsset>::new(&["ron"]))
         .add_event::<game::CardFlipEvent>()
-        .add_startup_system(game::tarot::setup)
-        .add_system(game::tarot::flip_card)
-        .add_system(game::tarot::handle_mouse_clicks)
-        .add_startup_stage(
-            "game_setup",
-            SystemStage::single(game::tarot::spawn_card.system()),
-        )
+        // add the app state type
+        .add_startup_system(setup)
+        // Declare the game state, and set its startup value
+        .add_state(game::GameState::Splash)
+        // Adds the plugins for each state
+        .add_plugin(splash::SplashPlugin)
+        .add_plugin(menu::MenuPlugin)
+        .add_plugin(plugin::GamePlugin)
         .run();
 }
 
-// fn flip_system(
-//     //mut commands: Commands,
-//     mut reader: EventReader<game::CardFlipEvent>,
-//     //mut query: Query<(&mut Transform, &mut game::Card)>,
-// ) {
-//     for event in reader.iter() {
-//         info!("flip entity: {}", event.entity.id());
-//     }
-// }
+// As there isn't an actual game, setup is just adding a `UiCameraBundle`
+fn setup(mut commands: Commands) {
+    commands.spawn_bundle(UiCameraBundle::default());
+}
