@@ -9,15 +9,17 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup)
-            .add_system_set(SystemSet::on_enter(GameState::Game).with_system(spawn_card))
+        app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(setup))
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(flip_card)
-                    .with_system(handle_mouse_clicks),
+                    .with_system(handle_mouse_clicks)
+                    .with_system(menu_action),
             )
             .add_system_set(
-                SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<OnGameScreen>),
+                SystemSet::on_exit(GameState::Game)
+                    .with_system(despawn_screen::<OnGameScreen>)
+                    .with_system(despawn_screen::<MainCamera>),
             );
     }
 }
@@ -25,6 +27,13 @@ impl Plugin for GamePlugin {
 // Tag component used to tag entities added on the game screen
 #[derive(Component)]
 struct OnGameScreen;
+
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+// All actions that can be triggered from a button click
+#[derive(Component)]
+enum GameActions {
+    BackToMainMenu,
+}
 
 // struct GameTimer(Timer);
 
@@ -135,6 +144,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut shoe: ResMut<super::Shoe>,
+    mut cards: ResMut<super::Cards>,
 ) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
@@ -158,13 +168,90 @@ fn setup(
     // init shoe values
     let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
     shoe.0 = vec;
+
+    let button_style = Style {
+        size: Size::new(Val::Px(200.0), Val::Px(65.0)),
+        margin: Rect::all(Val::Px(20.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..Default::default()
+    };
+    let button_text_style = TextStyle {
+        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+        font_size: 40.0,
+        color: TEXT_COLOR,
+    };
+
+    // First create a `NodeBundle` for centering what we want to display
+    let parent = commands
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                // This will center the current node
+                margin: Rect::all(Val::Auto),
+                // This will display its children in a column, from top to bottom. Unlike
+                // in Flexbox, Bevy origin is on bottom left, so the vertical axis is reversed
+                flex_direction: FlexDirection::ColumnReverse,
+                // `align_items` will align children on the cross axis. Here the main axis is
+                // vertical (column), so the cross axis is horizontal. This will center the
+                // children
+                align_items: AlignItems::Center,
+                ..Default::default()
+            },
+            color: Color::BLACK.into(),
+            ..Default::default()
+        })
+        .insert(OnGameScreen)
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(ButtonBundle {
+                    style: button_style,
+                    color: NORMAL_BUTTON.into(),
+                    ..Default::default()
+                })
+                .insert(GameActions::BackToMainMenu)
+                .with_children(|parent| {
+                    parent.spawn_bundle(TextBundle {
+                        text: Text::with_section("Back", button_text_style, Default::default()),
+                        ..Default::default()
+                    });
+                });
+        })
+        .id();
+
+    // for i in 0..3 {
+    //     let card = super::Card {
+    //         state: super::CardState::Down,
+    //         rect: super::Rect {
+    //             x: -250.0 + (super::CARD_WIDTH * i as f32 * 2.0),
+    //             y: 0.0,
+    //             width: super::CARD_WIDTH,
+    //             height: super::CARD_HEIGHT,
+    //         },
+    //     };
+
+    //     let entity = commands
+    //         .spawn_bundle(SpriteSheetBundle {
+    //             sprite: TextureAtlasSprite {
+    //                 index: 23,
+    //                 ..Default::default()
+    //             },
+    //             texture_atlas: material.sprite_sheet.clone(),
+    //             transform: Transform {
+    //                 translation: Vec3::new(card.rect.x, card.rect.y, i as f32),
+    //                 scale: Vec3::new(2.0, 2.0, 1.0),
+    //                 ..Default::default()
+    //             },
+    //             ..Default::default()
+    //         })
+    //         .insert(card)
+    //         .id();
+
+    //     commands.entity(parent).push_children(&[entity]);
+    //     cards.0.push(entity);
+    // }
 }
 
-fn spawn_card(
-    mut commands: Commands,
-    materials: Res<Materials>,
-    mut cards: ResMut<super::Cards>,
-) {
+fn spawn_card(mut commands: Commands, materials: Res<Materials>, mut cards: ResMut<super::Cards>) {
     for i in 0..3 {
         let card = super::Card {
             state: super::CardState::Down,
@@ -314,6 +401,19 @@ fn handle_mouse_clicks(
                     }
                     card_flip_writer.send(super::CardFlipEvent { entity: entity });
                 }
+            }
+        }
+    }
+}
+
+fn menu_action(
+    interaction_query: Query<(&Interaction, &GameActions), (Changed<Interaction>, With<Button>)>,
+    mut game_state: ResMut<State<GameState>>,
+) {
+    for (interaction, menu_button_action) in interaction_query.iter() {
+        if *interaction == Interaction::Clicked {
+            match menu_button_action {
+                GameActions::BackToMainMenu => game_state.set(GameState::Menu).unwrap(),
             }
         }
     }
