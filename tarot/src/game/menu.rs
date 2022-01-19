@@ -94,6 +94,8 @@ const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+const MENU: Color = Color::rgb(0.15, 0.15, 0.15);
+const BORDER: Color = Color::rgb(0.65, 0.65, 0.65);
 
 // Tag component used to mark wich setting is currently selected
 #[derive(Component)]
@@ -156,14 +158,14 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     // Common style for all buttons on the screen
     let button_style = Style {
-        size: Size::new(Val::Px(250.0), Val::Px(65.0)),
-        margin: Rect::all(Val::Px(20.0)),
+        size: Size::new(Val::Px(250.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_icon_style = Style {
-        size: Size::new(Val::Px(30.0), Val::Auto),
+        size: Size::new(Val::Px(10.0), Val::Auto),
         // This takes the icons out of the flexbox flow, to be positionned exactly
         position_type: PositionType::Absolute,
         // The icon will be close to the left border of the button
@@ -177,109 +179,128 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     };
     let button_text_style = TextStyle {
         font: font.clone(),
-        font_size: 40.0,
+        font_size: 30.0,
         color: TEXT_COLOR,
     };
 
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                margin: Rect::all(Val::Auto),
-                flex_direction: FlexDirection::ColumnReverse,
-                align_items: AlignItems::Center,
+                size: Size::new(Val::Px(400.0), Val::Auto),
+                border: Rect::all(Val::Px(3.0)),
                 ..Default::default()
             },
-            color: Color::CRIMSON.into(),
+            color: BORDER.into(),
             ..Default::default()
         })
         .insert(OnMainMenuScreen)
         .with_children(|parent| {
-            // Display the game name
-            parent.spawn_bundle(TextBundle {
-                style: Style {
-                    margin: Rect::all(Val::Px(50.0)),
-                    ..Default::default()
-                },
-                text: Text::with_section(
-                    "Bevy Game Menu UI",
-                    TextStyle {
-                        font: font.clone(),
-                        font_size: 80.0,
-                        color: TEXT_COLOR,
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        margin: Rect::all(Val::Auto),
+                        border: Rect::all(Val::Px(8.0)),
+                        flex_direction: FlexDirection::ColumnReverse,
+                        align_items: AlignItems::Center,
+                        padding: Rect::all(Val::Px(5.0)),
+                        ..Default::default()
                     },
-                    Default::default(),
-                ),
-                ..Default::default()
-            });
+                    color: MENU.into(),
+                    //color: Color::CRIMSON.into(),
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    // Display the game name
+                    parent.spawn_bundle(TextBundle {
+                        style: Style {
+                            margin: Rect::all(Val::Px(3.0)),
+                            ..Default::default()
+                        },
+                        text: Text::with_section(
+                            "Tarot",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 60.0,
+                                color: TEXT_COLOR,
+                            },
+                            Default::default(),
+                        ),
+                        ..Default::default()
+                    });
 
-            // Display three buttons for each action available from the main menu:
-            // - new game
-            // - settings
-            // - quit
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style.clone(),
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::Play)
-                .with_children(|parent| {
-                    let icon = asset_server.load("textures/Game Icons/right.png");
-                    parent.spawn_bundle(ImageBundle {
-                        style: button_icon_style.clone(),
-                        image: UiImage(icon),
-                        ..Default::default()
-                    });
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section(
-                            "New Game",
-                            button_text_style.clone(),
-                            Default::default(),
-                        ),
-                        ..Default::default()
-                    });
-                });
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style.clone(),
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::Settings)
-                .with_children(|parent| {
-                    let icon = asset_server.load("textures/Game Icons/wrench.png");
-                    parent.spawn_bundle(ImageBundle {
-                        style: button_icon_style.clone(),
-                        image: UiImage(icon),
-                        ..Default::default()
-                    });
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section(
-                            "Settings",
-                            button_text_style.clone(),
-                            Default::default(),
-                        ),
-                        ..Default::default()
-                    });
-                });
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style,
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::Quit)
-                .with_children(|parent| {
-                    let icon = asset_server.load("textures/Game Icons/exitRight.png");
-                    parent.spawn_bundle(ImageBundle {
-                        style: button_icon_style,
-                        image: UiImage(icon),
-                        ..Default::default()
-                    });
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section("Quit", button_text_style, Default::default()),
-                        ..Default::default()
-                    });
+                    // Display three buttons for each action available from the main menu:
+                    // - new game
+                    // - settings
+                    // - quit
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style.clone(),
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::Play)
+                        .with_children(|parent| {
+                            let icon = asset_server.load("textures/Game Icons/right.png");
+                            parent.spawn_bundle(ImageBundle {
+                                style: button_icon_style.clone(),
+                                image: UiImage(icon),
+                                ..Default::default()
+                            });
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "New Game",
+                                    button_text_style.clone(),
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style.clone(),
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::Settings)
+                        .with_children(|parent| {
+                            let icon = asset_server.load("textures/Game Icons/wrench.png");
+                            parent.spawn_bundle(ImageBundle {
+                                style: button_icon_style.clone(),
+                                image: UiImage(icon),
+                                ..Default::default()
+                            });
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Settings",
+                                    button_text_style.clone(),
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style,
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::Quit)
+                        .with_children(|parent| {
+                            let icon = asset_server.load("textures/Game Icons/exitRight.png");
+                            parent.spawn_bundle(ImageBundle {
+                                style: button_icon_style,
+                                image: UiImage(icon),
+                                ..Default::default()
+                            });
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Quit",
+                                    button_text_style,
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
                 });
         });
 }

@@ -88,7 +88,7 @@ fn setup(
     };
     let button_text_style = TextStyle {
         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-        font_size: 40.0,
+        font_size: 30.0,
         color: TEXT_COLOR,
     };
 
