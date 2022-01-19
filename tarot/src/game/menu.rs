@@ -165,12 +165,12 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..Default::default()
     };
     let button_icon_style = Style {
-        size: Size::new(Val::Px(10.0), Val::Auto),
+        size: Size::new(Val::Px(30.0), Val::Auto),
         // This takes the icons out of the flexbox flow, to be positionned exactly
         position_type: PositionType::Absolute,
         // The icon will be close to the left border of the button
         position: Rect {
-            left: Val::Px(10.0),
+            left: Val::Px(30.0),
             right: Val::Auto,
             top: Val::Auto,
             bottom: Val::Auto,
@@ -240,7 +240,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         })
                         .insert(MenuButtonAction::Play)
                         .with_children(|parent| {
-                            let icon = asset_server.load("textures/Game Icons/right.png");
+                            let icon = asset_server.load("icons/right.png");
                             parent.spawn_bundle(ImageBundle {
                                 style: button_icon_style.clone(),
                                 image: UiImage(icon),
@@ -263,7 +263,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         })
                         .insert(MenuButtonAction::Settings)
                         .with_children(|parent| {
-                            let icon = asset_server.load("textures/Game Icons/wrench.png");
+                            let icon = asset_server.load("icons/wrench.png");
                             parent.spawn_bundle(ImageBundle {
                                 style: button_icon_style.clone(),
                                 image: UiImage(icon),
@@ -286,7 +286,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         })
                         .insert(MenuButtonAction::Quit)
                         .with_children(|parent| {
-                            let icon = asset_server.load("textures/Game Icons/exitRight.png");
+                            let icon = asset_server.load("icons/exitRight.png");
                             parent.spawn_bundle(ImageBundle {
                                 style: button_icon_style,
                                 image: UiImage(icon),

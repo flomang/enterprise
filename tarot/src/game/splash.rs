@@ -28,7 +28,7 @@ struct OnSplashScreen;
 struct SplashTimer(Timer);
 
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let icon = asset_server.load("branding/icon.png");
+    let icon = asset_server.load("icons/branding.png");
     // Display the logo
     commands
         .spawn_bundle(ImageBundle {
