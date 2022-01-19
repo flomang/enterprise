@@ -1,7 +1,7 @@
 use bevy::{prelude::*, reflect::TypeUuid};
 use serde::Deserialize;
 
-pub mod plugin;
+pub mod tarot;
 pub mod menu;
 pub mod splash;
 

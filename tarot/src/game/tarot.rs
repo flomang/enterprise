@@ -122,11 +122,11 @@ fn setup(
 
     commands.entity(gamescreen).push_children(&[menu]);
 
-    for i in 0..4 {
+    for i in 0..3 {
         let card = super::Card {
             state: super::CardState::Down,
             rect: super::Rect {
-                x: -390.0 + (super::CARD_WIDTH * i as f32 * 2.0),
+                x: -300.0 + (super::CARD_WIDTH * i as f32 * 2.0),
                 y: 0.0,
                 width: super::CARD_WIDTH,
                 height: super::CARD_HEIGHT,

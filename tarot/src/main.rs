@@ -4,7 +4,7 @@ use bevy_asset_ron::*;
 mod game;
 use game::menu;
 use game::splash;
-use game::plugin;
+use game::tarot;
 
 fn main() {
     App::new()
@@ -20,7 +20,7 @@ fn main() {
         .add_state(game::GameState::Splash)
         .add_plugin(splash::SplashPlugin)
         .add_plugin(menu::MenuPlugin)
-        .add_plugin(plugin::GamePlugin)
+        .add_plugin(tarot::GamePlugin)
         .run();
 }
 
