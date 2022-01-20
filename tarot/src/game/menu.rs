@@ -186,7 +186,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                size: Size::new(Val::Px(400.0), Val::Auto),
+                size: Size::new(Val::Percent(33.0), Val::Auto),
                 border: Rect::all(Val::Px(3.0)),
                 ..Default::default()
             },
@@ -199,14 +199,13 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .spawn_bundle(NodeBundle {
                     style: Style {
                         margin: Rect::all(Val::Auto),
-                        border: Rect::all(Val::Px(8.0)),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
                         flex_direction: FlexDirection::ColumnReverse,
                         align_items: AlignItems::Center,
-                        padding: Rect::all(Val::Px(5.0)),
+                        padding: Rect::all(Val::Px(90.0)),
                         ..Default::default()
                     },
                     color: MENU.into(),
-                    //color: Color::CRIMSON.into(),
                     ..Default::default()
                 })
                 .with_children(|parent| {

@@ -80,8 +80,8 @@ fn setup(
     shoe.0 = vec;
 
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(65.0)),
-        margin: Rect::all(Val::Px(20.0)),
+        size: Size::new(Val::Px(100.0), Val::Px(33.0)),
+        margin: Rect::all(Val::Px(6.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
@@ -114,7 +114,7 @@ fn setup(
         .insert(GameActions::BackToMainMenu)
         .with_children(|parent| {
             parent.spawn_bundle(TextBundle {
-                text: Text::with_section("Back", button_text_style, Default::default()),
+                text: Text::with_section("Quit", button_text_style, Default::default()),
                 ..Default::default()
             });
         })
@@ -126,7 +126,7 @@ fn setup(
         let card = super::Card {
             state: super::CardState::Down,
             rect: super::Rect {
-                x: -300.0 + (super::CARD_WIDTH * i as f32 * 2.0),
+                x: -200.0 + (super::CARD_WIDTH * i as f32 * 2.0),
                 y: 0.0,
                 width: super::CARD_WIDTH,
                 height: super::CARD_HEIGHT,
