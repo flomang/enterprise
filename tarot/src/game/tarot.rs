@@ -13,13 +13,17 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_materials)
-            .add_system_set(SystemSet::on_enter(GameState::Game).with_system(setup))
+            .add_system_set(
+                SystemSet::on_enter(GameState::Game)
+                    .with_system(setup_ui)
+                    .with_system(setup_cards),
+            )
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
-                    .with_system(flip_card)
-                    .with_system(handle_mouse_clicks)
-                    .with_system(button_action)
-                    .with_system(button_system),
+                    .with_system(handle_card_flip)
+                    .with_system(handle_mouse_input)
+                    .with_system(handle_menu_action)
+                    .with_system(handle_button_colors),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
@@ -73,19 +77,13 @@ fn setup_materials(
     commands.insert_resource(material);
 }
 
-fn setup(
+fn setup_ui(
     mut commands: Commands,
-    mut shoe: ResMut<super::Shoe>,
     asset_server: Res<AssetServer>,
-    materials: Res<Materials>,
 ) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera);
-
-    // init shoe values
-    let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
-    shoe.0 = vec;
 
     let button_style = Style {
         size: Size::new(Val::Px(100.0), Val::Px(33.0)),
@@ -100,6 +98,7 @@ fn setup(
         color: TEXT_COLOR,
     };
 
+    // main game screen with left menu
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -112,7 +111,7 @@ fn setup(
         })
         .insert(OnGameScreen)
         .with_children(|parent| {
-            // left side menu 
+            // left side menu
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
@@ -155,6 +154,12 @@ fn setup(
                         });
                 });
         });
+}
+
+fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials: Res<Materials>) {
+    // init shoe values
+    let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
+    shoe.0 = vec;
 
     for i in 0..3 {
         let card = super::Card {
@@ -185,7 +190,7 @@ fn setup(
     }
 }
 
-fn flip_card(
+fn handle_card_flip(
     //mut reader: EventReader<super::CardFlipEvent>,
     mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
     mut shoe: ResMut<super::Shoe>,
@@ -261,7 +266,7 @@ fn flip_card(
     }
 }
 
-fn handle_mouse_clicks(
+fn handle_mouse_input(
     mut query: Query<(Entity, &mut super::Card)>,
     mut card_flip_writer: EventWriter<super::CardFlipEvent>,
     mouse_input: Res<Input<MouseButton>>,
@@ -297,7 +302,7 @@ fn handle_mouse_clicks(
     }
 }
 
-fn button_action(
+fn handle_menu_action(
     interaction_query: Query<(&Interaction, &GameActions), (Changed<Interaction>, With<Button>)>,
     mut game_state: ResMut<State<GameState>>,
 ) {
@@ -311,7 +316,7 @@ fn button_action(
 }
 
 // This system handles changing all buttons color based on mouse interaction
-fn button_system(
+fn handle_button_colors(
     mut interaction_query: Query<
         (&Interaction, &mut UiColor, Option<&SelectedOption>),
         (Changed<Interaction>, With<Button>),
