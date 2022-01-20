@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use super::{despawn_screen , GameState, TEXT_COLOR, NORMAL_BUTTON, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, PRESSED_BUTTON, MENU, BORDER} ;
+use super::{
+    despawn_screen, GameState, BORDER, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON,
+    PRESSED_BUTTON, TEXT_COLOR,
+};
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -99,41 +102,55 @@ fn setup(
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                size: Size::new(Val::Auto, Val::Auto),
+                size: Size::new(Val::Px(101.0), Val::Percent(100.0)),
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: BORDER.into(),
+            color: UiColor(Color::BLACK),
             ..Default::default()
         })
         .insert(OnGameScreen)
         .with_children(|parent| {
+            // left side menu 
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
+                        size: Size::new(Val::Px(100.0), Val::Percent(100.0)),
+                        border: Rect::all(Val::Px(1.0)),
                         ..Default::default()
                     },
-                    color: MENU.into(),
+                    color: BORDER.into(),
                     ..Default::default()
                 })
                 .with_children(|parent| {
                     parent
-                        .spawn_bundle(ButtonBundle {
-                            style: button_style,
-                            color: NORMAL_BUTTON.into(),
+                        .spawn_bundle(NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
+                                ..Default::default()
+                            },
+                            color: MENU.into(),
                             ..Default::default()
                         })
-                        .insert(GameActions::BackToMainMenu)
                         .with_children(|parent| {
-                            parent.spawn_bundle(TextBundle {
-                                text: Text::with_section(
-                                    "Quit",
-                                    button_text_style,
-                                    Default::default(),
-                                ),
-                                ..Default::default()
-                            });
+                            // quit button to exit the game
+                            parent
+                                .spawn_bundle(ButtonBundle {
+                                    style: button_style,
+                                    color: NORMAL_BUTTON.into(),
+                                    ..Default::default()
+                                })
+                                .insert(GameActions::BackToMainMenu)
+                                .with_children(|parent| {
+                                    parent.spawn_bundle(TextBundle {
+                                        text: Text::with_section(
+                                            "Quit",
+                                            button_text_style,
+                                            Default::default(),
+                                        ),
+                                        ..Default::default()
+                                    });
+                                });
                         });
                 });
         });
@@ -163,8 +180,7 @@ fn setup(
                 },
                 ..Default::default()
             })
-            .insert(card)
-            .id();
+            .insert(card);
     }
 }
 
