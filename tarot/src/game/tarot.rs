@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use super::{despawn_screen, DisplayQuality, GameState, Volume, TEXT_COLOR};
+use super::{despawn_screen , GameState, TEXT_COLOR, NORMAL_BUTTON, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, PRESSED_BUTTON, MENU, BORDER} ;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -15,7 +15,8 @@ impl Plugin for GamePlugin {
                 SystemSet::on_update(GameState::Game)
                     .with_system(flip_card)
                     .with_system(handle_mouse_clicks)
-                    .with_system(menu_action),
+                    .with_system(button_action)
+                    .with_system(button_system),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
@@ -29,7 +30,6 @@ impl Plugin for GamePlugin {
 #[derive(Component)]
 struct OnGameScreen;
 
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 // All actions that can be triggered from a button click
 #[derive(Component)]
 enum GameActions {
@@ -39,6 +39,10 @@ enum GameActions {
 /// Used to help identify our main camera
 #[derive(Component)]
 struct MainCamera;
+
+// Tag component used to mark wich setting is currently selected
+#[derive(Component)]
+struct SelectedOption;
 
 struct Materials {
     sprite_sheet: Handle<TextureAtlas>,
@@ -92,35 +96,47 @@ fn setup(
         color: TEXT_COLOR,
     };
 
-    let gamescreen = commands
+    commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                position_type: PositionType::Absolute,
-                margin: Rect::all(Val::Auto),
+                size: Size::new(Val::Auto, Val::Auto),
+                border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: Color::BLACK.into(),
+            color: BORDER.into(),
             ..Default::default()
         })
         .insert(OnGameScreen)
-        .id();
-
-    let menu = commands
-        .spawn_bundle(ButtonBundle {
-            style: button_style,
-            color: NORMAL_BUTTON.into(),
-            ..Default::default()
-        })
-        .insert(GameActions::BackToMainMenu)
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
-                text: Text::with_section("Quit", button_text_style, Default::default()),
-                ..Default::default()
-            });
-        })
-        .id();
-
-    commands.entity(gamescreen).push_children(&[menu]);
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
+                        ..Default::default()
+                    },
+                    color: MENU.into(),
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style,
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(GameActions::BackToMainMenu)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Quit",
+                                    button_text_style,
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
+                });
+        });
 
     for i in 0..3 {
         let card = super::Card {
@@ -264,7 +280,7 @@ fn handle_mouse_clicks(
     }
 }
 
-fn menu_action(
+fn button_action(
     interaction_query: Query<(&Interaction, &GameActions), (Changed<Interaction>, With<Button>)>,
     mut game_state: ResMut<State<GameState>>,
 ) {
@@ -273,6 +289,24 @@ fn menu_action(
             match menu_button_action {
                 GameActions::BackToMainMenu => game_state.set(GameState::Menu).unwrap(),
             }
+        }
+    }
+}
+
+// This system handles changing all buttons color based on mouse interaction
+fn button_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut UiColor, Option<&SelectedOption>),
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut color, selected) in interaction_query.iter_mut() {
+        *color = match (*interaction, selected) {
+            (Interaction::Clicked, _) => PRESSED_BUTTON.into(),
+            (Interaction::Hovered, Some(_)) => HOVERED_PRESSED_BUTTON.into(),
+            (Interaction::Hovered, None) => HOVERED_BUTTON.into(),
+            (Interaction::None, Some(_)) => PRESSED_BUTTON.into(),
+            (Interaction::None, None) => NORMAL_BUTTON.into(),
         }
     }
 }

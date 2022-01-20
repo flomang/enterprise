@@ -1,6 +1,6 @@
 use bevy::{app::AppExit, prelude::*};
 
-use super::{despawn_screen, DisplayQuality, GameState, Volume, TEXT_COLOR};
+use super::{despawn_screen, DisplayQuality, GameState, Volume, TEXT_COLOR, NORMAL_BUTTON, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, PRESSED_BUTTON, MENU, BORDER};
 
 // This plugin manages the menu, with 5 different screens:
 // - a main menu with "New Game", "Settings", "Quit"
@@ -89,13 +89,6 @@ struct OnDisplaySettingsMenuScreen;
 // Tag component used to tag entities added on the sound settings menu screen
 #[derive(Component)]
 struct OnSoundSettingsMenuScreen;
-
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
-const MENU: Color = Color::rgb(0.15, 0.15, 0.15);
-const BORDER: Color = Color::rgb(0.65, 0.65, 0.65);
 
 // Tag component used to mark wich setting is currently selected
 #[derive(Component)]
@@ -187,7 +180,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(33.0), Val::Auto),
-                border: Rect::all(Val::Px(3.0)),
+                border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
             color: BORDER.into(),

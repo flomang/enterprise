@@ -5,17 +5,17 @@ pub mod tarot;
 pub mod menu;
 pub mod splash;
 
-pub const WINDOW_WIDTH: f32 = 1000.0;
-pub const WINDOW_HEIGHT: f32 = 1000.0;
+//pub const WINDOW_WIDTH: f32 = 1000.0;
+//pub const WINDOW_HEIGHT: f32 = 1000.0;
 pub const CARD_WIDTH: f32 = 129.0;
 pub const CARD_HEIGHT: f32 = 129.0;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum AppState {
-    MainMenu,
-    InGame,
-    Paused,
-}
+const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.25, 0.65, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+const MENU: Color = Color::rgb(0.15, 0.15, 0.15);
+const BORDER: Color = Color::rgb(0.65, 0.65, 0.65);
 
 pub struct CardFlipEvent {
     pub entity: Entity,
@@ -81,18 +81,6 @@ pub struct CardAsset {
     up: String,
     reverse: String,
 }
-
-// pub struct Materials {
-//     sprite_sheet: Handle<TextureAtlas>,
-//     card_catalog: Handle<CatalogAsset>,
-// }
-
-
-// This example will display a simple menu using Bevy UI where you can start a new game,
-// change some settings or quit. There is no actual game, it will just display the current
-// settings for 5 seconds before going back to the menu.
-
-const TEXT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
