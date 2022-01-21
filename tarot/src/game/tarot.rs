@@ -80,6 +80,7 @@ fn setup_materials(
 fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    clear_color: ResMut<ClearColor>,
 ) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
@@ -99,6 +100,7 @@ fn setup_ui(
     };
 
     // main game screen with left menu
+    // For UI, the origin is at the bottom left corner.
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -106,7 +108,7 @@ fn setup_ui(
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: UiColor(Color::BLACK),
+            color: UiColor(clear_color.0),
             ..Default::default()
         })
         .insert(OnGameScreen)
@@ -161,6 +163,8 @@ fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials:
     let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
     shoe.0 = vec;
 
+    // these cards use 2D space
+    // the origin (X=0.0; Y=0.0) is at the center of the screen by default
     for i in 0..3 {
         let card = super::Card {
             state: super::CardState::Down,
@@ -180,10 +184,10 @@ fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials:
                 },
                 texture_atlas: materials.sprite_sheet.clone(),
                 transform: Transform {
-                    translation: Vec3::new(card.rect.x, card.rect.y, i as f32),
-                    scale: Vec3::new(2.0, 2.0, 1.0),
-                    ..Default::default()
-                },
+                     translation: Vec3::new(card.rect.x, card.rect.y, i as f32),
+                     scale: Vec3::new(2.0, 2.0, 1.0),
+                     ..Default::default()
+                 },
                 ..Default::default()
             })
             .insert(card);
