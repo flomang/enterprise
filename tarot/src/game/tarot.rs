@@ -30,7 +30,8 @@ impl Plugin for GamePlugin {
                 SystemSet::on_exit(GameState::Game)
                     .with_system(despawn_screen::<OnGameScreen>)
                     .with_system(despawn_screen::<MainCamera>)
-                    .with_system(despawn_screen::<super::Card>),
+                    .with_system(despawn_screen::<super::Card>)
+                    .with_system(despawn_screen::<Summary>),
             );
     }
 }
