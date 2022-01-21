@@ -181,7 +181,7 @@ fn setup_cards(
         let font = asset_server.load("fonts/FiraMono-Medium.ttf");
         let text_style = TextStyle {
             font,
-            font_size: 12.0,
+            font_size: 17.0,
             color: Color::WHITE,
         };
         let text_alignment = TextAlignment {
@@ -191,12 +191,12 @@ fn setup_cards(
 
         let title_id = commands
             .spawn_bundle(Text2dBundle {
-                text: Text::with_section("?", text_style.clone(), text_alignment),
+                text: Text::with_section("", text_style.clone(), text_alignment),
                 transform: Transform {
-                    translation: Vec3::new(x, y + super::CARD_HEIGHT + 30.0, i as f32),
+                    translation: Vec3::new(x, y + super::CARD_HEIGHT + 20.0, i as f32),
                     ..Default::default()
                 },
-                text_2d_size: Text2dSize{
+                text_2d_size: Text2dSize {
                     size: Size::new(5.0, 5.0),
                 },
                 ..Default::default()
@@ -204,20 +204,51 @@ fn setup_cards(
             .insert(Summary)
             .id();
 
-        let summary_id = commands
-            .spawn_bundle(Text2dBundle {
-                text: Text::with_section("?", text_style.clone(), text_alignment),
-                transform: Transform {
-                    translation: Vec3::new(x, y - super::CARD_HEIGHT - 30.0, i as f32),
+        // let summary_id = commands
+        //     .spawn_bundle(Text2dBundle {
+        //         text: Text::with_section("", text_style.clone(), text_alignment),
+        //         transform: Transform {
+        //             translation: Vec3::new(x, y - super::CARD_HEIGHT - 30.0, i as f32),
+        //             ..Default::default()
+        //         },
+        //         text_2d_size: Text2dSize {
+        //             size: Size::new(5.0, 5.0),
+        //         },
+        //         ..Default::default()
+        //     })
+        //     .insert(Summary)
+        //     .id();
+
+        let summary_id = commands.spawn_bundle(TextBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                flex_wrap: FlexWrap::Wrap,
+                flex_direction: FlexDirection::Column,
+                size: Size::new(Val::Px(200.0), Val::Px(100.0)),
+                position: Rect {
+                    bottom: Val::Px(130.0),
+                    left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
                     ..Default::default()
                 },
-                text_2d_size: Text2dSize{
-                    size: Size::new(5.0, 5.0),
-                },
                 ..Default::default()
-            })
-            .insert(Summary)
-            .id();
+            },
+            // Use the `Text::with_section` constructor
+            text: Text::with_section(
+                // Accepts a `String` or any type that converts into a `String`, such as `&str`
+                "",
+                TextStyle {
+                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                    font_size: 17.0,
+                    color: Color::WHITE,
+                },
+                // Note: You can use `Default::default()` in place of the `TextAlignment`
+                TextAlignment {
+                     horizontal: HorizontalAlign::Center,
+                     vertical: VerticalAlign::Top,
+                },
+            ),
+            ..Default::default()
+        }).insert(Summary).id();
 
         let card = super::Card {
             title: title_id,
@@ -259,7 +290,6 @@ fn handle_card_flip(
 ) {
     //if reader.iter().next().is_some() {
     for (mut sprite, mut transform, mut card) in query_sprite.iter_mut() {
-
         match card.state {
             super::CardState::FlipUp => {
                 transform.scale.x -= 1.;
@@ -321,10 +351,10 @@ fn handle_card_flip(
                     card.state = super::CardState::TransitionDown;
 
                     if let Ok(mut title) = query.get_mut(card.title) {
-                        title.sections[0].value = format!("?");
+                        title.sections[0].value = format!("");
                     }
                     if let Ok(mut summary) = query.get_mut(card.summary) {
-                        summary.sections[0].value = format!("?");
+                        summary.sections[0].value = format!("");
                     }
                 }
             }
