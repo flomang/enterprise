@@ -222,8 +222,8 @@ fn setup_cards(
         let summary_id = commands.spawn_bundle(TextBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                flex_wrap: FlexWrap::Wrap,
-                flex_direction: FlexDirection::Column,
+                //flex_wrap: FlexWrap::Wrap,
+                //flex_direction: FlexDirection::Column,
                 size: Size::new(Val::Px(200.0), Val::Px(100.0)),
                 position: Rect {
                     bottom: Val::Px(130.0),
@@ -244,7 +244,7 @@ fn setup_cards(
                 // Note: You can use `Default::default()` in place of the `TextAlignment`
                 TextAlignment {
                      horizontal: HorizontalAlign::Center,
-                     vertical: VerticalAlign::Top,
+                     ..Default::default()
                 },
             ),
             ..Default::default()

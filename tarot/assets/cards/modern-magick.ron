@@ -29,7 +29,7 @@ CatalogAsset(
             order: 4,
             title: "The Emperor",
             up: "Power, effectiveness, reason.",
-            reverse: "Immature emotinos, obstructions to plans."
+            reverse: "Immature emotions, obstructions to plans."
         ),
         (
             order: 5,
