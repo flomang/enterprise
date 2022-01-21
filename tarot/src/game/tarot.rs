@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::text::Text2dSize;
 use rand::Rng;
 
 use super::{
@@ -37,6 +38,9 @@ impl Plugin for GamePlugin {
 // Tag component used to tag entities added on the game screen
 #[derive(Component)]
 struct OnGameScreen;
+
+#[derive(Component)]
+struct Summary;
 
 // All actions that can be triggered from a button click
 #[derive(Component)]
@@ -158,7 +162,12 @@ fn setup_ui(
         });
 }
 
-fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials: Res<Materials>) {
+fn setup_cards(
+    mut commands: Commands,
+    mut shoe: ResMut<super::Shoe>,
+    asset_server: Res<AssetServer>,
+    materials: Res<Materials>,
+) {
     // init shoe values
     let vec: Vec<usize> = (0..22).map(|x| x as usize).collect();
     shoe.0 = vec;
@@ -166,11 +175,57 @@ fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials:
     // these cards use 2D space
     // the origin (X=0.0; Y=0.0) is at the center of the screen by default
     for i in 0..3 {
+        let x = -200.0 + (super::CARD_WIDTH * i as f32 * 2.0);
+        let y = 0.0;
+
+        let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+        let text_style = TextStyle {
+            font,
+            font_size: 12.0,
+            color: Color::WHITE,
+        };
+        let text_alignment = TextAlignment {
+            vertical: VerticalAlign::Center,
+            horizontal: HorizontalAlign::Center,
+        };
+
+        let title_id = commands
+            .spawn_bundle(Text2dBundle {
+                text: Text::with_section("?", text_style.clone(), text_alignment),
+                transform: Transform {
+                    translation: Vec3::new(x, y + super::CARD_HEIGHT + 30.0, i as f32),
+                    ..Default::default()
+                },
+                text_2d_size: Text2dSize{
+                    size: Size::new(5.0, 5.0),
+                },
+                ..Default::default()
+            })
+            .insert(Summary)
+            .id();
+
+        let summary_id = commands
+            .spawn_bundle(Text2dBundle {
+                text: Text::with_section("?", text_style.clone(), text_alignment),
+                transform: Transform {
+                    translation: Vec3::new(x, y - super::CARD_HEIGHT - 30.0, i as f32),
+                    ..Default::default()
+                },
+                text_2d_size: Text2dSize{
+                    size: Size::new(5.0, 5.0),
+                },
+                ..Default::default()
+            })
+            .insert(Summary)
+            .id();
+
         let card = super::Card {
+            title: title_id,
+            summary: summary_id,
             state: super::CardState::Down,
             rect: super::Rect {
-                x: -200.0 + (super::CARD_WIDTH * i as f32 * 2.0),
-                y: 0.0,
+                x: x,
+                y: y,
                 width: super::CARD_WIDTH,
                 height: super::CARD_HEIGHT,
             },
@@ -184,10 +239,10 @@ fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials:
                 },
                 texture_atlas: materials.sprite_sheet.clone(),
                 transform: Transform {
-                     translation: Vec3::new(card.rect.x, card.rect.y, i as f32),
-                     scale: Vec3::new(2.0, 2.0, 1.0),
-                     ..Default::default()
-                 },
+                    translation: Vec3::new(x, y, i as f32),
+                    scale: Vec3::new(2.0, 2.0, 1.0),
+                    ..Default::default()
+                },
                 ..Default::default()
             })
             .insert(card);
@@ -196,13 +251,15 @@ fn setup_cards(mut commands: Commands, mut shoe: ResMut<super::Shoe>, materials:
 
 fn handle_card_flip(
     //mut reader: EventReader<super::CardFlipEvent>,
-    mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
+    mut query_sprite: Query<(&mut TextureAtlasSprite, &mut Transform, &mut super::Card)>,
+    mut query: Query<&mut Text, With<Summary>>,
     mut shoe: ResMut<super::Shoe>,
     materials: Res<Materials>,
     catalog_assets: ResMut<Assets<super::CatalogAsset>>,
 ) {
     //if reader.iter().next().is_some() {
-    for (mut sprite, mut transform, mut card) in query.iter_mut() {
+    for (mut sprite, mut transform, mut card) in query_sprite.iter_mut() {
+
         match card.state {
             super::CardState::FlipUp => {
                 transform.scale.x -= 1.;
@@ -227,13 +284,20 @@ fn handle_card_flip(
                     let custom_asset = catalog_assets.get(&materials.card_catalog);
                     let card_asset = custom_asset.unwrap();
                     let el_asset = &card_asset.cards[card_index];
-                    let order = &el_asset.order;
-                    let title = &el_asset.title;
-                    if radians > 0.0 {
-                        info!("{} ({}) Reverse: {}", title, order, el_asset.reverse);
+                    let heading = format!("{} ({})", &el_asset.title, &el_asset.order);
+
+                    let summary = if radians > 0.0 {
+                        format!("Reverse: {}", el_asset.reverse)
                     } else {
-                        info!("{} ({}) Up: {}", title, order, el_asset.up);
+                        format!("Up: {}", el_asset.up)
                     };
+
+                    if let Ok(mut title) = query.get_mut(card.title) {
+                        title.sections[0].value = format!("{}", heading);
+                    }
+                    if let Ok(mut desc) = query.get_mut(card.summary) {
+                        desc.sections[0].value = format!("{}", summary);
+                    }
                 }
             }
             super::CardState::TransitionUp => {
@@ -255,6 +319,13 @@ fn handle_card_flip(
                     // show card cover
                     sprite.index = 23;
                     card.state = super::CardState::TransitionDown;
+
+                    if let Ok(mut title) = query.get_mut(card.title) {
+                        title.sections[0].value = format!("?");
+                    }
+                    if let Ok(mut summary) = query.get_mut(card.summary) {
+                        summary.sections[0].value = format!("?");
+                    }
                 }
             }
             super::CardState::TransitionDown => {

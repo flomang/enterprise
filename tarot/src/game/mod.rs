@@ -64,6 +64,8 @@ pub enum CardState {
 pub struct Card {
     state: CardState,
     rect: Rect,
+    title: Entity,
+    summary: Entity,
 }
 
 #[derive(Debug, Deserialize, TypeUuid)]
