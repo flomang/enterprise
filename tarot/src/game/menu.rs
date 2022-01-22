@@ -2,7 +2,7 @@ use bevy::{app::AppExit, prelude::*};
 
 use super::{
     despawn_screen, DisplayQuality, GameState, Volume, BORDER, HOVERED_BUTTON,
-    HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR,
+    HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR, BLACK_BUTTON
 };
 
 // This plugin manages the menu, with 5 different screens:
@@ -555,27 +555,39 @@ fn sound_settings_menu_setup(
     volume: Res<Volume>,
 ) {
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(65.0)),
-        margin: Rect::all(Val::Px(20.0)),
+        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_text_style = TextStyle {
         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-        font_size: 40.0,
+        font_size: 30.0,
         color: TEXT_COLOR,
+    };
+    let back_button_style = Style {
+        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        position: Rect {
+            top: Val::Percent(37.0),
+            //left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+            ..Default::default()
+        },
+        ..Default::default()
     };
 
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
                 margin: Rect::all(Val::Auto),
-                flex_direction: FlexDirection::ColumnReverse,
-                align_items: AlignItems::Center,
+                size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: Color::CRIMSON.into(),
+            color: BORDER.into(),
             ..Default::default()
         })
         .insert(OnSoundSettingsMenuScreen)
@@ -583,48 +595,67 @@ fn sound_settings_menu_setup(
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
+                        margin: Rect::all(Val::Auto),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(99.0)),
+                        flex_direction: FlexDirection::ColumnReverse,
                         align_items: AlignItems::Center,
                         ..Default::default()
                     },
-                    color: Color::CRIMSON.into(),
+                    color: MENU.into(),
                     ..Default::default()
                 })
+                .insert(OnSoundSettingsMenuScreen)
                 .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section(
-                            "Volume",
-                            button_text_style.clone(),
-                            Default::default(),
-                        ),
-                        ..Default::default()
-                    });
-                    for volume_setting in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
-                        let mut entity = parent.spawn_bundle(ButtonBundle {
+                    parent
+                        .spawn_bundle(NodeBundle {
                             style: Style {
-                                size: Size::new(Val::Px(30.0), Val::Px(65.0)),
-                                ..button_style.clone()
+                                align_items: AlignItems::Center,
+                                ..Default::default()
                             },
+                            color: MENU.into(),
+                            ..Default::default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Volume",
+                                    button_text_style.clone(),
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                            for volume_setting in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
+                                let mut entity = parent.spawn_bundle(ButtonBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(10.0), Val::Px(35.0)),
+                                        ..button_style.clone()
+                                    },
+                                    color: BLACK_BUTTON.into(),
+                                    ..Default::default()
+                                });
+                                entity.insert(Volume(volume_setting));
+                                if *volume == Volume(volume_setting) {
+                                    entity.insert(SelectedOption);
+                                }
+                            }
+                        });
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: back_button_style,
                             color: NORMAL_BUTTON.into(),
                             ..Default::default()
+                        })
+                        .insert(MenuButtonAction::BackToSettings)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Back",
+                                    button_text_style,
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
                         });
-                        entity.insert(Volume(volume_setting));
-                        if *volume == Volume(volume_setting) {
-                            entity.insert(SelectedOption);
-                        }
-                    }
-                });
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style,
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::BackToSettings)
-                .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section("Back", button_text_style, Default::default()),
-                        ..Default::default()
-                    });
                 });
         });
 }
