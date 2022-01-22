@@ -1,6 +1,9 @@
 use bevy::{app::AppExit, prelude::*};
 
-use super::{despawn_screen, DisplayQuality, GameState, Volume, TEXT_COLOR, NORMAL_BUTTON, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, PRESSED_BUTTON, MENU, BORDER};
+use super::{
+    despawn_screen, DisplayQuality, GameState, Volume, BORDER, HOVERED_BUTTON,
+    HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR,
+};
 
 // This plugin manages the menu, with 5 different screens:
 // - a main menu with "New Game", "Settings", "Quit"
@@ -298,80 +301,116 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn settings_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(65.0)),
-        margin: Rect::all(Val::Px(20.0)),
+        size: Size::new(Val::Px(250.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_text_style = TextStyle {
-        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-        font_size: 40.0,
+        font: font.clone(),
+        font_size: 30.0,
         color: TEXT_COLOR,
     };
 
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                margin: Rect::all(Val::Auto),
-                flex_direction: FlexDirection::ColumnReverse,
-                align_items: AlignItems::Center,
+                size: Size::new(Val::Percent(33.0), Val::Auto),
+                border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: Color::CRIMSON.into(),
+            color: BORDER.into(),
             ..Default::default()
         })
         .insert(OnSettingsMenuScreen)
         .with_children(|parent| {
-            // Display two buttons for the submenus
             parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style.clone(),
-                    color: NORMAL_BUTTON.into(),
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        margin: Rect::all(Val::Auto),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
+                        flex_direction: FlexDirection::ColumnReverse,
+                        align_items: AlignItems::Center,
+                        padding: Rect::all(Val::Px(90.0)),
+                        ..Default::default()
+                    },
+                    color: MENU.into(),
                     ..Default::default()
                 })
-                .insert(MenuButtonAction::SettingsDisplay)
                 .with_children(|parent| {
+                    // Display the game name
                     parent.spawn_bundle(TextBundle {
+                        style: Style {
+                            margin: Rect::all(Val::Px(3.0)),
+                            ..Default::default()
+                        },
                         text: Text::with_section(
-                            "Display",
-                            button_text_style.clone(),
+                            "Tarot",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 60.0,
+                                color: TEXT_COLOR,
+                            },
                             Default::default(),
                         ),
                         ..Default::default()
                     });
-                });
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style.clone(),
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::SettingsSound)
-                .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section(
-                            "Sound",
-                            button_text_style.clone(),
-                            Default::default(),
-                        ),
-                        ..Default::default()
-                    });
-                });
-            // Display the back button to return to the main menu screen
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style,
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::BackToMainMenu)
-                .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section("Back", button_text_style, Default::default()),
-                        ..Default::default()
-                    });
+                    // Display two buttons for the submenus
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style.clone(),
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::SettingsDisplay)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Display",
+                                    button_text_style.clone(),
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style.clone(),
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::SettingsSound)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Sound",
+                                    button_text_style.clone(),
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
+                    // Display the back button to return to the main menu screen
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: button_style,
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::BackToMainMenu)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Back",
+                                    button_text_style,
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
                 });
         });
 }
@@ -382,94 +421,130 @@ fn display_settings_menu_setup(
     display_quality: Res<DisplayQuality>,
 ) {
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(65.0)),
-        margin: Rect::all(Val::Px(20.0)),
+        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_text_style = TextStyle {
         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-        font_size: 40.0,
+        font_size: 30.0,
         color: TEXT_COLOR,
+    };
+
+    let back_button_style = Style {
+        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        margin: Rect::all(Val::Px(3.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        position: Rect {
+            top: Val::Percent(42.0),
+            //left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+            ..Default::default()
+        },
+        ..Default::default()
     };
 
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
                 margin: Rect::all(Val::Auto),
-                flex_direction: FlexDirection::ColumnReverse,
-                align_items: AlignItems::Center,
+                size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
-            color: Color::CRIMSON.into(),
+            color: BORDER.into(),
             ..Default::default()
         })
         .insert(OnDisplaySettingsMenuScreen)
         .with_children(|parent| {
-            // Create a new `NodeBundle`, this time not setting its `flex_direction`. It will
-            // use the default value, `FlexDirection::Row`, from left to right.
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
+                        margin: Rect::all(Val::Auto),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(99.0)),
+                        flex_direction: FlexDirection::ColumnReverse,
                         align_items: AlignItems::Center,
                         ..Default::default()
                     },
-                    color: Color::CRIMSON.into(),
+                    color: MENU.into(),
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    // Display a label for the current setting
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section(
-                            "Display Quality",
-                            button_text_style.clone(),
-                            Default::default(),
-                        ),
-                        ..Default::default()
-                    });
-                    // Display a button for each possible value
-                    for quality_setting in [
-                        DisplayQuality::Low,
-                        DisplayQuality::Medium,
-                        DisplayQuality::High,
-                    ] {
-                        let mut entity = parent.spawn_bundle(ButtonBundle {
+                    // Create a new `NodeBundle`, this time not setting its `flex_direction`. It will
+                    // use the default value, `FlexDirection::Row`, from left to right.
+                    parent
+                        .spawn_bundle(NodeBundle {
                             style: Style {
-                                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                                ..button_style.clone()
+                                align_items: AlignItems::Center,
+                                ..Default::default()
                             },
-                            color: NORMAL_BUTTON.into(),
+                            color: MENU.into(),
                             ..Default::default()
-                        });
-                        entity.insert(quality_setting).with_children(|parent| {
+                        })
+                        .with_children(|parent| {
+                            // Display a label for the current setting
                             parent.spawn_bundle(TextBundle {
+                                style: Style {
+                                    size: Size::new(Val::Px(100.0), Val::Px(30.0)),
+                                    padding: Rect::all(Val::Px(90.0)),
+                                    ..button_style.clone()
+                                },
                                 text: Text::with_section(
-                                    format!("{:?}", quality_setting),
+                                    "Display Quality",
                                     button_text_style.clone(),
                                     Default::default(),
                                 ),
                                 ..Default::default()
                             });
+                            // Display a button for each possible value
+                            for quality_setting in [
+                                DisplayQuality::Low,
+                                DisplayQuality::Medium,
+                                DisplayQuality::High,
+                            ] {
+                                let mut entity = parent.spawn_bundle(ButtonBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(100.0), Val::Px(30.0)),
+                                        ..button_style.clone()
+                                    },
+                                    color: NORMAL_BUTTON.into(),
+                                    ..Default::default()
+                                });
+                                entity.insert(quality_setting).with_children(|parent| {
+                                    parent.spawn_bundle(TextBundle {
+                                        text: Text::with_section(
+                                            format!("{:?}", quality_setting),
+                                            button_text_style.clone(),
+                                            Default::default(),
+                                        ),
+                                        ..Default::default()
+                                    });
+                                });
+                                if *display_quality == quality_setting {
+                                    entity.insert(SelectedOption);
+                                }
+                            }
                         });
-                        if *display_quality == quality_setting {
-                            entity.insert(SelectedOption);
-                        }
-                    }
-                });
-            // Display the back button to return to the settings screen
-            parent
-                .spawn_bundle(ButtonBundle {
-                    style: button_style,
-                    color: NORMAL_BUTTON.into(),
-                    ..Default::default()
-                })
-                .insert(MenuButtonAction::BackToSettings)
-                .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::with_section("Back", button_text_style, Default::default()),
-                        ..Default::default()
-                    });
+                    // Display the back button to return to the settings screen
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: back_button_style,
+                            color: NORMAL_BUTTON.into(),
+                            ..Default::default()
+                        })
+                        .insert(MenuButtonAction::BackToSettings)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Back",
+                                    button_text_style,
+                                    Default::default(),
+                                ),
+                                ..Default::default()
+                            });
+                        });
                 });
         });
 }
