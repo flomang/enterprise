@@ -1,8 +1,8 @@
 use bevy::{app::AppExit, prelude::*};
 
 use super::{
-    despawn_screen, DisplayQuality, GameState, Volume, BORDER, HOVERED_BUTTON,
-    HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR, BLACK_BUTTON
+    despawn_screen, DisplayQuality, GameState, Volume, BLACK_BUTTON, BORDER, HOVERED_BUTTON,
+    HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR,
 };
 
 // This plugin manages the menu, with 5 different screens:
@@ -341,7 +341,7 @@ fn settings_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    // Display the game name
+                    // Display menu name
                     parent.spawn_bundle(TextBundle {
                         style: Style {
                             margin: Rect::all(Val::Px(3.0)),
@@ -420,15 +420,16 @@ fn display_settings_menu_setup(
     asset_server: Res<AssetServer>,
     display_quality: Res<DisplayQuality>,
 ) {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        size: Size::new(Val::Px(250.0), Val::Px(30.0)),
         margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_text_style = TextStyle {
-        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+        font: font.clone(),
         font_size: 30.0,
         color: TEXT_COLOR,
     };
@@ -439,8 +440,7 @@ fn display_settings_menu_setup(
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         position: Rect {
-            top: Val::Percent(42.0),
-            //left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+            bottom: Val::Px(-100.0),
             ..Default::default()
         },
         ..Default::default()
@@ -449,9 +449,7 @@ fn display_settings_menu_setup(
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                margin: Rect::all(Val::Auto),
                 size: Size::new(Val::Percent(33.0), Val::Auto),
-                //size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
@@ -474,6 +472,23 @@ fn display_settings_menu_setup(
                     ..Default::default()
                 })
                 .with_children(|parent| {
+                    // Display menu name
+                    parent.spawn_bundle(TextBundle {
+                        style: Style {
+                            margin: Rect::all(Val::Px(3.0)),
+                            ..Default::default()
+                        },
+                        text: Text::with_section(
+                            "Display",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 60.0,
+                                color: TEXT_COLOR,
+                            },
+                            Default::default(),
+                        ),
+                        ..Default::default()
+                    });
                     // Create a new `NodeBundle`, this time not setting its `flex_direction`. It will
                     // use the default value, `FlexDirection::Row`, from left to right.
                     parent
@@ -486,20 +501,6 @@ fn display_settings_menu_setup(
                             ..Default::default()
                         })
                         .with_children(|parent| {
-                            // Display a label for the current setting
-                            parent.spawn_bundle(TextBundle {
-                                style: Style {
-                                    size: Size::new(Val::Px(100.0), Val::Px(30.0)),
-                                    padding: Rect::all(Val::Px(90.0)),
-                                    ..button_style.clone()
-                                },
-                                text: Text::with_section(
-                                    "Display Quality",
-                                    button_text_style.clone(),
-                                    Default::default(),
-                                ),
-                                ..Default::default()
-                            });
                             // Display a button for each possible value
                             for quality_setting in [
                                 DisplayQuality::Low,
@@ -556,26 +557,27 @@ fn sound_settings_menu_setup(
     asset_server: Res<AssetServer>,
     volume: Res<Volume>,
 ) {
+    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let button_style = Style {
-        size: Size::new(Val::Px(200.0), Val::Px(30.0)),
+        size: Size::new(Val::Px(250.0), Val::Px(30.0)),
         margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..Default::default()
     };
     let button_text_style = TextStyle {
-        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+        font: font.clone(),
         font_size: 30.0,
         color: TEXT_COLOR,
     };
+
     let back_button_style = Style {
         size: Size::new(Val::Px(200.0), Val::Px(30.0)),
         margin: Rect::all(Val::Px(3.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         position: Rect {
-            top: Val::Percent(37.0),
-            //left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+            bottom: Val::Px(-100.0),
             ..Default::default()
         },
         ..Default::default()
@@ -584,7 +586,6 @@ fn sound_settings_menu_setup(
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                margin: Rect::all(Val::Auto),
                 size: Size::new(Val::Percent(33.0), Val::Auto),
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
@@ -609,6 +610,24 @@ fn sound_settings_menu_setup(
                 })
                 .insert(OnSoundSettingsMenuScreen)
                 .with_children(|parent| {
+                    // Display menu name
+                    parent.spawn_bundle(TextBundle {
+                        style: Style {
+                            margin: Rect::all(Val::Px(3.0)),
+                            ..Default::default()
+                        },
+                        text: Text::with_section(
+                            "Sound",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 60.0,
+                                color: TEXT_COLOR,
+                            },
+                            Default::default(),
+                        ),
+                        ..Default::default()
+                    });
+
                     parent
                         .spawn_bundle(NodeBundle {
                             style: Style {
