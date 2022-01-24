@@ -348,7 +348,7 @@ fn settings_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ..Default::default()
                         },
                         text: Text::with_section(
-                            "Tarot",
+                            "Settings",
                             TextStyle {
                                 font: font.clone(),
                                 font_size: 60.0,
@@ -450,7 +450,8 @@ fn display_settings_menu_setup(
         .spawn_bundle(NodeBundle {
             style: Style {
                 margin: Rect::all(Val::Auto),
-                size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                size: Size::new(Val::Percent(33.0), Val::Auto),
+                //size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
@@ -463,9 +464,10 @@ fn display_settings_menu_setup(
                 .spawn_bundle(NodeBundle {
                     style: Style {
                         margin: Rect::all(Val::Auto),
-                        size: Size::new(Val::Percent(99.0), Val::Percent(99.0)),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
                         flex_direction: FlexDirection::ColumnReverse,
                         align_items: AlignItems::Center,
+                        padding: Rect::all(Val::Px(90.0)),
                         ..Default::default()
                     },
                     color: MENU.into(),
@@ -583,7 +585,7 @@ fn sound_settings_menu_setup(
         .spawn_bundle(NodeBundle {
             style: Style {
                 margin: Rect::all(Val::Auto),
-                size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                size: Size::new(Val::Percent(33.0), Val::Auto),
                 border: Rect::all(Val::Px(1.0)),
                 ..Default::default()
             },
@@ -596,9 +598,10 @@ fn sound_settings_menu_setup(
                 .spawn_bundle(NodeBundle {
                     style: Style {
                         margin: Rect::all(Val::Auto),
-                        size: Size::new(Val::Percent(99.0), Val::Percent(99.0)),
+                        size: Size::new(Val::Percent(99.0), Val::Percent(100.0)),
                         flex_direction: FlexDirection::ColumnReverse,
                         align_items: AlignItems::Center,
+                        padding: Rect::all(Val::Px(90.0)),
                         ..Default::default()
                     },
                     color: MENU.into(),
