@@ -1,7 +1,7 @@
 use bevy::{app::AppExit, prelude::*};
 
 use super::{
-    despawn_screen, DisplayQuality, GameState, Volume, BLACK_BUTTON, BORDER, HOVERED_BUTTON,
+    despawn_screen, DisplayQuality, GameState, Volume, SOUND_BUTTON, BORDER, HOVERED_BUTTON,
     HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_COLOR,
 };
 
@@ -652,7 +652,7 @@ fn sound_settings_menu_setup(
                                         size: Size::new(Val::Px(10.0), Val::Px(35.0)),
                                         ..button_style.clone()
                                     },
-                                    color: BLACK_BUTTON.into(),
+                                    color: SOUND_BUTTON.into(),
                                     ..Default::default()
                                 });
                                 entity.insert(Volume(volume_setting));
