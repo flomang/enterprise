@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy::text::Text2dSize;
 use rand::Rng;
+use rand::prelude::*;
+
 
 use super::{
     despawn_screen, GameState, BORDER, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON,
@@ -268,11 +270,9 @@ fn setup_cards(
 
         let transform = Transform {
             translation: Vec3::new(x, y, i as f32),
-            scale: Vec3::new(2.0, 2.0, 1.0),
+            scale: Vec3::new(rand::thread_rng().gen_range(0.0..2.0), 2.0, 1.0),
             ..Default::default()
         };
-
-        let duration = rand::thread_rng().gen_range(1..7);
 
         commands
             .spawn_bundle(SpriteSheetBundle {
@@ -300,14 +300,14 @@ fn handle_card_flip(
     for (mut sprite, mut transform, mut card) in query_sprite.iter_mut() {
         match card.state {
             super::CardState::SpinStart => {
-                transform.scale.x -= 0.25;
+                transform.scale.x -= 0.10;
                 if transform.scale.x < 0.0 {
                     transform.scale.x = 0.0;
                     card.state = super::CardState::SpinEnd;
                 }
             }
             super::CardState::SpinEnd => {
-                transform.scale.x += 0.25;
+                transform.scale.x += 0.10;
                 if transform.scale.x >= 2.0 {
                     transform.scale.x = 2.0;
                     card.state = super::CardState::SpinStart;

@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_easings::*;
 use bevy_asset_ron::*;
 
 mod game;
@@ -11,7 +10,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RonAssetPlugin::<game::CatalogAsset>::new(&["ron"]))
-        .add_plugin(bevy_easings::EasingsPlugin)
         .insert_resource(ClearColor(Color::rgb(0.09, 0.09, 0.09)))
         .insert_resource(game::DisplayQuality::Medium)
         .insert_resource(game::Volume(7))
