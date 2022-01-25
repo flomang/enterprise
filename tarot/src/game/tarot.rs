@@ -220,41 +220,44 @@ fn setup_cards(
         //     .insert(Summary)
         //     .id();
 
-        let summary_id = commands.spawn_bundle(TextBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                //flex_wrap: FlexWrap::Wrap,
-                //flex_direction: FlexDirection::Column,
-                size: Size::new(Val::Px(200.0), Val::Px(100.0)),
-                position: Rect {
-                    bottom: Val::Px(130.0),
-                    left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+        let summary_id = commands
+            .spawn_bundle(TextBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    //flex_wrap: FlexWrap::Wrap,
+                    //flex_direction: FlexDirection::Column,
+                    size: Size::new(Val::Px(200.0), Val::Px(100.0)),
+                    position: Rect {
+                        bottom: Val::Px(130.0),
+                        left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
+                // Use the `Text::with_section` constructor
+                text: Text::with_section(
+                    // Accepts a `String` or any type that converts into a `String`, such as `&str`
+                    "",
+                    TextStyle {
+                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                        font_size: 17.0,
+                        color: Color::WHITE,
+                    },
+                    // Note: You can use `Default::default()` in place of the `TextAlignment`
+                    TextAlignment {
+                        horizontal: HorizontalAlign::Center,
+                        ..Default::default()
+                    },
+                ),
                 ..Default::default()
-            },
-            // Use the `Text::with_section` constructor
-            text: Text::with_section(
-                // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                "",
-                TextStyle {
-                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                    font_size: 17.0,
-                    color: Color::WHITE,
-                },
-                // Note: You can use `Default::default()` in place of the `TextAlignment`
-                TextAlignment {
-                     horizontal: HorizontalAlign::Center,
-                     ..Default::default()
-                },
-            ),
-            ..Default::default()
-        }).insert(Summary).id();
+            })
+            .insert(Summary)
+            .id();
 
         let card = super::Card {
             title: title_id,
             summary: summary_id,
-            state: super::CardState::Down,
+            state: super::CardState::SpinStart,
             rect: super::Rect {
                 x: x,
                 y: y,
@@ -263,6 +266,14 @@ fn setup_cards(
             },
         };
 
+        let transform = Transform {
+            translation: Vec3::new(x, y, i as f32),
+            scale: Vec3::new(2.0, 2.0, 1.0),
+            ..Default::default()
+        };
+
+        let duration = rand::thread_rng().gen_range(1..7);
+
         commands
             .spawn_bundle(SpriteSheetBundle {
                 sprite: TextureAtlasSprite {
@@ -270,11 +281,7 @@ fn setup_cards(
                     ..Default::default()
                 },
                 texture_atlas: materials.sprite_sheet.clone(),
-                transform: Transform {
-                    translation: Vec3::new(x, y, i as f32),
-                    scale: Vec3::new(2.0, 2.0, 1.0),
-                    ..Default::default()
-                },
+                transform: transform,
                 ..Default::default()
             })
             .insert(card);
@@ -292,6 +299,20 @@ fn handle_card_flip(
     //if reader.iter().next().is_some() {
     for (mut sprite, mut transform, mut card) in query_sprite.iter_mut() {
         match card.state {
+            super::CardState::SpinStart => {
+                transform.scale.x -= 0.25;
+                if transform.scale.x < 0.0 {
+                    transform.scale.x = 0.0;
+                    card.state = super::CardState::SpinEnd;
+                }
+            }
+            super::CardState::SpinEnd => {
+                transform.scale.x += 0.25;
+                if transform.scale.x >= 2.0 {
+                    transform.scale.x = 2.0;
+                    card.state = super::CardState::SpinStart;
+                }
+            }
             super::CardState::FlipUp => {
                 transform.scale.x -= 1.;
 
@@ -364,7 +385,7 @@ fn handle_card_flip(
 
                 if transform.scale.x >= 2.0 {
                     transform.scale.x = 2.0;
-                    card.state = super::CardState::Down;
+                    card.state = super::CardState::SpinStart;
                 }
             }
             _ => (),
@@ -396,11 +417,20 @@ fn handle_mouse_input(
 
             for (entity, mut card) in query.iter_mut() {
                 if card.rect.contains(pos_wld.x, pos_wld.y) {
-                    if card.state == super::CardState::Down {
-                        card.state = super::CardState::FlipUp;
-                    } else if card.state == super::CardState::Up {
-                        card.state = super::CardState::FlipDown;
+                    match card.state {
+                        super::CardState::SpinStart | super::CardState::SpinEnd => {
+                            card.state = super::CardState::FlipUp;
+                        }
+                        super::CardState::Up => {
+                            card.state = super::CardState::FlipDown;
+                        }
+                        _ => (),
                     }
+                    //if card.state == super::CardState::SpinStart  {
+                    //    card.state = super::CardState::FlipUp;
+                    //} else if card.state == super::CardState::Up {
+                    //    card.state = super::CardState::FlipDown;
+                    //}
                     card_flip_writer.send(super::CardFlipEvent { entity: entity });
                 }
             }

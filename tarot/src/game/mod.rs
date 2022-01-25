@@ -59,6 +59,8 @@ pub enum CardState {
     FlipUp,
     TransitionDown,
     TransitionUp,
+    SpinStart,
+    SpinEnd,
 }
 
 #[derive(Component)]
