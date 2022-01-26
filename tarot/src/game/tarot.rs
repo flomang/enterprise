@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use bevy::text::Text2dSize;
-use rand::Rng;
 use rand::prelude::*;
-
+use rand::Rng;
 
 use super::{
     despawn_screen, GameState, BORDER, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON, MENU, NORMAL_BUTTON,
@@ -185,7 +184,7 @@ fn setup_cards(
         let text_style = TextStyle {
             font,
             font_size: 17.0,
-            color: Color::WHITE,
+            color: Color::GOLD,
         };
         let text_alignment = TextAlignment {
             vertical: VerticalAlign::Center,
@@ -207,30 +206,14 @@ fn setup_cards(
             .insert(Summary)
             .id();
 
-        // let summary_id = commands
-        //     .spawn_bundle(Text2dBundle {
-        //         text: Text::with_section("", text_style.clone(), text_alignment),
-        //         transform: Transform {
-        //             translation: Vec3::new(x, y - super::CARD_HEIGHT - 30.0, i as f32),
-        //             ..Default::default()
-        //         },
-        //         text_2d_size: Text2dSize {
-        //             size: Size::new(5.0, 5.0),
-        //         },
-        //         ..Default::default()
-        //     })
-        //     .insert(Summary)
-        //     .id();
-
         let summary_id = commands
             .spawn_bundle(TextBundle {
                 style: Style {
+                    flex_wrap: FlexWrap::Wrap,
                     position_type: PositionType::Absolute,
-                    //flex_wrap: FlexWrap::Wrap,
-                    //flex_direction: FlexDirection::Column,
-                    size: Size::new(Val::Px(200.0), Val::Px(100.0)),
+                    size: Size::new(Val::Px(200.0), Val::Auto),
                     position: Rect {
-                        bottom: Val::Px(130.0),
+                        top: Val::Px(30.0),
                         left: Val::Px(350.0 + (i as f32 * 129.0 * 2.0)),
                         ..Default::default()
                     },
@@ -243,12 +226,12 @@ fn setup_cards(
                     TextStyle {
                         font: asset_server.load("fonts/FiraMono-Medium.ttf"),
                         font_size: 17.0,
-                        color: Color::WHITE,
+                        color: Color::GOLD,
                     },
                     // Note: You can use `Default::default()` in place of the `TextAlignment`
                     TextAlignment {
-                        horizontal: HorizontalAlign::Center,
-                        ..Default::default()
+                         horizontal: HorizontalAlign::Center,
+                         vertical: VerticalAlign::Top,
                     },
                 ),
                 ..Default::default()
@@ -259,7 +242,7 @@ fn setup_cards(
         let card = super::Card {
             title: title_id,
             summary: summary_id,
-            state: super::CardState::SpinStart,
+            state: super::CardState::Down,
             rect: super::Rect {
                 x: x,
                 y: y,
@@ -270,7 +253,8 @@ fn setup_cards(
 
         let transform = Transform {
             translation: Vec3::new(x, y, i as f32),
-            scale: Vec3::new(rand::thread_rng().gen_range(0.0..2.0), 2.0, 1.0),
+            //scale: Vec3::new(rand::thread_rng().gen_range(0.0..2.0), 2.0, 1.0),
+            scale: Vec3::new(2.0, 2.0, 1.0),
             ..Default::default()
         };
 
@@ -385,7 +369,8 @@ fn handle_card_flip(
 
                 if transform.scale.x >= 2.0 {
                     transform.scale.x = 2.0;
-                    card.state = super::CardState::SpinStart;
+                    //card.state = super::CardState::SpinStart;
+                    card.state = super::CardState::Down;
                 }
             }
             _ => (),
@@ -417,20 +402,20 @@ fn handle_mouse_input(
 
             for (entity, mut card) in query.iter_mut() {
                 if card.rect.contains(pos_wld.x, pos_wld.y) {
-                    match card.state {
-                        super::CardState::SpinStart | super::CardState::SpinEnd => {
-                            card.state = super::CardState::FlipUp;
-                        }
-                        super::CardState::Up => {
-                            card.state = super::CardState::FlipDown;
-                        }
-                        _ => (),
+                    // match card.state {
+                    //     super::CardState::SpinStart | super::CardState::SpinEnd => {
+                    //         card.state = super::CardState::FlipUp;
+                    //     }
+                    //     super::CardState::Up => {
+                    //         card.state = super::CardState::FlipDown;
+                    //     }
+                    //     _ => (),
+                    // }
+                    if card.state == super::CardState::Down {
+                        card.state = super::CardState::FlipUp;
+                    } else if card.state == super::CardState::Up {
+                        card.state = super::CardState::FlipDown;
                     }
-                    //if card.state == super::CardState::SpinStart  {
-                    //    card.state = super::CardState::FlipUp;
-                    //} else if card.state == super::CardState::Up {
-                    //    card.state = super::CardState::FlipDown;
-                    //}
                     card_flip_writer.send(super::CardFlipEvent { entity: entity });
                 }
             }
