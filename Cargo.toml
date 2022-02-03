@@ -2,7 +2,7 @@
 resolver="2"
 
 members = [
-    "actix-web",
+    "chat",
     "exchange",
     "iot-one",
     "minigrep",
