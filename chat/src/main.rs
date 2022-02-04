@@ -32,11 +32,14 @@ use std::sync::{
     Arc,
 };
 use std::time::{Duration, Instant};
+use std::env;
 
 use actix::*;
 use actix_files as fs;
-use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_cors::Cors;
+use actix_web::{http, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_web_actors::ws;
+use dotenv::dotenv;
 
 mod server;
 
@@ -261,6 +264,8 @@ impl WsChatSession {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     env_logger::init();
 
     // App state
@@ -272,7 +277,13 @@ async fn main() -> std::io::Result<()> {
 
     // Create Http server with websocket support
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin(&env::var("CLIENT_HOST").unwrap())
+            .allow_any_method()
+            .max_age(3600);
+
         App::new()
+            //.wrap(cors)
             .data(app_state.clone())
             .data(server.clone())
             // redirect to websocket.html
@@ -287,7 +298,7 @@ async fn main() -> std::io::Result<()> {
             // static resources
             .service(fs::Files::new("/static/", "static/"))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }
