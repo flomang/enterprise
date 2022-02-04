@@ -1,43 +1,13 @@
-// use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-
-// #[get("/")]
-// async fn hello() -> impl Responder {
-//     HttpResponse::Ok().body("To boldly create my imagination!")
-// }
-
-// #[post("/echo")]
-// async fn echo(req_body: String) -> impl Responder {
-//     HttpResponse::Ok().body(req_body)
-// }
-
-// async fn manual_hello() -> impl Responder {
-//     HttpResponse::Ok().body("Hey you!")
-// }
-
-// #[actix_web::main]
-// async fn main() -> std::io::Result<()> {
-//     HttpServer::new(|| {
-//         App::new()
-//             .service(hello)
-//             .service(echo)
-//             .route("/hey", web::get().to(manual_hello))
-//     })
-//     .bind("127.0.0.1:8080")?
-//     .run()
-//     .await
-// }
-
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::{AtomicUsize},
     Arc,
 };
 use std::time::{Duration, Instant};
 use std::env;
 
 use actix::*;
-use actix_files as fs;
 use actix_cors::Cors;
-use actix_web::{http, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{http, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use dotenv::dotenv;
 
@@ -65,12 +35,6 @@ async fn chat_route(
         &req,
         stream,
     )
-}
-
-///  Displays and affects state
-async fn get_count(count: web::Data<Arc<AtomicUsize>>) -> impl Responder {
-    let current_count = count.fetch_add(1, Ordering::SeqCst);
-    format!("Visitors: {}", current_count)
 }
 
 struct WsChatSession {
@@ -280,23 +244,19 @@ async fn main() -> std::io::Result<()> {
         let cors = Cors::default()
             .allowed_origin(&env::var("CLIENT_HOST").unwrap())
             .allow_any_method()
+            .allowed_headers(vec![
+                http::header::AUTHORIZATION,
+                http::header::ACCEPT,
+                http::header::CONTENT_TYPE,
+            ])
             .max_age(3600);
 
         App::new()
-            //.wrap(cors)
+            .wrap(cors)
             .data(app_state.clone())
             .data(server.clone())
-            // redirect to websocket.html
-            .service(web::resource("/").route(web::get().to(|| {
-                HttpResponse::Found()
-                    .header("LOCATION", "/static/websocket.html")
-                    .finish()
-            })))
-            .route("/count/", web::get().to(get_count))
             // websocket
             .service(web::resource("/ws/").to(chat_route))
-            // static resources
-            .service(fs::Files::new("/static/", "static/"))
     })
     .bind("0.0.0.0:8080")?
     .run()
