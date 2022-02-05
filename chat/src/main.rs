@@ -7,7 +7,7 @@ use std::env;
 
 use actix::*;
 use actix_cors::Cors;
-use actix_web::{http, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use dotenv::dotenv;
 
@@ -230,7 +230,8 @@ impl WsChatSession {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    env_logger::init();
+    // log info 
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     // App state
     // We are keeping a count of the number of visitors
@@ -253,6 +254,8 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(cors)
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .data(app_state.clone())
             .data(server.clone())
             // websocket
