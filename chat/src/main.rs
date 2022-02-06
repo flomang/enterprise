@@ -99,7 +99,7 @@ impl Handler<server::Message> for WsChatSession {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, PartialEq, Debug)]
 #[serde(tag = "type")]
 enum Message {
     #[serde(rename_all = "camelCase")]
@@ -107,7 +107,9 @@ enum Message {
         name: String,
         screen_width: i32,
         screen_height: i32,
-    }
+    },
+    #[serde(other)]
+    Unknown,
 }
 
 /// WebSocket message handler
