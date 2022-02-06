@@ -10,6 +10,7 @@ use actix_cors::Cors;
 use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use dotenv::dotenv;
+use serde::Deserialize;
 
 mod server;
 
@@ -98,6 +99,13 @@ impl Handler<server::Message> for WsChatSession {
     }
 }
 
+#[derive(Deserialize, Debug)]
+struct RegisterPlayer {
+    name: String,
+    screenWidth: i32,
+    screenHeight: i32,
+}
+
 /// WebSocket message handler
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
     fn handle(
@@ -123,11 +131,22 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
-                let m = text.trim();
+                let message = text.trim();
                 // we check for /sss type of messages
-                if m.starts_with('/') {
-                    let v: Vec<&str> = m.splitn(2, ' ').collect();
-                    match v[0] {
+                if message.starts_with('/') {
+                    let args: Vec<&str> = message.splitn(2, ' ').collect();
+                    match args[0] {
+                        "/register" => {
+                            let params: Result<RegisterPlayer, serde_json::Error> =
+                                serde_json::from_str(args[1]);
+
+                            if let Ok(params) = params {
+                                println!("{:?}", params);
+                                ctx.text(args[1]);
+                            } else {
+                                ctx.text("Invalid request params");
+                            }
+                        }
                         "/list" => {
                             // Send ListRooms message to chat server and wait for
                             // response
@@ -152,8 +171,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             // of rooms back
                         }
                         "/join" => {
-                            if v.len() == 2 {
-                                self.room = v[1].to_owned();
+                            if args.len() == 2 {
+                                self.room = args[1].to_owned();
                                 self.addr.do_send(server::Join {
                                     id: self.id,
                                     name: self.room.clone(),
@@ -165,19 +184,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             }
                         }
                         "/name" => {
-                            if v.len() == 2 {
-                                self.name = Some(v[1].to_owned());
+                            if args.len() == 2 {
+                                self.name = Some(args[1].to_owned());
                             } else {
                                 ctx.text("!!! name is required");
                             }
                         }
-                        _ => ctx.text(format!("!!! unknown command: {:?}", m)),
+                        _ => ctx.text(format!("!!! unknown command: {:?}", message)),
                     }
                 } else {
                     let msg = if let Some(ref name) = self.name {
-                        format!("{}: {}", name, m)
+                        format!("{}: {}", name, message)
                     } else {
-                        m.to_owned()
+                        message.to_owned()
                     };
                     // send message to chat server
                     self.addr.do_send(server::ClientMessage {
