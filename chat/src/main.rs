@@ -100,10 +100,14 @@ impl Handler<server::Message> for WsChatSession {
 }
 
 #[derive(Deserialize, Debug)]
-struct RegisterPlayer {
-    name: String,
-    screenWidth: i32,
-    screenHeight: i32,
+#[serde(tag = "type")]
+enum Message {
+    #[serde(rename_all = "camelCase")]
+    RegisterPlayer {
+        name: String,
+        screen_width: i32,
+        screen_height: i32,
+    }
 }
 
 /// WebSocket message handler
@@ -136,13 +140,21 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                 if message.starts_with('/') {
                     let args: Vec<&str> = message.splitn(2, ' ').collect();
                     match args[0] {
-                        "/register" => {
-                            let params: Result<RegisterPlayer, serde_json::Error> =
+                        "/messages" => {
+                            let messages: Result<Vec<Message>, serde_json::Error> =
                                 serde_json::from_str(args[1]);
 
-                            if let Ok(params) = params {
-                                println!("{:?}", params);
-                                ctx.text(args[1]);
+                            if let Ok(messages) = messages {
+                                for msg in messages {
+                                    match msg  {
+                                        Message::RegisterPlayer{ name, screen_width, screen_height } => {
+                                            println!("RegisterPlayer: {} screenWidth: {} screenHeight: {}", name, screen_width, screen_height);
+                                        }
+                                        _ => {
+                                            println!("Invalid message {:?}", msg)
+                                        }
+                                    }
+                                }
                             } else {
                                 ctx.text("Invalid request params");
                             }
