@@ -4,13 +4,17 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 use std::env;
+use std::collections::HashMap;
+
 
 use actix::*;
 use actix_cors::Cors;
 use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use dotenv::dotenv;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
 
 mod server;
 
@@ -99,17 +103,18 @@ impl Handler<server::Message> for WsChatSession {
     }
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(tag = "type")]
 enum Message {
     #[serde(rename_all = "camelCase")]
     RegisterPlayer {
+        id: String,
         name: String,
         screen_width: i32,
         screen_height: i32,
-    },
-    #[serde(other)]
-    Unknown,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
+    }
 }
 
 /// WebSocket message handler
@@ -143,23 +148,45 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                     let args: Vec<&str> = message.splitn(2, ' ').collect();
                     match args[0] {
                         "/messages" => {
-                            let messages: Result<Vec<Message>, serde_json::Error> =
+                            let messages: Result<Vec<serde_json::Value>, serde_json::Error> = 
                                 serde_json::from_str(args[1]);
 
-                            if let Ok(messages) = messages {
-                                for msg in messages {
-                                    match msg  {
-                                        Message::RegisterPlayer{ name, screen_width, screen_height } => {
-                                            println!("RegisterPlayer: {} screenWidth: {} screenHeight: {}", name, screen_width, screen_height);
+                            if let Ok(values) = messages {
+                                for value in values {
+                                    // if there is a type attribute 
+                                    if let Some(_) = value.get("type") {
+                                        let req: Result<Message, serde_json::Error> = serde_json::from_value(value.clone());
+                                        if let Ok(m) = req {
+                                            match m {
+                                                Message::RegisterPlayer{ id: _, name, screen_width: _, screen_height: _, extra: _ } => println!("Register Player: {}", name),
+                                            }
+                                            ctx.text(value.to_string());
+                                        } else {
+                                            println!("Unknown type encountered: {}", value.to_string());
                                         }
-                                        _ => {
-                                            println!("Invalid message {:?}", msg)
-                                        }
+                                    } else {
+                                        println!("Type property not found: {}", value.to_string());
                                     }
                                 }
                             } else {
-                                ctx.text("Invalid request params");
+                                println!("Error in {:?}", messages);
                             }
+                
+
+                            // if let Ok(messages) = messages {
+                            //     for msg in messages {
+                            //         match msg  {
+                            //             Message::RegisterPlayer{ id, name, screen_width, screen_height, extra } => {
+                            //                 println!("{} RegisterPlayer: {} screenWidth: {} screenHeight: {} extra: {:?}", id, name, screen_width, screen_height, extra);
+                            //             }
+                            //             _ => {
+                            //                 println!("Invalid message {:?}", msg)
+                            //             }
+                            //         }
+                            //     }
+                            // } else {
+                            //     ctx.text("Invalid request params");
+                            // }
                         }
                         "/list" => {
                             // Send ListRooms message to chat server and wait for
