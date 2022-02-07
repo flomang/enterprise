@@ -148,45 +148,31 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                     let args: Vec<&str> = message.splitn(2, ' ').collect();
                     match args[0] {
                         "/messages" => {
-                            let messages: Result<Vec<serde_json::Value>, serde_json::Error> = 
+                            let values: Result<Vec<serde_json::Value>, serde_json::Error> = 
                                 serde_json::from_str(args[1]);
 
-                            if let Ok(values) = messages {
-                                for value in values {
+                            if let Ok(values) = values {
+                                for val in values {
                                     // if there is a type attribute 
-                                    if let Some(_) = value.get("type") {
-                                        let req: Result<Message, serde_json::Error> = serde_json::from_value(value.clone());
-                                        if let Ok(m) = req {
-                                            match m {
+                                    if let Some(_) = val.get("type") {
+                                        let msg: Result<Message, serde_json::Error> = serde_json::from_value(val.clone());
+
+                                        if let Ok(msg) = msg {
+                                            match msg {
                                                 Message::RegisterPlayer{ id: _, name, screen_width: _, screen_height: _, extra: _ } => println!("Register Player: {}", name),
                                             }
-                                            ctx.text(value.to_string());
+                                            // send back message to client
+                                            ctx.text(val.to_string());
                                         } else {
-                                            println!("Unknown type encountered: {}", value.to_string());
+                                            println!("Unknown type encountered: {}", val.to_string());
                                         }
                                     } else {
-                                        println!("Type property not found: {}", value.to_string());
+                                        println!("Type property not found: {}", val.to_string());
                                     }
                                 }
                             } else {
-                                println!("Error in {:?}", messages);
+                                println!("Error in {:?}", values);
                             }
-                
-
-                            // if let Ok(messages) = messages {
-                            //     for msg in messages {
-                            //         match msg  {
-                            //             Message::RegisterPlayer{ id, name, screen_width, screen_height, extra } => {
-                            //                 println!("{} RegisterPlayer: {} screenWidth: {} screenHeight: {} extra: {:?}", id, name, screen_width, screen_height, extra);
-                            //             }
-                            //             _ => {
-                            //                 println!("Invalid message {:?}", msg)
-                            //             }
-                            //         }
-                            //     }
-                            // } else {
-                            //     ctx.text("Invalid request params");
-                            // }
                         }
                         "/list" => {
                             // Send ListRooms message to chat server and wait for
