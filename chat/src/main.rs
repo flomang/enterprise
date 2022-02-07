@@ -110,8 +110,8 @@ enum Message {
     RegisterPlayer {
         id: String,
         name: String,
-        screen_width: i32,
-        screen_height: i32,
+        x: f32,
+        y: f32,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
     }
@@ -159,7 +159,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
 
                                         if let Ok(msg) = msg {
                                             match msg {
-                                                Message::RegisterPlayer{ id: _, name, screen_width: _, screen_height: _, extra: _ } => println!("Register Player: {}", name),
+                                                Message::RegisterPlayer{ id: _, name, x: _, y: _, extra: _ } => println!("Register Player: {}", name),
                                             }
                                             // send back message to client
                                             ctx.text(val.to_string());
