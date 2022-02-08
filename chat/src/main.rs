@@ -106,12 +106,16 @@ impl Handler<server::Message> for WsChatSession {
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(tag = "type")]
 enum Message {
-    #[serde(rename_all = "camelCase")]
     RegisterPlayer {
         id: String,
         name: String,
         x: f32,
         y: f32,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
+    },
+    PlayerDied {
+        id: String,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
     }
@@ -159,7 +163,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
 
                                         if let Ok(msg) = msg {
                                             match msg {
-                                                Message::RegisterPlayer{ id: _, name, x: _, y: _, extra: _ } => println!("Register Player: {}", name),
+                                                Message::RegisterPlayer{ id, name, x: _, y: _, extra: _ } => println!("new player: {} ({})", id, name),
+                                                Message::PlayerDied{ id, extra: _ } => println!("player died: {}", id),
                                             }
                                             // send back message to client
                                             ctx.text(val.to_string());
