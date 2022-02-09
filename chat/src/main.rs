@@ -105,7 +105,7 @@ impl Handler<server::Message> for WsChatSession {
 
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(tag = "type")]
-enum Message {
+enum ClientMessage {
     RegisterPlayer {
         id: String,
         name: String,
@@ -118,6 +118,20 @@ enum Message {
         id: String,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
+    }
+}
+
+#[derive(Serialize, Debug)]
+#[serde(tag = "type")]
+enum ServerMessage {
+    PlayerRegistered {
+        id: String,
+        name: String,
+        x: f32,
+        y: f32,
+    },
+    PlayerDied {
+        id: String,
     }
 }
 
@@ -159,15 +173,24 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                 for val in values {
                                     // if there is a type attribute 
                                     if let Some(_) = val.get("type") {
-                                        let msg: Result<Message, serde_json::Error> = serde_json::from_value(val.clone());
+                                        let msg: Result<ClientMessage, serde_json::Error> = serde_json::from_value(val.clone());
 
                                         if let Ok(msg) = msg {
                                             match msg {
-                                                Message::RegisterPlayer{ id, name, x: _, y: _, extra: _ } => println!("new player: {} ({})", id, name),
-                                                Message::PlayerDied{ id, extra: _ } => println!("player died: {}", id),
+                                                ClientMessage::RegisterPlayer{ id, name, x, y, extra: _ } => {
+                                                    //println!("new player: {} ({})", id, name)
+                                                    let msg = ServerMessage::PlayerRegistered {id, name, x, y};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                },
+
+                                                ClientMessage::PlayerDied{ id, extra: _ } => { 
+                                                    println!("player died: {}", id);
+                                                    let msg = ServerMessage::PlayerDied {id};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                }
                                             }
-                                            // send back message to client
-                                            ctx.text(val.to_string());
                                         } else {
                                             println!("Unknown type encountered: {}", val.to_string());
                                         }
