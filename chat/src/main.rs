@@ -114,6 +114,13 @@ enum ClientMessage {
         #[serde(flatten)]
         extra: HashMap<String, Value>,
     },
+    RespawnPlayer {
+        id: String,
+        x: f32,
+        y: f32,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
+    },
     PlayerDied {
         id: String,
         #[serde(flatten)]
@@ -127,6 +134,11 @@ enum ServerMessage {
     PlayerRegistered {
         id: String,
         name: String,
+        x: f32,
+        y: f32,
+    },
+    PlayerRespawned {
+        id: String,
         x: f32,
         y: f32,
     },
@@ -180,6 +192,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                                 ClientMessage::RegisterPlayer{ id, name, x, y, extra: _ } => {
                                                     //println!("new player: {} ({})", id, name)
                                                     let msg = ServerMessage::PlayerRegistered {id, name, x, y};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                },
+
+                                                ClientMessage::RespawnPlayer{ id, x, y, extra: _ } => {
+                                                    //println!("new player: {} ({})", id, name)
+                                                    let msg = ServerMessage::PlayerRespawned {id, x, y};
                                                     let response = serde_json::to_string(&msg).unwrap();
                                                     ctx.text(response);
                                                 },
