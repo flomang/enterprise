@@ -132,6 +132,20 @@ enum ClientMessage {
         key_down: bool,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerKeyboardArrowLeft {
+        id: String,
+        key_down: bool,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerKeyboardArrowRight {
+        id: String,
+        key_down: bool,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
     }
 }
 
@@ -156,6 +170,16 @@ enum ServerMessage {
     PlayerMoveForward {
         id: String,
         is_moving: bool,
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerRotateLeft {
+        id: String,
+        is_rotating: bool,
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerRotateRight {
+        id: String,
+        is_rotating: bool,
     },
 }
 
@@ -223,6 +247,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
 
                                                 ClientMessage::PlayerKeyboardArrowUp{ id, key_down, extra: _ } => { 
                                                     let msg = ServerMessage::PlayerMoveForward {id, is_moving: key_down};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                }
+
+                                                ClientMessage::PlayerKeyboardArrowLeft{ id, key_down, extra: _ } => { 
+                                                    let msg = ServerMessage::PlayerRotateLeft {id, is_rotating: key_down};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                }
+
+                                                ClientMessage::PlayerKeyboardArrowRight{ id, key_down, extra: _ } => { 
+                                                    let msg = ServerMessage::PlayerRotateRight {id, is_rotating: key_down};
                                                     let response = serde_json::to_string(&msg).unwrap();
                                                     ctx.text(response);
                                                 }
