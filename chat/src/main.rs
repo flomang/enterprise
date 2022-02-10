@@ -125,6 +125,13 @@ enum ClientMessage {
         id: String,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerKeyboardArrowUp {
+        id: String,
+        key_down: bool,
+        #[serde(flatten)]
+        extra: HashMap<String, Value>,
     }
 }
 
@@ -144,7 +151,12 @@ enum ServerMessage {
     },
     PlayerDied {
         id: String,
-    }
+    },
+    #[serde(rename_all = "camelCase")]
+    PlayerMoveForward {
+        id: String,
+        is_moving: bool,
+    },
 }
 
 /// WebSocket message handler
@@ -204,8 +216,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                                 },
 
                                                 ClientMessage::PlayerDied{ id, extra: _ } => { 
-                                                    println!("player died: {}", id);
                                                     let msg = ServerMessage::PlayerDied {id};
+                                                    let response = serde_json::to_string(&msg).unwrap();
+                                                    ctx.text(response);
+                                                }
+
+                                                ClientMessage::PlayerKeyboardArrowUp{ id, key_down, extra: _ } => { 
+                                                    let msg = ServerMessage::PlayerMoveForward {id, is_moving: key_down};
                                                     let response = serde_json::to_string(&msg).unwrap();
                                                     ctx.text(response);
                                                 }
