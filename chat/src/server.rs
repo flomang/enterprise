@@ -91,11 +91,11 @@ impl ChatServer {
     fn send_message(&self, room: &str, message: &str, skip_id: usize) {
         if let Some(sessions) = self.rooms.get(room) {
             for id in sessions {
-                if *id != skip_id {
+                //if *id != skip_id {
                     if let Some(addr) = self.sessions.get(id) {
                         let _ = addr.do_send(Message(message.to_owned()));
                     }
-                }
+                //}
             }
         }
     }

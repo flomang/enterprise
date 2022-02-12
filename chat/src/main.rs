@@ -189,7 +189,6 @@ enum ServerMessage {
     },
 }
 
-
 fn clamp(input: f32, min: f32, max: f32) -> f32 {
     if input < min {
         min
@@ -246,8 +245,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                     points.push(y);
                 }
                 let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius: radius, points: points};
-                let response = serde_json::to_string(&asteroid).unwrap();
-                ctx.text(response);
+                let json = serde_json::to_string(&asteroid).unwrap();
+                self.addr.do_send(server::ClientMessage {
+                    id: self.id,
+                    msg: json,
+                    room: self.room.clone(),
+                });
             }
             ws::Message::Text(text) => {
                 let message = text.trim();
@@ -268,41 +271,65 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                         if let Ok(msg) = msg {
                                             match msg {
                                                 ClientMessage::RegisterPlayer{ id, name, x, y, extra: _ } => {
-                                                    //println!("new player: {} ({})", id, name)
                                                     let msg = ServerMessage::PlayerRegistered {id, name, x, y};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    // send message to chat server
+                                                    self.addr.do_send(server::ClientMessage {
+                                                         id: self.id,
+                                                         msg: json,
+                                                         room: self.room.clone(),
+                                                    });
                                                 },
 
                                                 ClientMessage::RespawnPlayer{ id, x, y, extra: _ } => {
                                                     //println!("new player: {} ({})", id, name)
                                                     let msg = ServerMessage::PlayerRespawned {id, x, y};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    self.addr.do_send(server::ClientMessage {
+                                                        id: self.id,
+                                                        msg: json,
+                                                        room: self.room.clone(),
+                                                    });
                                                 },
 
                                                 ClientMessage::PlayerDied{ id, extra: _ } => { 
                                                     let msg = ServerMessage::PlayerDied {id};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    self.addr.do_send(server::ClientMessage {
+                                                        id: self.id,
+                                                        msg: json,
+                                                        room: self.room.clone(),
+                                                    });
                                                 }
 
                                                 ClientMessage::PlayerKeyboardArrowUp{ id, key_down, extra: _ } => { 
                                                     let msg = ServerMessage::PlayerMoveForward {id, is_moving: key_down};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    self.addr.do_send(server::ClientMessage {
+                                                        id: self.id,
+                                                        msg: json,
+                                                        room: self.room.clone(),
+                                                    });
                                                 }
 
                                                 ClientMessage::PlayerKeyboardArrowLeft{ id, key_down, extra: _ } => { 
                                                     let msg = ServerMessage::PlayerRotateLeft {id, is_rotating: key_down};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    self.addr.do_send(server::ClientMessage {
+                                                        id: self.id,
+                                                        msg: json,
+                                                        room: self.room.clone(),
+                                                    });
                                                 }
 
                                                 ClientMessage::PlayerKeyboardArrowRight{ id, key_down, extra: _ } => { 
                                                     let msg = ServerMessage::PlayerRotateRight {id, is_rotating: key_down};
-                                                    let response = serde_json::to_string(&msg).unwrap();
-                                                    ctx.text(response);
+                                                    let json = serde_json::to_string(&msg).unwrap();
+                                                    self.addr.do_send(server::ClientMessage {
+                                                        id: self.id,
+                                                        msg: json,
+                                                        room: self.room.clone(),
+                                                    });
                                                 }
                                             }
                                         } else {
