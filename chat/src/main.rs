@@ -14,6 +14,7 @@ use actix_web_actors::ws;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use rand::Rng;
 
 
 mod server;
@@ -181,6 +182,27 @@ enum ServerMessage {
         id: String,
         is_rotating: bool,
     },
+    Asteroid {
+         id: String,
+         radius: f32,
+         points: Vec<f32>,
+    },
+}
+
+
+fn clamp(input: f32, min: f32, max: f32) -> f32 {
+    if input < min {
+        min
+    } else if input > max {
+        max 
+    } else {
+        input
+    } 
+}
+  
+fn map(current: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    let mapped: f32 = ((current - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
+    return clamp(mapped, out_min, out_max);
 }
 
 /// WebSocket message handler
@@ -206,6 +228,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             }
             ws::Message::Pong(_) => {
                 self.hb = Instant::now();
+
+                // TODO move this into a struct
+                let mut rng = rand::thread_rng();
+                let total = rng.gen_range(6, 12);
+                let radius: f32 = rng.gen_range(3.0, 21.0);
+                let mut points = Vec::new();
+
+                for i in 0..total {
+                    let angle = map(i as f32, 0.0, total as f32, 0.0, (std::f64::consts::PI * 2.0) as f32 );
+                    let offset = rng.gen_range(-radius * 0.5, radius * 0.5);
+                    let r = radius + offset;
+                    let x = r * angle.cos();
+                    let y = r * angle.sin();
+
+                    points.push(x);
+                    points.push(y);
+                }
+                let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius: radius, points: points};
+                let response = serde_json::to_string(&asteroid).unwrap();
+                ctx.text(response);
             }
             ws::Message::Text(text) => {
                 let message = text.trim();
