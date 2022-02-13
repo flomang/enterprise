@@ -184,10 +184,13 @@ enum ServerMessage {
         id: String,
         is_rotating: bool,
     },
+    #[serde(rename_all = "camelCase")]
     Asteroid {
          id: String,
          radius: f32,
          points: Vec<f32>,
+         velocity_x: f32,
+         velocity_y: f32,
     },
 }
 
@@ -246,7 +249,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                     points.push(x);
                     points.push(y);
                 }
-                let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius: radius, points: points};
+                let velocity_x = rng.gen_range(-1.0, 1.0);
+                let velocity_y = rng.gen_range(-1.0, 1.0);
+                let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius, points, velocity_x, velocity_y};
                 let json = serde_json::to_string(&asteroid).unwrap();
                 self.addr.do_send(server::ClientMessage{
                     id: self.id,
