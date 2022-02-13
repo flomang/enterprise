@@ -158,11 +158,13 @@ enum ServerMessage {
         name: String,
         x: f32,
         y: f32,
+        rotation: f32,
     },
     PlayerRespawned {
         id: String,
         x: f32,
         y: f32,
+        rotation: f32,
     },
     PlayerDied {
         id: String,
@@ -246,7 +248,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                 }
                 let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius: radius, points: points};
                 let json = serde_json::to_string(&asteroid).unwrap();
-                self.addr.do_send(server::ClientMessage {
+                self.addr.do_send(server::ClientMessage{
                     id: self.id,
                     msg: json,
                     room: self.room.clone(),
@@ -271,7 +273,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                         if let Ok(msg) = msg {
                                             match msg {
                                                 ClientMessage::RegisterPlayer{ id, name, x, y, extra: _ } => {
-                                                    let msg = ServerMessage::PlayerRegistered {id, name, x, y};
+                                                    let mut rng = rand::thread_rng();
+                                                    let rotation = rng.gen_range(0.0, std::f64::consts::PI * 2.0) as f32;
+                                                    let msg = ServerMessage::PlayerRegistered {id, name, x, y, rotation};
                                                     let json = serde_json::to_string(&msg).unwrap();
                                                     // send message to chat server
                                                     self.addr.do_send(server::ClientMessage {
@@ -282,8 +286,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                                 },
 
                                                 ClientMessage::RespawnPlayer{ id, x, y, extra: _ } => {
-                                                    //println!("new player: {} ({})", id, name)
-                                                    let msg = ServerMessage::PlayerRespawned {id, x, y};
+                                                    let mut rng = rand::thread_rng();
+                                                    let rotation = rng.gen_range(0.0, std::f64::consts::PI * 2.0) as f32;
+                                                    let msg = ServerMessage::PlayerRespawned {id, x, y, rotation};
                                                     let json = serde_json::to_string(&msg).unwrap();
                                                     self.addr.do_send(server::ClientMessage {
                                                         id: self.id,
