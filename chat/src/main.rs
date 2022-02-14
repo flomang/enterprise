@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use actix::*;
 use actix_cors::Cors;
-use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_web_actors::ws;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
@@ -461,9 +461,15 @@ impl WsChatSession {
     }
 }
 
-async fn greet(req: HttpRequest) -> impl Responder {
+#[get("/bangs")]
+async fn bangs(req: HttpRequest) -> impl Responder {
     let name = req.match_info().get("name").unwrap_or("World");
-    format!("Hello {}!", &name)
+    format!("bang list {}!", &name)
+}
+
+#[post("/moonbang")]
+async fn moonbang(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
 }
 
 #[actix_web::main]
@@ -501,8 +507,8 @@ async fn main() -> std::io::Result<()> {
             // websocket
             .service(web::resource("/ws/").to(chat_route))
             // routes
-            .route("/greet", web::get().to(greet))
-            .route("/greet/{name}", web::get().to(greet))
+            .service(bangs)
+            .service(moonbang)
     })
     .bind("0.0.0.0:8080")?
     .run()
