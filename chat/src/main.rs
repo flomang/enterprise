@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use actix::*;
 use actix_cors::Cors;
-use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_web_actors::ws;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
@@ -147,7 +147,17 @@ enum ClientMessage {
         key_down: bool,
         #[serde(flatten)]
         extra: HashMap<String, Value>,
-    }
+    },
+    // #[serde(rename_all = "camelCase")]
+    // CreateMoonBang {
+    //     id: String,
+    //     name: String,
+    //     width: i32,
+    //     height: i32,
+    //     private: bool,
+    //     #[serde(flatten)]
+    //     extra: HashMap<String, Value>,
+    // }
 }
 
 #[derive(Serialize, Debug)]
@@ -451,6 +461,11 @@ impl WsChatSession {
     }
 }
 
+async fn greet(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -485,6 +500,9 @@ async fn main() -> std::io::Result<()> {
             .data(server.clone())
             // websocket
             .service(web::resource("/ws/").to(chat_route))
+            // routes
+            .route("/greet", web::get().to(greet))
+            .route("/greet/{name}", web::get().to(greet))
     })
     .bind("0.0.0.0:8080")?
     .run()
