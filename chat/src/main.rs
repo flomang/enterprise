@@ -4,20 +4,20 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 use std::env;
-use std::collections::HashMap;
 
 
 use actix::*;
 use actix_cors::Cors;
-use actix_web::{get, post, http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{http, web, middleware::Logger, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use dotenv::dotenv;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use rand::Rng;
 
-
+mod asteroid;
 mod server;
+mod routes;
+
+use asteroid::*;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -102,121 +102,6 @@ impl Handler<server::Message> for WsChatSession {
     fn handle(&mut self, msg: server::Message, ctx: &mut Self::Context) {
         ctx.text(msg.0);
     }
-}
-
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
-#[serde(tag = "type")]
-enum ClientMessage {
-    RegisterPlayer {
-        id: String,
-        name: String,
-        x: f32,
-        y: f32,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    RespawnPlayer {
-        id: String,
-        x: f32,
-        y: f32,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    PlayerDied {
-        id: String,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerKeyboardArrowUp {
-        id: String,
-        key_down: bool,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerKeyboardArrowLeft {
-        id: String,
-        key_down: bool,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerKeyboardArrowRight {
-        id: String,
-        key_down: bool,
-        #[serde(flatten)]
-        extra: HashMap<String, Value>,
-    },
-    // #[serde(rename_all = "camelCase")]
-    // CreateMoonBang {
-    //     id: String,
-    //     name: String,
-    //     width: i32,
-    //     height: i32,
-    //     private: bool,
-    //     #[serde(flatten)]
-    //     extra: HashMap<String, Value>,
-    // }
-}
-
-#[derive(Serialize, Debug)]
-#[serde(tag = "type")]
-enum ServerMessage {
-    PlayerRegistered {
-        id: String,
-        name: String,
-        x: f32,
-        y: f32,
-        rotation: f32,
-    },
-    PlayerRespawned {
-        id: String,
-        x: f32,
-        y: f32,
-        rotation: f32,
-    },
-    PlayerDied {
-        id: String,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerMoveForward {
-        id: String,
-        is_moving: bool,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerRotateLeft {
-        id: String,
-        is_rotating: bool,
-    },
-    #[serde(rename_all = "camelCase")]
-    PlayerRotateRight {
-        id: String,
-        is_rotating: bool,
-    },
-    #[serde(rename_all = "camelCase")]
-    Asteroid {
-         id: String,
-         radius: f32,
-         points: Vec<f32>,
-         velocity_x: f32,
-         velocity_y: f32,
-    },
-}
-
-fn clamp(input: f32, min: f32, max: f32) -> f32 {
-    if input < min {
-        min
-    } else if input > max {
-        max 
-    } else {
-        input
-    } 
-}
-  
-fn map(current: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
-    let mapped: f32 = ((current - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
-    return clamp(mapped, out_min, out_max);
 }
 
 /// WebSocket message handler
@@ -461,17 +346,6 @@ impl WsChatSession {
     }
 }
 
-#[get("/bangs")]
-async fn bangs(req: HttpRequest) -> impl Responder {
-    let name = req.match_info().get("name").unwrap_or("World");
-    format!("bang list {}!", &name)
-}
-
-#[post("/moonbang")]
-async fn moonbang(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -507,8 +381,8 @@ async fn main() -> std::io::Result<()> {
             // websocket
             .service(web::resource("/ws/").to(chat_route))
             // routes
-            .service(bangs)
-            .service(moonbang)
+            .service(routes::bangs)
+            .service(routes::moonbang)
     })
     .bind("0.0.0.0:8080")?
     .run()
