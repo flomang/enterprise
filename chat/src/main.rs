@@ -128,25 +128,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             ws::Message::Pong(_) => {
                 self.hb = Instant::now();
 
-                // TODO move this into a struct
-                let mut rng = rand::thread_rng();
-                let total = rng.gen_range(6, 12);
-                let radius: f32 = rng.gen_range(3.0, 21.0);
-                let mut points = Vec::new();
-
-                for i in 0..total {
-                    let angle = map(i as f32, 0.0, total as f32, 0.0, (std::f64::consts::PI * 2.0) as f32 );
-                    let offset = rng.gen_range(-radius * 0.5, radius * 0.5);
-                    let r = radius + offset;
-                    let x = r * angle.cos();
-                    let y = r * angle.sin();
-
-                    points.push(x);
-                    points.push(y);
-                }
-                let velocity_x = rng.gen_range(-1.0, 1.0);
-                let velocity_y = rng.gen_range(-1.0, 1.0);
-                let asteroid = ServerMessage::Asteroid{ id: String::from("uuid"), radius, points, velocity_x, velocity_y};
+                let asteroid = create_asteroid(); 
                 let json = serde_json::to_string(&asteroid).unwrap();
                 self.addr.do_send(server::ClientMessage{
                     id: self.id,
