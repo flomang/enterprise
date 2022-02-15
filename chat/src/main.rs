@@ -4,6 +4,7 @@ use std::sync::{
 };
 use std::env;
 
+use actix::Actor;
 use actix_cors::Cors;
 use actix_web::{http, web, middleware::Logger, App, HttpServer};
 use dotenv::dotenv;
@@ -12,7 +13,6 @@ mod asteroid;
 mod routes;
 
 use asteroid::server;
-use actix::Actor;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -47,7 +47,7 @@ async fn main() -> std::io::Result<()> {
             .data(app_state.clone())
             .data(server.clone())
             // websocket
-            .service(web::resource("/ws/").to(asteroid::chat::chat_route))
+            .service(web::resource("/ws/").to(routes::chat_route))
             // routes
             .service(routes::bangs)
             .service(routes::moonbang)

@@ -1,5 +1,4 @@
 use std::time::{Duration, Instant};
-use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix::*;
 use actix_web_actors::ws;
 
@@ -12,36 +11,18 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 
-pub async fn chat_route(
-    req: HttpRequest,
-    stream: web::Payload,
-    srv: web::Data<Addr<server::ChatServer>>,
-) -> Result<HttpResponse, Error> {
-    ws::start(
-        WsChatSession {
-            id: 0,
-            hb: Instant::now(),
-            room: "Main".to_owned(),
-            name: None,
-            addr: srv.get_ref().clone(),
-        },
-        &req,
-        stream,
-    )
-}
-
-struct WsChatSession {
+pub struct WsChatSession {
     /// unique session id
-    id: usize,
+    pub id: usize,
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
     /// otherwise we drop connection.
-    hb: Instant,
+    pub hb: Instant,
     /// joined room
-    room: String,
+    pub room: String,
     /// peer name
-    name: Option<String>,
+    pub name: Option<String>,
     /// Chat server
-    addr: Addr<server::ChatServer>,
+    pub addr: Addr<server::ChatServer>,
 }
 
 impl Actor for WsChatSession {
