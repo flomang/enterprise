@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+pub mod chat;
+pub mod server;
+
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
