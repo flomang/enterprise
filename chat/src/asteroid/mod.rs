@@ -142,3 +142,11 @@ pub fn create_asteroid() -> ServerMessage {
     let velocity_y = rng.gen_range(-1.0, 1.0);
     ServerMessage::Asteroid{ id: String::from("uuid"), radius, points, velocity_x, velocity_y}
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct MoonBang {
+    name: String,
+    width: i32,
+    height: i32,
+    private: bool,
+}
