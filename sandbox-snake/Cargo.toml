@@ -1,5 +1,5 @@
 [package]
-name = "prophet"
+name = "sandbox-snake"
 version = "0.1.0"
 edition = "2018"
 

@@ -3611,14 +3611,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9145ac0af1d93c638c98c40cf7d25665f427b2a44ad0a99b1dccf3e2f25bb987"
 
 [[package]]
-name = "prophet"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "rand 0.8.4",
-]
-
-[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3890,6 +3882,14 @@ version = "0.1.0"
 [[package]]
 name = "sandbox-smart-pointers"
 version = "0.1.0"
+
+[[package]]
+name = "sandbox-snake"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "rand 0.8.4",
+]
 
 [[package]]
 name = "sandbox-threading"
