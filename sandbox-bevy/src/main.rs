@@ -33,7 +33,7 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(3.3))
+                .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(snake::game::spawn_food.system())
                 .label(snake::FoodState::Spawn),
         )

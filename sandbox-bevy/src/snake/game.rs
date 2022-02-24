@@ -33,7 +33,6 @@ fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBund
 
  fn sprite_factory( image: &Handle<Image> ) -> SpriteBundle {
      let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
-     //let sprite_handle = asset_server.load("images/neon-pizza-logo.png");
 
      SpriteBundle {
         texture: image.clone(),
@@ -73,8 +72,8 @@ pub fn setup(
 ) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
-        snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
-        snake_segment: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
+        snake_head: regular_polygon_colored(6, 6.0, Color::GREEN, Color::GREEN),
+        snake_segment: regular_polygon_colored(6, 3.0, Color::GREEN, Color::GREEN),
         pizza_handle: asset_server.load("images/neon-pizza-logo.png"),
     });
 }
