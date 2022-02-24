@@ -1,14 +1,19 @@
 use bevy::prelude::*;
-use bevy::render::pass::ClearColor;
 use bevy::core::FixedTimestep;
 use rand::prelude::random;
 
 
+const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
+const SNAKE_SEGMENT_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
+const FOOD_COLOR: Color = Color::rgb(1.0, 0.0, 1.0);
+
 const ARENA_WIDTH: u32 = 10;
 const ARENA_HEIGHT: u32 = 10;
 
+#[derive(Component)]
 struct Food;
 
+#[derive(Component)]
 struct SnakeSegment;
 
 // events
@@ -16,28 +21,24 @@ struct GrowthEvent;
 struct GameOverEvent;
 
 
+#[derive(Component)]
 struct SnakeHead {
     direction: Direction,
 }
 
-#[derive(Default)]
+#[derive(Default, )]
 struct SnakeSegments(Vec<Entity>);
 
 #[derive(Default)]
 struct LastTailPosition(Option<Position>);
 
-struct Materials {
-	head_material: Handle<ColorMaterial>,
-    segment_material: Handle<ColorMaterial>, 
-    food_material: Handle<ColorMaterial>,
-}
-
-#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Component, Copy, Clone, Eq, PartialEq, Hash)]
 struct Position {
     x: i32,
     y: i32,
 }
 
+#[derive(Component)]
 struct Size {
     width: f32,
     height: f32,
@@ -78,23 +79,20 @@ impl Direction {
     }
 }
 
-fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.insert_resource(Materials {
-        head_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into()),
-        segment_material: materials.add(Color::rgb(0.3, 0.3, 0.3).into()), 
-        food_material: materials.add(Color::rgb(1.0, 0.0, 1.0).into()), 
-    });
 }
 
 fn spawn_segment(
     mut commands: Commands,
-    material: &Handle<ColorMaterial>,
     position: Position,
 ) -> Entity {
     commands
         .spawn_bundle(SpriteBundle {
-            material: material.clone(),
+            sprite: Sprite {
+                color: SNAKE_SEGMENT_COLOR,
+                ..Default::default()
+            },
             ..Default::default()
         })
         .insert(SnakeSegment)
@@ -105,11 +103,13 @@ fn spawn_segment(
 
 fn food_spawner(
     mut commands: Commands,
-    materials: Res<Materials>,
 ) {
     commands
         .spawn_bundle(SpriteBundle {
-            material: materials.food_material.clone(),
+            sprite: Sprite {
+                color: FOOD_COLOR,
+                ..Default::default()
+            },
             ..Default::default()
         })
         .insert(Food)
@@ -122,14 +122,19 @@ fn food_spawner(
 
 fn spawn_snake(
     mut commands: Commands,
-    materials: Res<Materials>,
     mut segments: ResMut<SnakeSegments>,
 ) {
     segments.0 = vec![
         commands
             .spawn_bundle(SpriteBundle {
-                material: materials.head_material.clone(),
-                sprite: Sprite::new(Vec2::new(10.0, 10.0)),
+                sprite: Sprite{
+                    color: SNAKE_HEAD_COLOR,
+                    ..Default::default()
+                },
+                transform: Transform {
+                    scale: Vec3::new(10.0, 10.0, 10.0),
+                    ..Default::default()
+                },
                 ..Default::default()
             })
             .insert(SnakeHead {
@@ -141,18 +146,18 @@ fn spawn_snake(
             .id(),
         spawn_segment(
             commands,
-            &materials.segment_material,
             Position { x: 3, y: 2 },
         ),
     ];
 }
 
-fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
+fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Transform)>) {
     let window = windows.get_primary().unwrap();
-    for (sprite_size, mut sprite) in q.iter_mut() {
-        sprite.size = Vec2::new(
+    for (sprite_size, mut transform) in q.iter_mut() {
+        transform.scale = Vec3::new(
             sprite_size.width / ARENA_WIDTH as f32 * window.width() as f32,
             sprite_size.height / ARENA_HEIGHT as f32 * window.height() as f32,
+            1.0,
         );
     }
 }
@@ -210,7 +215,6 @@ fn snake_eating(
 fn game_over(
     mut commands: Commands,
     mut reader: EventReader<GameOverEvent>,
-    materials: Res<Materials>,
     segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
     segments: Query<Entity, With<SnakeSegment>>,
@@ -219,7 +223,7 @@ fn game_over(
         for ent in food.iter().chain(segments.iter()) {
             commands.entity(ent).despawn();
         }
-        spawn_snake(commands, materials, segments_res);
+        spawn_snake(commands, segments_res);
     }
 }
 
@@ -280,19 +284,17 @@ fn snake_growth(
     last_tail_position: Res<LastTailPosition>,
     mut segments: ResMut<SnakeSegments>,
     mut growth_reader: EventReader<GrowthEvent>,
-    materials: Res<Materials>,
 ) {
     if growth_reader.iter().next().is_some() {
         segments.0.push(spawn_segment(
             commands,
-            &materials.segment_material,
             last_tail_position.0.unwrap(),
         ));
     }
 }
 
 fn main() {
-	App::build()
+	App::new()
     .insert_resource(WindowDescriptor { 
         title: "Snake!".to_string(), 
         width: 500.0,                 
