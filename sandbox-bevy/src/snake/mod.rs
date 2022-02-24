@@ -58,7 +58,7 @@ pub struct Shape {
 pub struct Materials {
     snake_head: Shape,
     snake_segment: Shape,
-    pizza: Handle<ColorMaterial>,
+    pizza_handle: Handle<Image>,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -76,20 +76,6 @@ impl Direction {
             Self::Right => Self::Left,
             Self::Up => Self::Down,
             Self::Down => Self::Up,
-        }
-    }
-}
-
-#[derive(Component)]
-pub struct Size {
-    width: f32,
-    height: f32,
-}
-impl Size {
-    pub fn square(x: f32) -> Self {
-        Self {
-            width: x,
-            height: x,
         }
     }
 }

@@ -31,12 +31,12 @@ fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBund
     )
 }
 
- fn sprite_factory( asset_server: Res<AssetServer> ) -> SpriteBundle {
+ fn sprite_factory( image: &Handle<Image> ) -> SpriteBundle {
      let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
-     let sprite_handle = asset_server.load("images/neon-pizza-logo.png");
+     //let sprite_handle = asset_server.load("images/neon-pizza-logo.png");
 
      SpriteBundle {
-        texture: sprite_handle.clone(),
+        texture: image.clone(),
         transform: transform, 
         sprite: Sprite {
             custom_size: Some(Vec2::new(24., 24.)),
@@ -70,15 +70,12 @@ fn random_position(
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let pizza_handle = asset_server.load("images/neon-pizza-logo.png");
-
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.insert_resource(super::Materials {
         snake_head: regular_polygon_colored(6, 5.0, Color::GREEN, Color::GREEN),
         snake_segment: regular_polygon_colored(6, 4.0, Color::GREEN, Color::GREEN),
-        pizza: materials.add(pizza_handle.into()),
+        pizza_handle: asset_server.load("images/neon-pizza-logo.png"),
     });
 }
 
@@ -119,16 +116,15 @@ pub fn spawn_snake(
 
 pub fn spawn_food(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    //asset_server: Res<AssetServer>,
+    materials: Res<super::Materials>,
     entities: Query<Entity, With<super::Position>>,
     positions: Query<&mut super::Position>,
 ) {
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
-        let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
-
         commands
-            .spawn_bundle(sprite_factory(asset_server))
+            .spawn_bundle(sprite_factory(&materials.pizza_handle))
             .insert(Food)
             .insert(position);
     }
@@ -283,17 +279,6 @@ pub fn game_over(
         }
 
         spawn_snake(commands, materials, segments_res);
-    }
-}
-
-pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&super::Size, &mut Transform)>) {
-    let window = windows.get_primary().unwrap();
-    for (sprite_size, mut transform) in q.iter_mut() {
-        transform.scale = Vec3::new(
-            sprite_size.width / super::ARENA_WIDTH as f32 * window.width() as f32,
-            sprite_size.height / super::ARENA_HEIGHT as f32 * window.height() as f32,
-            1.0,
-        );
     }
 }
 

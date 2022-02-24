@@ -83,7 +83,6 @@ fn main() {
             CoreStage::PostUpdate,
             SystemSet::new()
                 .with_system(snake::game::position_translation.system())
-                .with_system(snake::game::size_scaling.system()),
         )
         .run();
 }
