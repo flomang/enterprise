@@ -9,8 +9,7 @@ pub const WINDOW_HEIGHT: f32 = 1000.0;
 pub const ARENA_WIDTH: u32 = 100;
 pub const ARENA_HEIGHT: u32 = 100;
 
-
-#[derive(Default, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Component, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Position {
     x: i32,
     y: i32,
@@ -36,15 +35,20 @@ pub enum FoodState {
     Spawn,
 }
 
+#[derive(Component)]
 pub struct Food;
+#[derive(Component)]
 pub struct Poison;
+#[derive(Component)]
 pub struct SnakeSegment;
 
+#[derive(Component)]
 pub struct SnakeHead {
     direction: Direction,
     input_direction: Direction,
 }
 
+#[derive(Component)]
 pub struct Shape {
     shape: shapes::RegularPolygon, 
     outline: Color,
@@ -72,6 +76,20 @@ impl Direction {
             Self::Right => Self::Left,
             Self::Up => Self::Down,
             Self::Down => Self::Up,
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Size {
+    width: f32,
+    height: f32,
+}
+impl Size {
+    pub fn square(x: f32) -> Self {
+        Self {
+            width: x,
+            height: x,
         }
     }
 }

@@ -1,13 +1,12 @@
 use bevy::core::FixedTimestep;
 use bevy::prelude::*;
-use bevy::render::pass::ClearColor;
 use bevy_prototype_lyon::prelude::*;
 
 mod snake;
 use snake::events;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Snake!".to_string(),
             width: snake::WINDOW_WIDTH,

@@ -23,24 +23,28 @@ fn regular_polygon_colored(sides: usize, radius: f32, outline: Color, fill: Colo
 fn shape_factory(shape: &super::Shape) -> bevy_prototype_lyon::entity::ShapeBundle {
     GeometryBuilder::build_as(
         &shape.shape,
-        ShapeColors::outlined(shape.fill, shape.outline),
         DrawMode::Outlined {
-            fill_options: FillOptions::default(),
-            outline_options: StrokeOptions::default().with_line_width(1.0),
+            fill_mode: FillMode::color(shape.outline),
+            outline_mode: StrokeMode::new(shape.fill, 1.0),
         },
         Transform::default(),
     )
 }
 
-fn sprite_factory(material: &Handle<ColorMaterial>) -> SpriteBundle {
-    let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
-    SpriteBundle {
-        material: material.clone(),
-        sprite: Sprite::new(Vec2::new(24., 24.)),
-        transform,
-        ..Default::default()
-    }
-}
+ fn sprite_factory( asset_server: Res<AssetServer> ) -> SpriteBundle {
+     let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
+     let sprite_handle = asset_server.load("images/neon-pizza-logo.png");
+
+     SpriteBundle {
+        texture: sprite_handle.clone(),
+        transform: transform, 
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(24., 24.)),
+            ..Default::default()
+        },
+         ..Default::default()
+     }
+ }
 
 fn random_position(
     entities: Query<Entity, With<super::Position>>,
@@ -115,14 +119,16 @@ pub fn spawn_snake(
 
 pub fn spawn_food(
     mut commands: Commands,
-    materials: Res<super::Materials>,
+    asset_server: Res<AssetServer>,
     entities: Query<Entity, With<super::Position>>,
     positions: Query<&mut super::Position>,
 ) {
     // can't spawn on existing entity
     if let Some(position) = random_position(entities, positions) {
+        let transform = Transform::from_translation(Vec3::new(-400., 0., 1.));
+
         commands
-            .spawn_bundle(sprite_factory(&materials.pizza))
+            .spawn_bundle(sprite_factory(asset_server))
             .insert(Food)
             .insert(position);
     }
@@ -280,20 +286,18 @@ pub fn game_over(
     }
 }
 
-pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
+pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&super::Size, &mut Transform)>) {
     let window = windows.get_primary().unwrap();
-    for (sprite_size, mut sprite) in q.iter_mut() {
-        sprite.size = Vec2::new(
+    for (sprite_size, mut transform) in q.iter_mut() {
+        transform.scale = Vec3::new(
             sprite_size.width / super::ARENA_WIDTH as f32 * window.width() as f32,
             sprite_size.height / super::ARENA_HEIGHT as f32 * window.height() as f32,
+            1.0,
         );
     }
 }
 
-pub fn position_translation(
-    windows: Res<Windows>,
-    mut q: Query<(&super::Position, &mut Transform)>,
-) {
+pub fn position_translation(windows: Res<Windows>, mut q: Query<(&super::Position, &mut Transform)>) {
     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
         let tile_size = bound_window / bound_game;
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
@@ -301,16 +305,8 @@ pub fn position_translation(
     let window = windows.get_primary().unwrap();
     for (pos, mut transform) in q.iter_mut() {
         transform.translation = Vec3::new(
-            convert(
-                pos.x as f32,
-                window.width() as f32,
-                super::ARENA_WIDTH as f32,
-            ),
-            convert(
-                pos.y as f32,
-                window.height() as f32,
-                super::ARENA_HEIGHT as f32,
-            ),
+            convert(pos.x as f32, window.width() as f32, super::ARENA_WIDTH as f32),
+            convert(pos.y as f32, window.height() as f32, super::ARENA_HEIGHT as f32),
             0.0,
         );
     }
