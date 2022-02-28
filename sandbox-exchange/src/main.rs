@@ -3,12 +3,9 @@ use exchange::engine;
 
 use std::collections::HashMap;
 use std::time::SystemTime;
-//use engine::orderbook::{Orderbook, OrderSide, orders};
 pub use engine::domain::OrderSide;
 pub use engine::orderbook::{Orderbook, OrderProcessingResult, Success, Failed};
 pub use engine::orders;
-//use orders::OrderRequest;
-
 
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -45,11 +42,12 @@ fn main() {
     let btc_asset = BrokerAsset::BTC;
     let usd_asset = BrokerAsset::USD;
     //let eth_asset = BrokerAsset::ETH;
+    let btc_market = String::from("BTC-USD");
+    let eth_market = String::from("ETH-USD");
 
     let mut markets: HashMap<String, Orderbook<BrokerAsset>> = HashMap::new();
-    markets.insert(String::from("BTC-USD"), Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD));
-    markets.insert(String::from("ETH-USD"), Orderbook::new(BrokerAsset::ETH, BrokerAsset::USD));
-    markets.insert(String::from("ETH-BTC"), Orderbook::new(BrokerAsset::ETH, BrokerAsset::BTC));
+    markets.insert(btc_market, Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD));
+    markets.insert(eth_market, Orderbook::new(BrokerAsset::ETH, BrokerAsset::USD));
 
 
     /* create order requests
@@ -122,57 +120,13 @@ fn main() {
             ),
         ];
 
+    let btc_orderbook = markets.get_mut("BTC-USD").unwrap();
+
     // processing
     for order in request_list {
-        //match order {
-        //    OrderRequest::NewMarketOrder {
-        //        order_asset,
-        //        price_asset,
-        //        side,
-        //        qty,
-        //        ts: _ts,
-        //    } => {
-        //        let market = format!("{:?}-{:?}", order_asset, price_asset);
-
-        //        println!("NEW market order: {}, {:?}, {}", market, side, qty)
-        //    }
-
-        //    OrderRequest::NewLimitOrder {
-        //        order_asset,
-        //        price_asset,
-        //        side: _side,
-        //        price: _price,
-        //        qty: _qty,
-        //        ts: _ts,
-        //    } => {
-        //        let market = format!("{:?}-{:?}", order_asset, price_asset);
-
-        //        println!("New limit order: {}", market)
-        //    }
-
-        //    OrderRequest::AmendOrder {
-        //        id: _id,
-        //        side: _side,
-        //        price: _price,
-        //        qty: _qty,
-        //        ts: _ts,
-        //    } => {
-        //        println!("Amend order")
-        //    }
-
-        //    OrderRequest::CancelOrder { 
-        //        id: _id, 
-        //        side: _side 
-        //    } => {
-        //        println!("Cancel order")
-        //    }
-        //}
-        println!("Order => {:?}", &order);
-
-        let btc_orderbook = markets.get_mut("BTC-USD").unwrap();
-
+        println!("Processing => {:?}", &order);
         let res = btc_orderbook.process_order(order);
-        println!("Processing => {:?}\n", res);
+        println!("Results => {:?}", res);
 
         if let Some((bid, ask)) = btc_orderbook.current_spread() {
             println!("Spread => bid: {}, ask: {}\n", bid, ask);
