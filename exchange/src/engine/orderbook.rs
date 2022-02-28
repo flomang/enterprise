@@ -89,8 +89,8 @@ where
     /// Basic usage:
     /// ```
     //let mut orderbook = Orderbook::new(Asset::BTC, Asset::USD);
-    /// let result = orderbook.process_order(OrderRequest::MarketOrder{  });
-    /// assert_eq!(orderbook)
+    //let result = orderbook.process_order(OrderRequest::MarketOrder{  });
+    //assert_eq!(orderbook)
     /// ```
     // todo fix doc test!
     pub fn new(order_asset: Asset, price_asset: Asset) -> Self {
