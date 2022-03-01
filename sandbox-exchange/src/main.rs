@@ -1,14 +1,13 @@
-
-use exchange::engine;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{error, post, put, delete, web, App, HttpResponse, HttpServer, Responder};
+use futures::StreamExt;
 use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
 
-
-use std::collections::HashMap;
-use std::time::SystemTime;
-pub use engine::domain::OrderSide;
-pub use engine::orderbook::{Orderbook, OrderProcessingResult, Success, Failed};
-pub use engine::orders;
+//use std::time::SystemTime;
+use exchange::engine;
+use engine::domain::OrderSide;
+use engine::orderbook::{Orderbook, OrderProcessingResult, Success, Failed};
+use engine::orders;
 
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -23,79 +22,72 @@ pub enum BrokerAsset {
     USD,
 }
 
-
-// fn parse_asset(asset: &str) -> Option<BrokerAsset> {
-//     // please keep these organized while editing
-//     match asset {
-//         // sorted alpha
-//         "ADA" => Some(BrokerAsset::ADA),
-//         "BTC" => Some(BrokerAsset::BTC),
-//         "DOT" => Some(BrokerAsset::DOT),
-//         "ETH" => Some(BrokerAsset::ETH),
-//         "EUR" => Some(BrokerAsset::EUR),
-//         "GRIN" => Some(BrokerAsset::GRIN),
-//         "UNI" => Some(BrokerAsset::UNI),
-//         "USD" => Some(BrokerAsset::USD),
-//         _ => None,
-//     }
-// }
+#[derive(Serialize, Deserialize)]
+struct LimitOrder {
+    order_asset: String,
+    price_asset: String,
+    side: String,
+    price: f64,
+    qty: f64,
+}
 
 struct AppState {
     order_book: Mutex<Orderbook<BrokerAsset>>,
 }
 
-#[get("/")]
-async fn hello(book: web::Data<AppState>) -> impl Responder { 
-    HttpResponse::Ok().body("hello")
-}
+const MAX_SIZE: usize = 262_144; // max payload size is 256k
 
 #[post("/order")]
-async fn order(book: web::Data<AppState>) -> impl Responder {
-    let btc_asset = BrokerAsset::BTC;
-    let usd_asset = BrokerAsset::USD;
-    let no =  orders::new_limit_order_request(
-                     btc_asset,
-                     usd_asset,
-                     OrderSide::Bid,
-                     0.98,
-                     5.0,
-                     SystemTime::now()
-        );
-        let mut book = book.order_book.lock().unwrap(); // <- get counter's MutexGuard
-        let res = book.process_order(no);
-        println!("Results => {:?}", res);
+async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
+    // payload is a stream of Bytes objects
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        let chunk = chunk?;
+        // limit max size of in-memory payload
+        if (body.len() + chunk.len()) > MAX_SIZE {
+            return Err(error::ErrorBadRequest("overflow"));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    let obj = serde_json::from_slice::<LimitOrder>(&body)?;
 
-    HttpResponse::Ok().body("ok")
+    //let btc_asset = BrokerAsset::BTC;
+    //let usd_asset = BrokerAsset::USD;
+    //let no =  orders::new_limit_order_request(
+    //    btc_asset,
+    //    usd_asset,
+    //    OrderSide::Bid,
+    //    0.98,
+    //    5.0,
+    //    SystemTime::now());
+
+    //let mut book = state.order_book.lock().unwrap();
+    //let res = book.process_order(no);
+    //println!("Results => {:?}", res);
+    Ok(HttpResponse::Ok().json(obj)) //
 }
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
+#[put("/order")]
+async fn put_order(state: web::Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().body("put order")
+}
+
+#[delete("/order")]
+async fn delete_order(state: web::Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().body("delete order")
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let btc_asset = BrokerAsset::BTC;
-    let usd_asset = BrokerAsset::USD;
-    let eth_asset = BrokerAsset::ETH;
-    let btc_market = String::from("BTC-USD");
-    let eth_market = String::from("ETH-USD");
-
-    //let mut markets: HashMap<String, Orderbook<BrokerAsset>> = HashMap::new();
-    //markets.insert(btc_market, Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD));
-    //markets.insert(eth_market, Orderbook::new(BrokerAsset::ETH, BrokerAsset::USD));
-
-    //let btc_orderbook = markets.get_mut("BTC-USD").unwrap();
-    let btcusd = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
-    let data = web::Data::new(AppState {
-        order_book: Mutex::new(btcusd),
-    });
+    let order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
+    let data = web::Data::new(AppState {order_book: Mutex::new(order_book)});
 
     HttpServer::new( move || {
         App::new()
             .app_data(data.clone())
-            .service(hello)
-            .service(order)
-            .route("/hey", web::get().to(manual_hello))
+            .service(post_order)
+            .service(put_order)
+            .service(delete_order)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
