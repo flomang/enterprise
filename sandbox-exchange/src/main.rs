@@ -1,4 +1,4 @@
-use actix_web::{error, post, put, delete, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{error, post, patch, delete, web, App, HttpResponse, HttpServer, Responder};
 use futures::StreamExt;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
@@ -42,6 +42,21 @@ struct LimitOrder {
     side: String,
     price: f64,
     qty: f64,
+}
+
+
+#[derive(Serialize, Deserialize)]
+struct AmendOrder {
+    id: u64,
+    side: String,
+    price: f64,
+    qty: f64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CancelOrder {
+    id: u64,
+    side: String,
 }
 
 struct AppState {
@@ -90,14 +105,56 @@ async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> im
     }
 }
 
-#[put("/order")]
-async fn put_order(_state: web::Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().body("put order")
+#[patch("/orders/{id}")]
+async fn put_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        let chunk = chunk?;
+        // limit max size of in-memory payload
+        if (body.len() + chunk.len()) > MAX_SIZE {
+            return Err(error::ErrorBadRequest("overflow"));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    let req = serde_json::from_slice::<AmendOrder>(&body)?;
+    let side_opt = OrderSide::from_string(&req.side);
+    let id = path.into_inner();
+
+    match side_opt {
+        Some(side) =>  {
+            let order = orders::amend_order_request(id, side, req.price, req.qty, SystemTime::now());
+            let mut book = state.order_book.lock().unwrap();
+            let res = book.process_order(order);
+            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+        }
+        None => Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+    }
 }
 
-#[delete("/order")]
-async fn delete_order(_state: web::Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().body("delete order")
+#[delete("/orders/{id}")]
+async fn delete_order(path: web::Path<u64>, state: web::Data<AppState>,  mut payload: web::Payload) -> impl Responder {
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        let chunk = chunk?;
+        // limit max size of in-memory payload
+        if (body.len() + chunk.len()) > MAX_SIZE {
+            return Err(error::ErrorBadRequest("overflow"));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    let req = serde_json::from_slice::<CancelOrder>(&body)?;
+    let side_opt = OrderSide::from_string(&req.side);
+    let id = path.into_inner();
+
+    match side_opt {
+        Some(side) =>  {
+            let order = orders::limit_order_cancel_request(id, side);
+            let mut book = state.order_book.lock().unwrap();
+            let res = book.process_order(order);
+            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+        }
+        None => Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+    }
 }
 
 #[actix_web::main]
