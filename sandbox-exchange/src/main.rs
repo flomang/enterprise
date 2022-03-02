@@ -36,17 +36,16 @@ impl BrokerAsset {
 }
 
 #[derive(Serialize, Deserialize)]
-struct LimitOrder {
+struct OrderRequest {
     order_asset: String,
     price_asset: String,
     side: String,
-    price: f64,
+    price: Option<f64>,
     qty: f64,
 }
 
-
 #[derive(Serialize, Deserialize)]
-struct AmendOrder {
+struct AmendOrderRequest {
     id: u64,
     side: String,
     price: f64,
@@ -54,7 +53,7 @@ struct AmendOrder {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CancelOrder {
+struct CancelOrderRequest {
     id: u64,
     side: String,
 }
@@ -77,22 +76,33 @@ async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> im
         }
         body.extend_from_slice(&chunk);
     }
-    let req = serde_json::from_slice::<LimitOrder>(&body)?;
+    let req = serde_json::from_slice::<OrderRequest>(&body)?;
     let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
     let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
     let side_opt = OrderSide::from_string(&req.side);
+    let price_opt = req.price;
 
     match (order_asset_opt, price_asset_opt, side_opt) {
         (Some(order_asset), Some(price_asset), Some(side)) => {
-            let limit_order =  orders::new_limit_order_request(
-                order_asset,
-                price_asset,
-                side,
-                req.price,
-                req.qty,
-                SystemTime::now());
+            let order = if let Some(price) = price_opt {
+               orders::new_limit_order_request(
+                  order_asset,
+                  price_asset,
+                  side,
+                  price,
+                  req.qty,
+                  SystemTime::now())
+            } else {
+                orders::new_market_order_request(
+                   order_asset,
+                   price_asset,
+                   side,
+                   req.qty,
+                   SystemTime::now())
+            };
+
             let mut book = state.order_book.lock().unwrap();
-            let res = book.process_order(limit_order);
+            let res = book.process_order(order);
             //println!("Results => {:?}", res);
             Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
         }
@@ -106,7 +116,7 @@ async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> im
 }
 
 #[patch("/orders/{id}")]
-async fn put_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
+async fn patch_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
     let mut body = web::BytesMut::new();
     while let Some(chunk) = payload.next().await {
         let chunk = chunk?;
@@ -116,7 +126,7 @@ async fn put_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload
         }
         body.extend_from_slice(&chunk);
     }
-    let req = serde_json::from_slice::<AmendOrder>(&body)?;
+    let req = serde_json::from_slice::<AmendOrderRequest>(&body)?;
     let side_opt = OrderSide::from_string(&req.side);
     let id = path.into_inner();
 
@@ -142,7 +152,7 @@ async fn delete_order(path: web::Path<u64>, state: web::Data<AppState>,  mut pay
         }
         body.extend_from_slice(&chunk);
     }
-    let req = serde_json::from_slice::<CancelOrder>(&body)?;
+    let req = serde_json::from_slice::<CancelOrderRequest>(&body)?;
     let side_opt = OrderSide::from_string(&req.side);
     let id = path.into_inner();
 
@@ -166,7 +176,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(data.clone())
             .service(post_order)
-            .service(put_order)
+            .service(patch_order)
             .service(delete_order)
     })
     .bind(("127.0.0.1", 8080))?
