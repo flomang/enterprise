@@ -3,23 +3,36 @@ use futures::StreamExt;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
-//use std::time::SystemTime;
+use std::time::SystemTime;
 use exchange::engine;
 use engine::domain::OrderSide;
-use engine::orderbook::{Orderbook, OrderProcessingResult, Success, Failed};
+use engine::orderbook::Orderbook;
 use engine::orders;
 
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
-pub enum BrokerAsset {
+enum BrokerAsset {
     ADA,
     BTC,
     DOT,
     ETH,
-    EUR,
     GRIN,
-    UNI,
     USD,
+}
+
+impl BrokerAsset {
+    pub fn from_string(asset: &str) -> Option<BrokerAsset> {
+        let upper = asset.to_uppercase();
+        match upper.as_str() {
+            "ADA" => Some(BrokerAsset::ADA),
+            "BTC" => Some(BrokerAsset::BTC),
+            "DOT" => Some(BrokerAsset::DOT),
+            "ETH" => Some(BrokerAsset::ETH),
+            "GRIN" => Some(BrokerAsset::GRIN),
+            "USD" => Some(BrokerAsset::USD),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -37,7 +50,7 @@ struct AppState {
 
 const MAX_SIZE: usize = 262_144; // max payload size is 256k
 
-#[post("/order")]
+#[post("/orders")]
 async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
     // payload is a stream of Bytes objects
     let mut body = web::BytesMut::new();
@@ -49,31 +62,41 @@ async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> im
         }
         body.extend_from_slice(&chunk);
     }
-    let obj = serde_json::from_slice::<LimitOrder>(&body)?;
+    let req = serde_json::from_slice::<LimitOrder>(&body)?;
+    let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
+    let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
+    let side_opt = OrderSide::from_string(&req.side);
 
-    //let btc_asset = BrokerAsset::BTC;
-    //let usd_asset = BrokerAsset::USD;
-    //let no =  orders::new_limit_order_request(
-    //    btc_asset,
-    //    usd_asset,
-    //    OrderSide::Bid,
-    //    0.98,
-    //    5.0,
-    //    SystemTime::now());
-
-    //let mut book = state.order_book.lock().unwrap();
-    //let res = book.process_order(no);
-    //println!("Results => {:?}", res);
-    Ok(HttpResponse::Ok().json(obj)) //
+    match (order_asset_opt, price_asset_opt, side_opt) {
+        (Some(order_asset), Some(price_asset), Some(side)) => {
+            let limit_order =  orders::new_limit_order_request(
+                order_asset,
+                price_asset,
+                side,
+                req.price,
+                req.qty,
+                SystemTime::now());
+            let mut book = state.order_book.lock().unwrap();
+            let res = book.process_order(limit_order);
+            //println!("Results => {:?}", res);
+            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+        }
+        (None, _, _) => 
+            Ok(HttpResponse::BadRequest().json(format!("invalid order asset {}", req.order_asset))),
+        (_, None, _) => 
+            Ok(HttpResponse::BadRequest().json(format!("invalid price asset {}", req.price_asset))),
+        (_, _, None) => 
+            Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+    }
 }
 
 #[put("/order")]
-async fn put_order(state: web::Data<AppState>) -> impl Responder {
+async fn put_order(_state: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().body("put order")
 }
 
 #[delete("/order")]
-async fn delete_order(state: web::Data<AppState>) -> impl Responder {
+async fn delete_order(_state: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().body("delete order")
 }
 

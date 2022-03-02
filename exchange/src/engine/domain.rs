@@ -7,6 +7,16 @@ pub enum OrderSide {
     Ask,
 }
 
+impl OrderSide {
+    pub fn from_string(side: &str) -> Option<OrderSide> {
+        match side {
+            "bid" => Some(OrderSide::Bid),
+            "ask" => Some(OrderSide::Ask),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Order<Asset>
 where
