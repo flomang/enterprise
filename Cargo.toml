@@ -5,6 +5,7 @@ members = [
     "chat",
     "exchange",
     "iot-one",
+    "magician",
     "minigrep",
     "sandbox-bevy",
     "sandbox-exchange",
