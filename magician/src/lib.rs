@@ -1,6 +1,26 @@
 
+#[macro_use] extern crate diesel;
 extern crate chrono;
+extern crate dotenv;
+
 use chrono::prelude::*;
+use diesel::prelude::*;
+use diesel::pg::PgConnection;
+use dotenv::dotenv;
+use std::env;
+
+pub mod schema;
+pub mod models;
+
+
+pub fn establish_connection() -> PgConnection {
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    PgConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url))
+}
 
 struct Ritual {
     name: String,
@@ -12,6 +32,8 @@ impl Ritual {
         Ritual { name, times: Vec::new() }
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
