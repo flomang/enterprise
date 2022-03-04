@@ -36,6 +36,15 @@ pub fn create_ritual<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> 
         .expect("Error saving new post")
 }
 
+pub fn publish_ritual<'a>(conn: &PgConnection, id: i32) -> Ritual {
+    use schema::rituals::dsl::{rituals, published};
+
+    diesel::update(rituals.find(id))
+        .set(published.eq(true))
+        .get_result::<Ritual>(conn)
+        .expect(&format!("Unable to find ritual {}", id))
+}
+
 
 #[cfg(test)]
 mod tests {

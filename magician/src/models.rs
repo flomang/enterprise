@@ -1,6 +1,6 @@
 use super::schema::rituals;
 
-#[derive(Queryable)]
+#[derive(Debug, Queryable)]
 pub struct Ritual {
     pub id: i32,
     pub title: String,

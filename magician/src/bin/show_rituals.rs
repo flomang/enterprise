@@ -9,6 +9,12 @@ fn main() {
     use magician::schema::rituals::dsl::*;
 
     let connection = establish_connection();
+    let ritual = create_ritual(&connection, "Quit Weed", "Just need a good tbreak!");
+    println!("\nSaved draft with id {}", ritual.id);
+
+    let ritual_updated = publish_ritual(&connection, ritual.id);
+    println!("{:?}", ritual_updated);
+
     let results = rituals.filter(published.eq(true))
         .limit(5)
         .load::<Ritual>(&connection)
