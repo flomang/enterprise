@@ -6,7 +6,7 @@ extern crate dotenv;
 pub mod schema;
 pub mod models;
 
-use chrono::prelude::*;
+use chrono::prelude::{Utc};
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
@@ -25,9 +25,12 @@ pub fn establish_connection() -> PgConnection {
 pub fn create_ritual<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Ritual {
     use schema::rituals;
 
+    let now = Utc::now().naive_utc();
     let new_ritual = NewRitual {
         title: title,
         body: body,
+        created_on: now,
+        updated_on: now,
     };
 
     diesel::insert_into(rituals::table)

@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4"
-diesel = { version = "1.4.4", features = ["postgres"] }
+diesel = { version = "1.4.4", features = ["chrono", "postgres"] }
 dotenv = "0.15.0"
 
