@@ -36,7 +36,15 @@ pub fn create_ritual<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> 
         .expect("Error saving new post")
 }
 
-pub fn publish_ritual<'a>(conn: &PgConnection, id: i32) -> Ritual {
+pub fn delete_ritual<'a>(conn: &PgConnection, pattern: &'a str) -> usize {
+    use schema::rituals::dsl::{rituals, title};
+
+    diesel::delete(rituals.filter(title.like(pattern)))
+        .execute(conn)
+        .expect("Error deleting posts")
+}
+
+pub fn publish_ritual(conn: &PgConnection, id: i32) -> Ritual {
     use schema::rituals::dsl::{rituals, published};
 
     diesel::update(rituals.find(id))

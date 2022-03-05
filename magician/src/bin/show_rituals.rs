@@ -15,6 +15,9 @@ fn main() {
     let ritual_updated = publish_ritual(&connection, ritual.id);
     println!("{:?}", ritual_updated);
 
+    let deleted = delete_ritual(&connection, &ritual.title);
+    println!("num deleted: {}", deleted);
+
     let results = rituals.filter(published.eq(true))
         .limit(5)
         .load::<Ritual>(&connection)
