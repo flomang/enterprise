@@ -11,7 +11,7 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use std::env;
-use self::models::{NewRitual, Ritual};
+use self::models::*;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -35,6 +35,20 @@ pub fn create_ritual<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> 
 
     diesel::insert_into(rituals::table)
         .values(&new_ritual)
+        .get_result(conn)
+        .expect("Error saving new post")
+}
+
+pub fn create_ritual_time(conn: &PgConnection, ritual_id: i32, time: chrono::NaiveDateTime) -> RitualTime {
+    use schema::ritual_times;
+
+    let new_time = NewRitualTime {
+        ritual_id: ritual_id,
+        created_on: time,
+    };
+
+    diesel::insert_into(ritual_times::table)
+        .values(&new_time)
         .get_result(conn)
         .expect("Error saving new post")
 }

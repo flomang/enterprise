@@ -1,6 +1,7 @@
 extern crate magician;
 extern crate diesel;
 
+use chrono::prelude::{Utc};
 use self::magician::*;
 use self::models::*;
 use self::diesel::prelude::*;
@@ -15,6 +16,7 @@ fn main() {
     let ritual_updated = publish_ritual(&connection, ritual.id);
     println!("{:?}", ritual_updated);
 
+    create_ritual_time(&connection, ritual.id,  Utc::now().naive_utc());
     //let deleted = delete_ritual(&connection, &ritual.title);
     //println!("num deleted: {}", deleted);
 
