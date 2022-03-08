@@ -1,4 +1,12 @@
 table! {
+    invitations (id) {
+        id -> Uuid,
+        email -> Varchar,
+        expires_at -> Timestamp,
+    }
+}
+
+table! {
     ritual_times (id) {
         id -> Int4,
         ritual_id -> Int4,
@@ -17,9 +25,19 @@ table! {
     }
 }
 
+table! {
+    users (email) {
+        email -> Varchar,
+        hash -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
 joinable!(ritual_times -> rituals (ritual_id));
 
 allow_tables_to_appear_in_same_query!(
+    invitations,
     ritual_times,
     rituals,
+    users,
 );

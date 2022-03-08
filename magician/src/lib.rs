@@ -3,9 +3,13 @@
 extern crate chrono;
 extern crate dotenv;
 
+pub mod email_service;
+pub mod errors;
+pub mod invitation_handler;
 pub mod schema;
 pub mod models;
 pub mod pagination;
+pub mod utils;
 
 use chrono::prelude::{Utc};
 use diesel::prelude::*;
@@ -51,12 +55,6 @@ pub fn list_rituals(conn: &mut PgConnection, page: i64, pize_size: i64) -> (Vec<
             .expect("query fav failed");
 
     (results, total_pages)
-    //println!("Displaying {} rituals of total_pages: {}", results.len(), total_pages);
-    //for ritual in results {
-    //    println!("title: {}", ritual.title);
-    //    println!("body: {}", ritual.body);
-    //    println!("----------\n");
-    //}
 }
 
 pub fn create_ritual_time(conn: &PgConnection, ritual_id: i32, time: chrono::NaiveDateTime) -> RitualTime {
