@@ -1,7 +1,7 @@
+use super::chrono;
+use super::schema::*;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use serde::{Deserialize, Serialize};
-use super::schema::*;
-use super::chrono;
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -16,7 +16,7 @@ pub struct Ritual {
 }
 
 #[derive(Insertable)]
-#[table_name="rituals"]
+#[table_name = "rituals"]
 pub struct NewRitual<'a> {
     pub title: &'a str,
     pub body: &'a str,
@@ -32,7 +32,7 @@ pub struct RitualTime {
 }
 
 #[derive(Insertable)]
-#[table_name="ritual_times"]
+#[table_name = "ritual_times"]
 pub struct NewRitualTime {
     pub ritual_id: i32,
     pub created_on: chrono::NaiveDateTime,
