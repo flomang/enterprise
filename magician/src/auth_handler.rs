@@ -63,9 +63,15 @@ pub async fn login(
     }
 }
 
-pub async fn get_me(logged_user: LoggedUser) -> HttpResponse {
-    HttpResponse::Ok().json(logged_user)
+pub async fn get_me(id: Identity) -> HttpResponse {
+     // access request identity
+     if let Some(id) = id.identity() {
+        HttpResponse::Ok().json(id)
+    } else {
+        HttpResponse::Ok().json("Welcome Anonymous!")
+    }
 }
+
 /// Diesel query
 fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, ServiceError> {
     use crate::schema::users::dsl::{email, users};
