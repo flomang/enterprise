@@ -3,12 +3,14 @@
 extern crate chrono;
 extern crate dotenv;
 
+pub mod auth_handler;
 pub mod email_service;
 pub mod errors;
 pub mod invitation_handler;
-pub mod schema;
 pub mod models;
 pub mod pagination;
+pub mod register_handler;
+pub mod schema;
 pub mod utils;
 
 use chrono::prelude::{Utc};
