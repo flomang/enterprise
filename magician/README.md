@@ -1,7 +1,6 @@
 ### magician 
 
 To record ritual instances. An example would be to measure weed intake with the intent of coming up with a schedule to quit.
-sssssss
 
 ### migrations
 

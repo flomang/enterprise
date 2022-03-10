@@ -26,7 +26,8 @@ table! {
 }
 
 table! {
-    users (email) {
+    users (id) {
+        id -> Uuid,
         email -> Varchar,
         hash -> Varchar,
         created_at -> Timestamp,
