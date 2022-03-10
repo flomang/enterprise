@@ -7,7 +7,8 @@ pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[derive(Debug, Queryable)]
 pub struct Ritual {
-    pub id:  uuid::Uuid,
+    pub id: uuid::Uuid,
+    pub user_id: uuid::Uuid,
     pub title: String,
     pub body: String,
     pub published: bool,
@@ -18,6 +19,7 @@ pub struct Ritual {
 #[derive(Insertable)]
 #[table_name = "rituals"]
 pub struct NewRitual<'a> {
+    pub user_id: uuid::Uuid,
     pub title: &'a str,
     pub body: &'a str,
     pub created_at: chrono::NaiveDateTime,
@@ -26,15 +28,15 @@ pub struct NewRitual<'a> {
 
 #[derive(Debug, Queryable)]
 pub struct RitualTime {
-    pub id:  uuid::Uuid,
-    pub ritual_id:  uuid::Uuid,
+    pub id: uuid::Uuid,
+    pub ritual_id: uuid::Uuid,
     pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]
 #[table_name = "ritual_times"]
 pub struct NewRitualTime {
-    pub ritual_id:  uuid::Uuid,
+    pub ritual_id: uuid::Uuid,
     pub created_at: chrono::NaiveDateTime,
 }
 
@@ -50,7 +52,7 @@ pub struct User {
 
 impl User {
     pub fn from_details<S: Into<String>, T: Into<String>>(email: S, pwd: T) -> Self {
-        let now = chrono::Local::now().naive_local(); 
+        let now = chrono::Local::now().naive_local();
         User {
             id: uuid::Uuid::new_v4(),
             email: email.into(),
@@ -91,7 +93,9 @@ pub struct SlimUser {
 
 impl From<User> for SlimUser {
     fn from(user: User) -> Self {
-        SlimUser { id: user.id, email: user.email }
+        SlimUser {
+            id: user.id,
+            email: user.email,
+        }
     }
 }
-
