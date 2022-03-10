@@ -8,20 +8,21 @@ table! {
 
 table! {
     ritual_times (id) {
-        id -> Int4,
-        ritual_id -> Int4,
-        created_on -> Timestamp,
+        id -> Uuid,
+        ritual_id -> Uuid,
+        created_at -> Timestamp,
     }
 }
 
 table! {
     rituals (id) {
-        id -> Int4,
+        id -> Uuid,
+        user_id -> Uuid,
         title -> Varchar,
         body -> Text,
         published -> Bool,
-        created_on -> Timestamp,
-        updated_on -> Timestamp,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
@@ -31,10 +32,12 @@ table! {
         email -> Varchar,
         hash -> Varchar,
         created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
 joinable!(ritual_times -> rituals (ritual_id));
+joinable!(rituals -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     invitations,

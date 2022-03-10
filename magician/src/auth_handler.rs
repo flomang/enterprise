@@ -65,8 +65,11 @@ pub async fn login(
 
 pub async fn get_me(id: Identity) -> HttpResponse {
      // access request identity
-     if let Some(id) = id.identity() {
-        HttpResponse::Ok().json(id)
+     if let Some(str) = id.identity() {
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        println!("user: {:?}", user);
+
+        HttpResponse::Ok().json(str)
     } else {
         HttpResponse::Ok().json("Welcome Anonymous!")
     }

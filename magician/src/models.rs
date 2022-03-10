@@ -7,12 +7,12 @@ pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[derive(Debug, Queryable)]
 pub struct Ritual {
-    pub id: i32,
+    pub id:  uuid::Uuid,
     pub title: String,
     pub body: String,
     pub published: bool,
-    pub created_on: chrono::NaiveDateTime,
-    pub updated_on: chrono::NaiveDateTime,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]
@@ -20,22 +20,22 @@ pub struct Ritual {
 pub struct NewRitual<'a> {
     pub title: &'a str,
     pub body: &'a str,
-    pub created_on: chrono::NaiveDateTime,
-    pub updated_on: chrono::NaiveDateTime,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Queryable)]
 pub struct RitualTime {
-    pub id: i32,
-    pub ritual_id: i32,
-    pub created_on: chrono::NaiveDateTime,
+    pub id:  uuid::Uuid,
+    pub ritual_id:  uuid::Uuid,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]
 #[table_name = "ritual_times"]
 pub struct NewRitualTime {
-    pub ritual_id: i32,
-    pub created_on: chrono::NaiveDateTime,
+    pub ritual_id:  uuid::Uuid,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
@@ -45,15 +45,18 @@ pub struct User {
     pub email: String,
     pub hash: String,
     pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 impl User {
     pub fn from_details<S: Into<String>, T: Into<String>>(email: S, pwd: T) -> Self {
+        let now = chrono::Local::now().naive_local(); 
         User {
             id: uuid::Uuid::new_v4(),
             email: email.into(),
             hash: pwd.into(),
-            created_at: chrono::Local::now().naive_local(),
+            created_at: now,
+            updated_at: now,
         }
     }
 }
