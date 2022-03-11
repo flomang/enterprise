@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
-#[derive(Debug, Queryable)]
+#[derive(Debug, Insertable, Queryable, Serialize)]
+#[table_name = "rituals"]
 pub struct Ritual {
     pub id: uuid::Uuid,
     pub user_id: uuid::Uuid,
@@ -16,15 +17,16 @@ pub struct Ritual {
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Insertable)]
-#[table_name = "rituals"]
-pub struct NewRitual<'a> {
-    pub user_id: uuid::Uuid,
-    pub title: &'a str,
-    pub body: &'a str,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
-}
+//#[derive(Insertable)]
+//#[table_name = "rituals"]
+//pub struct NewRitual<'a> {
+//    pub id: uuid::Uuid,
+//    pub user_id: uuid::Uuid,
+//    pub title: &'a str,
+//    pub body: &'a str,
+//    pub created_at: chrono::NaiveDateTime,
+//    pub updated_at: chrono::NaiveDateTime,
+//}
 
 #[derive(Debug, Queryable)]
 pub struct RitualTime {

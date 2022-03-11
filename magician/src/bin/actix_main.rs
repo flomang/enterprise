@@ -9,6 +9,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use magician::auth_handler;
 use magician::register_handler;
 use magician::invitation_handler;
+use magician::ritual_handler;
 use magician::models;
 use magician::utils;
 
@@ -60,6 +61,10 @@ async fn main() -> std::io::Result<()> {
                             .route(web::post().to(auth_handler::login))
                             .route(web::delete().to(auth_handler::logout))
                             .route(web::get().to(auth_handler::get_me)),
+                    )
+                    .service(
+                        web::resource("/rituals")
+                            .route(web::post().to(ritual_handler::create_ritual)),
                     ),
             )
     })

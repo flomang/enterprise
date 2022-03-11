@@ -10,6 +10,7 @@ pub mod invitation_handler;
 pub mod models;
 pub mod pagination;
 pub mod register_handler;
+pub mod ritual_handler;
 pub mod schema;
 pub mod utils;
 
@@ -28,28 +29,28 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_ritual<'a>(
-    conn: &PgConnection,
-    user_id: uuid::Uuid,
-    title: &'a str,
-    body: &'a str,
-) -> Ritual {
-    use schema::rituals;
+// pub fn create_ritual<'a>(
+//     conn: &PgConnection,
+//     user_id: uuid::Uuid,
+//     title: &'a str,
+//     body: &'a str,
+// ) -> Ritual {
+//     use schema::rituals;
 
-    let now = Utc::now().naive_utc();
-    let new_ritual = NewRitual {
-        user_id: user_id,
-        title: title,
-        body: body,
-        created_at: now,
-        updated_at: now,
-    };
+//     let now = Utc::now().naive_utc();
+//     let new_ritual = NewRitual {
+//         user_id: user_id,
+//         title: title,
+//         body: body,
+//         created_at: now,
+//         updated_at: now,
+//     };
 
-    diesel::insert_into(rituals::table)
-        .values(&new_ritual)
-        .get_result(conn)
-        .expect("Error saving new post")
-}
+//     diesel::insert_into(rituals::table)
+//         .values(&new_ritual)
+//         .get_result(conn)
+//         .expect("Error saving new post")
+// }
 
 pub fn list_rituals(
     conn: &mut PgConnection,
