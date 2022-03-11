@@ -64,7 +64,8 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::resource("/rituals")
-                            .route(web::post().to(ritual_handler::create_ritual)),
+                            .route(web::post().to(ritual_handler::create_ritual))
+                            .route(web::get().to(ritual_handler::list_rituals)),
                     ),
             )
     })

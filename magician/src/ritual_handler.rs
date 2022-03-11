@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
 use diesel::PgConnection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::errors::ServiceError;
 use crate::models::{Pool, Ritual, SlimUser};
@@ -42,6 +42,56 @@ pub async fn create_ritual(
             .expect("Error saving new post");
         let json = serde_json::to_string(&ritual).unwrap();
 
+        Ok(HttpResponse::Ok().json(json))
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct PageInfo {
+    page: i64,
+    page_size: i64,
+}
+
+#[derive(Serialize)]
+struct RitualPage {
+    page: i64,
+    page_size: i64,
+    rituals: Vec<Ritual>,
+    total: i64,
+}
+
+pub async fn list_rituals(
+    info: web::Query<PageInfo>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    use crate::pagination::*;
+
+    if let Some(str) = id.identity() {
+        use crate::schema::rituals::dsl::*;
+
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        let params = info.into_inner();
+        let mut conn  = pool.get().unwrap();
+
+        let (results, total_pages) = rituals
+            .filter(user_id.eq(&user.id))
+            .order_by(created_at)
+            .paginate(params.page)
+            .per_page(params.page_size)
+            .load_and_count_pages::<Ritual>(&mut conn)
+            .expect("query fav failed");
+
+        let page = RitualPage {
+            page: params.page,
+            page_size: params.page_size,
+            rituals: results,
+            total: total_pages,
+        };
+
+        let json = serde_json::to_string(&page).unwrap();
         Ok(HttpResponse::Ok().json(json))
     } else {
         Err(ServiceError::Unauthorized)
