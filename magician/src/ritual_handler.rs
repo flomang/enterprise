@@ -74,7 +74,7 @@ pub async fn list_rituals(
 
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let params = info.into_inner();
-        let mut conn  = pool.get().unwrap();
+        let mut conn = pool.get().unwrap();
 
         let (results, total_pages) = rituals
             .filter(user_id.eq(&user.id))
@@ -93,6 +93,29 @@ pub async fn list_rituals(
 
         let json = serde_json::to_string(&page).unwrap();
         Ok(HttpResponse::Ok().json(json))
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
+pub async fn delete_ritual(
+    path: web::Path<String>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(str) = id.identity() {
+        use crate::schema::rituals::dsl::*;
+
+        let _user: SlimUser = serde_json::from_str(&str).unwrap();
+        let rid = path.into_inner();
+        let rid = uuid::Uuid::parse_str(&rid).unwrap();
+        let conn = pool.get().unwrap();
+
+        let results = diesel::delete(rituals.filter(id.eq(&rid)))
+            .execute(&conn)
+            .expect("Error deleting posts");
+
+        Ok(HttpResponse::Ok().json(results))
     } else {
         Err(ServiceError::Unauthorized)
     }

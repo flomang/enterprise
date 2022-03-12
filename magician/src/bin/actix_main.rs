@@ -66,6 +66,10 @@ async fn main() -> std::io::Result<()> {
                         web::resource("/rituals")
                             .route(web::post().to(ritual_handler::create_ritual))
                             .route(web::get().to(ritual_handler::list_rituals)),
+                    )
+                    .service(
+                        web::resource("/rituals/{ritual_id}")
+                            .route(web::delete().to(ritual_handler::delete_ritual)),
                     ),
             )
     })
