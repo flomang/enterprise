@@ -123,3 +123,33 @@ pub async fn delete_ritual(
         Err(ServiceError::Unauthorized)
     }
 }
+
+#[get("/{id}")]
+pub async fn get_ritual(
+    path: web::Path<String>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(str) = id.identity() {
+        use crate::schema::rituals::dsl::*;
+
+        let _user: SlimUser = serde_json::from_str(&str).unwrap();
+        let rid = path.into_inner();
+        let rid = uuid::Uuid::parse_str(&rid).unwrap();
+        let conn = pool.get().unwrap();
+
+        let results = rituals
+            .filter(id.eq(&rid))
+            .load::<Ritual>(&conn)
+            .expect("could not find ritual by id");
+
+        if results.len() > 0 {
+            let json = serde_json::to_string(&results[0]).unwrap();
+            Ok(HttpResponse::Ok().json(json))
+        } else {
+            Ok(HttpResponse::NotFound().json(""))
+        }
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
