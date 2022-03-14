@@ -1,4 +1,4 @@
-use actix_web::{error::BlockingError, web, HttpResponse};
+use actix_web::{error::BlockingError, post, web, HttpResponse};
 use diesel::prelude::*;
 use serde::Deserialize;
 
@@ -11,6 +11,7 @@ pub struct UserData {
     pub password: String,
 }
 
+#[post("/{id}")]
 pub async fn register_user(
     invitation_id: web::Path<String>,
     user_data: web::Json<UserData>,

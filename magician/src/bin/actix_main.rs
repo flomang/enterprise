@@ -49,25 +49,20 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .service(
-                        web::resource("/invitation")
-                            .route(web::post().to(invitation_handler::post_invitation)),
+                        web::scope("/invitations").service(invitation_handler::create_invitation),
                     )
+                    .service(web::scope("/register").service(register_handler::register_user))
                     .service(
-                        web::resource("/register/{invitation_id}")
-                            .route(web::post().to(register_handler::register_user)),
-                    )
-                    .service(
-                        web::resource("/auth")
-                            .route(web::post().to(auth_handler::login))
-                            .route(web::delete().to(auth_handler::logout))
-                            .route(web::get().to(auth_handler::get_me)),
+                        web::scope("/auth")
+                            .service(auth_handler::login)
+                            .service(auth_handler::logout),
                     )
                     .service(
                         web::scope("/rituals")
-                                .service(ritual_handler::create_ritual)
-                                .service(ritual_handler::list_rituals)
-                                .service(ritual_handler::delete_ritual)
-                                .service(ritual_handler::get_ritual),
+                            .service(ritual_handler::create_ritual)
+                            .service(ritual_handler::list_rituals)
+                            .service(ritual_handler::delete_ritual)
+                            .service(ritual_handler::get_ritual),
                     ),
             )
     })

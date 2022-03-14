@@ -1,6 +1,6 @@
 use actix_identity::Identity;
 use actix_web::{
-    dev::Payload, error::BlockingError, web, Error, FromRequest, HttpRequest, HttpResponse,
+    dev::Payload, error::BlockingError, get, post, web, Error, FromRequest, HttpRequest, HttpResponse,
 };
 use diesel::prelude::*;
 use diesel::PgConnection;
@@ -38,11 +38,13 @@ impl FromRequest for LoggedUser {
     }
 }
 
+#[post("/logout")]
 pub async fn logout(id: Identity) -> HttpResponse {
     id.forget();
     HttpResponse::Ok().finish()
 }
 
+#[post("/login")]
 pub async fn login(
     auth_data: web::Json<AuthData>,
     id: Identity,
@@ -63,6 +65,7 @@ pub async fn login(
     }
 }
 
+#[get("/")]
 pub async fn get_me(id: Identity) -> HttpResponse {
      // access request identity
      if let Some(str) = id.identity() {
