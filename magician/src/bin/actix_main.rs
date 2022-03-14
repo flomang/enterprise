@@ -7,10 +7,10 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 use magician::auth_handler;
-use magician::register_handler;
 use magician::invitation_handler;
-use magician::ritual_handler;
 use magician::models;
+use magician::register_handler;
+use magician::ritual_handler;
 use magician::utils;
 
 #[actix_rt::main]
@@ -63,13 +63,10 @@ async fn main() -> std::io::Result<()> {
                             .route(web::get().to(auth_handler::get_me)),
                     )
                     .service(
-                        web::resource("/rituals")
-                            .route(web::post().to(ritual_handler::create_ritual))
-                            .route(web::get().to(ritual_handler::list_rituals)),
-                    )
-                    .service(
-                        web::resource("/rituals/{ritual_id}")
-                            .route(web::delete().to(ritual_handler::delete_ritual)),
+                        web::scope("/rituals")
+                                .service(ritual_handler::create_ritual)
+                                .service(ritual_handler::list_rituals)
+                                .service(ritual_handler::delete_ritual),
                     ),
             )
     })

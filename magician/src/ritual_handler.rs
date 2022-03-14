@@ -1,5 +1,5 @@
 use actix_identity::Identity;
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
 use diesel::PgConnection;
@@ -14,6 +14,7 @@ pub struct RitualData {
     pub body: String,
 }
 
+#[post("")]
 pub async fn create_ritual(
     ritual_data: web::Json<RitualData>,
     id: Identity,
@@ -62,6 +63,7 @@ struct RitualPage {
     total: i64,
 }
 
+#[get("")]
 pub async fn list_rituals(
     info: web::Query<PageInfo>,
     id: Identity,
@@ -98,6 +100,7 @@ pub async fn list_rituals(
     }
 }
 
+#[delete("/{id}")]
 pub async fn delete_ritual(
     path: web::Path<String>,
     id: Identity,
