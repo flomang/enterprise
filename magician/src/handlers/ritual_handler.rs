@@ -6,7 +6,7 @@ use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::errors::ServiceError;
-use crate::models::{Pool, Ritual, SlimUser};
+use crate::models::{Pool, Ritual, NewRitualTime, RitualTime, SlimUser};
 
 #[derive(Debug, Deserialize)]
 pub struct RitualData {
@@ -151,5 +151,74 @@ pub async fn get_ritual(
         }
     } else {
         Err(ServiceError::Unauthorized)
+    }
+}
+
+pub fn create_ritual_time(
+    conn: &PgConnection,
+    ritual_id: uuid::Uuid,
+    time: chrono::NaiveDateTime,
+) -> RitualTime {
+    use crate::schema::ritual_times;
+
+    let new_time = NewRitualTime {
+        ritual_id: ritual_id,
+        created_at: time,
+    };
+
+    diesel::insert_into(ritual_times::table)
+        .values(&new_time)
+        .get_result(conn)
+        .expect("Error saving new post")
+}
+
+
+pub fn publish_ritual(conn: &PgConnection, id: uuid::Uuid) -> Ritual {
+    use crate::schema::rituals::dsl::{published, rituals};
+
+    diesel::update(rituals.find(id))
+        .set(published.eq(true))
+        .get_result::<Ritual>(conn)
+        .expect(&format!("Unable to find ritual {}", id))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::establish_connection;
+
+    #[test]
+    fn test_ritual() {
+        let mut conn = establish_connection();
+        //create_ritual(&conn, "Quit Weed1", "one");
+        //create_ritual(&conn, "Quit Weed2", "two");
+        //create_ritual(&conn, "Quit Weed3", "three");
+        //create_ritual(&conn, "Quit Weed4", "four");
+        //create_ritual(&conn, "Quit Weed5", "five");
+        //create_ritual(&conn, "Quit Weed6", "six");
+        // let page_size = 3;
+        // let (results, total_pages) = list_rituals(&mut conn, 2, page_size);
+        // println!(
+        //     "Displaying {} of total: {}",
+        //     results.len(),
+        //     (total_pages * page_size)
+        // );
+        // for ritual in results {
+        //     println!("title: {}", ritual.title);
+        //     println!("body: {}", ritual.body);
+        //     println!("----------\n");
+        // }
+
+        // let mut weed = Ritual::new(String::from("Smoking Weed"));
+
+        // weed.times = vec![
+        //     Utc.ymd(2022, 3, 2).and_hms(12, 30, 11),
+        //     Utc.ymd(2022, 3, 2).and_hms(1, 30, 10),
+        //     Utc.ymd(2022, 3, 2).and_hms(17, 40, 10),
+        // ];
+
+        // weed.times.push( Utc.ymd(2022, 3, 2).and_hms(17, 40, 10));
+
+        //assert_eq!(5, weed.times.len());
+        assert_eq!(true, true);
     }
 }
