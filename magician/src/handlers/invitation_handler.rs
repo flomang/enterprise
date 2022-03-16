@@ -3,7 +3,7 @@ use diesel::{prelude::*, PgConnection};
 use serde::Deserialize;
 
 //use crate::email_service::send_invitation;
-use crate::errors::ServiceError;
+use crate::utils::errors::ServiceError;
 use crate::models::{Invitation, Pool};
 
 #[derive(Deserialize)]
@@ -31,7 +31,7 @@ pub async fn create_invitation(
 fn insert_invitation_and_send(
     eml: String,
     pool: web::Data<Pool>,
-) -> Result<(), crate::errors::ServiceError> {
+) -> Result<(), ServiceError> {
     let _invitation = dbg!(query(eml, pool)?);
     
     Ok(())
@@ -39,7 +39,7 @@ fn insert_invitation_and_send(
 }
 
 /// Diesel query
-fn query(eml: String, pool: web::Data<Pool>) -> Result<Invitation, crate::errors::ServiceError> {
+fn query(eml: String, pool: web::Data<Pool>) -> Result<Invitation, ServiceError> {
     use crate::schema::invitations::dsl::invitations;
 
     let new_invitation: Invitation = eml.into();

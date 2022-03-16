@@ -7,7 +7,7 @@ use diesel::PgConnection;
 use futures::future::{err, ok, Ready};
 use serde::Deserialize;
 
-use crate::errors::ServiceError;
+use crate::utils::errors::ServiceError;
 use crate::models::{Pool, SlimUser, User};
 use crate::utils::verify;
 

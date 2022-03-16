@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::errors::ServiceError;
+use crate::utils::errors::ServiceError;
 use crate::models::{Pool, Ritual, SlimUser};
 
 #[derive(Debug, Deserialize)]
@@ -69,7 +69,7 @@ pub async fn list_rituals(
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use crate::pagination::*;
+    use crate::utils::pagination::*;
 
     if let Some(str) = id.identity() {
         use crate::schema::rituals::dsl::*;

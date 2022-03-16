@@ -3,19 +3,14 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 
-pub mod auth_handler;
+pub mod handlers;
 pub mod email_service;
-pub mod errors;
-pub mod invitation_handler;
 pub mod models;
-pub mod pagination;
-pub mod register_handler;
-pub mod ritual_handler;
 pub mod schema;
 pub mod utils;
 
 use self::models::*;
-use self::pagination::*;
+use self::utils::pagination::*;
 use chrono::prelude::Utc;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

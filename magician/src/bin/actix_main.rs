@@ -6,11 +6,8 @@ use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-use magician::auth_handler;
-use magician::invitation_handler;
+use magician::handlers::{auth_handler, invitation_handler, register_handler, ritual_handler};
 use magician::models;
-use magician::register_handler;
-use magician::ritual_handler;
 use magician::utils;
 
 #[actix_rt::main]
