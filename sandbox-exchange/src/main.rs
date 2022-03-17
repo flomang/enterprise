@@ -1,4 +1,4 @@
-use actix_web::{error, post, patch, delete, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{error, post, patch, delete, web, App, Error, HttpResponse, HttpServer, Result, Responder};
 use futures::StreamExt;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ impl BrokerAsset {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct OrderRequest {
     order_asset: String,
     price_asset: String,
@@ -65,18 +65,7 @@ struct AppState {
 const MAX_SIZE: usize = 262_144; // max payload size is 256k
 
 #[post("/orders")]
-async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
-    // payload is a stream of Bytes objects
-    let mut body = web::BytesMut::new();
-    while let Some(chunk) = payload.next().await {
-        let chunk = chunk?;
-        // limit max size of in-memory payload
-        if (body.len() + chunk.len()) > MAX_SIZE {
-            return Err(error::ErrorBadRequest("overflow"));
-        }
-        body.extend_from_slice(&chunk);
-    }
-    let req = serde_json::from_slice::<OrderRequest>(&body)?;
+async fn post_order(state: web::Data<AppState>, req: web::Json<OrderRequest>) -> Result<impl Responder> {
     let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
     let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
     let side_opt = OrderSide::from_string(&req.side);
@@ -103,30 +92,21 @@ async fn post_order(state: web::Data<AppState>, mut payload: web::Payload) -> im
 
             let mut book = state.order_book.lock().unwrap();
             let res = book.process_order(order);
-            //println!("Results => {:?}", res);
-            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+            println!("Results => {:?}", res);
+            Ok(web::Json("ding")) 
         }
         (None, _, _) => 
-            Ok(HttpResponse::BadRequest().json(format!("invalid order asset {}", req.order_asset))),
+
+            Ok(web::Json("bad order asset")),
         (_, None, _) => 
-            Ok(HttpResponse::BadRequest().json(format!("invalid price asset {}", req.price_asset))),
+            Ok(web::Json("bad price asset")),
         (_, _, None) => 
-            Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+            Ok(web::Json("bad side")),
     }
 }
 
 #[patch("/orders/{id}")]
-async fn patch_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
-    let mut body = web::BytesMut::new();
-    while let Some(chunk) = payload.next().await {
-        let chunk = chunk?;
-        // limit max size of in-memory payload
-        if (body.len() + chunk.len()) > MAX_SIZE {
-            return Err(error::ErrorBadRequest("overflow"));
-        }
-        body.extend_from_slice(&chunk);
-    }
-    let req = serde_json::from_slice::<AmendOrderRequest>(&body)?;
+async fn patch_order(path: web::Path<u64>, state: web::Data<AppState>, req: web::Json<AmendOrderRequest>) -> Result<impl Responder> {
     let side_opt = OrderSide::from_string(&req.side);
     let id = path.into_inner();
 
@@ -135,24 +115,14 @@ async fn patch_order(path: web::Path<u64>, state: web::Data<AppState>, mut paylo
             let order = orders::amend_order_request(id, side, req.price, req.qty, SystemTime::now());
             let mut book = state.order_book.lock().unwrap();
             let res = book.process_order(order);
-            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+            Ok(web::Json(format!("{:?}", res))) //
         }
-        None => Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+        None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
     }
 }
 
 #[delete("/orders/{id}")]
-async fn delete_order(path: web::Path<u64>, state: web::Data<AppState>, mut payload: web::Payload) -> impl Responder {
-    let mut body = web::BytesMut::new();
-    while let Some(chunk) = payload.next().await {
-        let chunk = chunk?;
-        // limit max size of in-memory payload
-        if (body.len() + chunk.len()) > MAX_SIZE {
-            return Err(error::ErrorBadRequest("overflow"));
-        }
-        body.extend_from_slice(&chunk);
-    }
-    let req = serde_json::from_slice::<CancelOrderRequest>(&body)?;
+async fn delete_order(path: web::Path<u64>, state: web::Data<AppState>, req: web::Json<CancelOrderRequest>) -> Result<impl Responder> {
     let side_opt = OrderSide::from_string(&req.side);
     let id = path.into_inner();
 
@@ -161,9 +131,9 @@ async fn delete_order(path: web::Path<u64>, state: web::Data<AppState>, mut payl
             let order = orders::limit_order_cancel_request(id, side);
             let mut book = state.order_book.lock().unwrap();
             let res = book.process_order(order);
-            Ok(HttpResponse::Ok().json(format!("{:?}", res))) //
+            Ok(web::Json("what now".to_string())) 
         }
-        None => Ok(HttpResponse::BadRequest().json("side must be 'bid' or 'ask'")),
+        None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
     }
 }
 
