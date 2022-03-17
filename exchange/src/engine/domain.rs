@@ -1,7 +1,8 @@
 
 use std::fmt::Debug;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum OrderSide {
     Bid,
     Ask,
@@ -31,7 +32,7 @@ where
 }
 
 
-#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum OrderType {
     Market,
     Limit,

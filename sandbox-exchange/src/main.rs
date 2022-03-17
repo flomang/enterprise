@@ -1,6 +1,4 @@
-use actix_web::{
-    delete, patch, post, web, App, HttpServer, Responder, Result,
-};
+use actix_web::{delete, patch, post, web, App, HttpServer, Responder, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
@@ -73,35 +71,48 @@ async fn post_order(
     let side_opt = OrderSide::from_string(&req.side);
     let price_opt = req.price;
 
-    match (order_asset_opt, price_asset_opt, side_opt) {
-        (Some(order_asset), Some(price_asset), Some(side)) => {
-            let order = if let Some(price) = price_opt {
-                orders::new_limit_order_request(
-                    order_asset,
-                    price_asset,
-                    side,
-                    price,
-                    req.qty,
-                    SystemTime::now(),
-                )
-            } else {
-                orders::new_market_order_request(
-                    order_asset,
-                    price_asset,
-                    side,
-                    req.qty,
-                    SystemTime::now(),
-                )
-            };
+    let mut errors: Vec<String> = vec![];
+    if order_asset_opt.is_none() {
+        errors.push("bad order asset".to_string());
+    }
+    if price_asset_opt.is_none() {
+        errors.push("bad price asset".to_string());
+    }
+    if side_opt.is_none() {
+        errors.push("side must be bid or ask".to_string());
+    }
 
-            let mut book = state.order_book.lock().unwrap();
-            let res = book.process_order(order);
-            println!("Results => {:?}", res);
-            Ok(web::Json("ding"))
+    let order = match (order_asset_opt, price_asset_opt, side_opt, price_opt) {
+        (Some(order_asset), Some(price_asset), Some(side), Some(price)) => {
+            Some(orders::new_limit_order_request(
+                order_asset,
+                price_asset,
+                side,
+                price,
+                req.qty,
+                SystemTime::now(),
+            ))
         }
-        (None, _, _) => Ok(web::Json("bad order asset")),
-        (_, None, _) => Ok(web::Json("bad price asset")),
-        (_, _, None) => Ok(web::Json("bad side")),
+        (Some(order_asset), Some(price_asset), Some(side), None) => {
+            Some(orders::new_market_order_request(
+                order_asset,
+                price_asset,
+                side,
+                req.qty,
+                SystemTime::now(),
+            ))
+        }
+        _ => None,
+    };
+
+    if let Some(o) = order {
+        let mut book = state.order_book.lock().unwrap();
+        let res = book.process_order(o);
+        let value = serde_json::json!(res);
+        Ok(web::Json(value))
+    } else {
+        let value = serde_json::json!(errors);
+        Ok(web::Json(value))
     }
 }
 
@@ -120,7 +131,7 @@ async fn patch_order(
                 orders::amend_order_request(id, side, req.price, req.qty, SystemTime::now());
             let mut book = state.order_book.lock().unwrap();
             let res = book.process_order(order);
-            Ok(web::Json(format!("{:?}", res))) //
+            Ok(web::Json(format!("{:?}", res)))
         }
         None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
     }

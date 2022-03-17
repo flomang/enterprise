@@ -1,7 +1,7 @@
 
 use std::time::SystemTime;
 use std::fmt::Debug;
-
+use serde::{Deserialize, Serialize};
 
 use super::domain::{Order, OrderSide, OrderType};
 use super::orders::OrderRequest;
@@ -19,7 +19,7 @@ const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Success {
     Accepted {
         id: u64,
@@ -56,7 +56,7 @@ pub enum Success {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Failed {
     ValidationFailed(String),
     DuplicateOrderID(u64),
