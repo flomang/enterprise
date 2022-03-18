@@ -2,37 +2,13 @@ use actix_web::{delete, patch, post, web, App, HttpServer, Responder, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
+use exchange::engine;
 use engine::domain::OrderSide;
 use engine::orderbook::Orderbook;
 use engine::orders;
-use exchange::engine;
 use std::time::SystemTime;
+use sandbox_exchange::BrokerAsset;
 
-// please keep these organized while editing
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-enum BrokerAsset {
-    ADA,
-    BTC,
-    DOT,
-    ETH,
-    GRIN,
-    USD,
-}
-
-impl BrokerAsset {
-    pub fn from_string(asset: &str) -> Option<BrokerAsset> {
-        let upper = asset.to_uppercase();
-        match upper.as_str() {
-            "ADA" => Some(BrokerAsset::ADA),
-            "BTC" => Some(BrokerAsset::BTC),
-            "DOT" => Some(BrokerAsset::DOT),
-            "ETH" => Some(BrokerAsset::ETH),
-            "GRIN" => Some(BrokerAsset::GRIN),
-            "USD" => Some(BrokerAsset::USD),
-            _ => None,
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OrderRequest {
