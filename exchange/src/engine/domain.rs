@@ -2,7 +2,7 @@
 use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum OrderSide {
     Bid,
     Ask,

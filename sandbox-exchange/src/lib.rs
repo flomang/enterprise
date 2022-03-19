@@ -1,6 +1,6 @@
-use std::sync::Mutex;
-use exchange::engine;
 use engine::orderbook::Orderbook;
+use exchange::engine;
+use std::sync::Mutex;
 
 pub mod routes;
 
@@ -40,6 +40,7 @@ mod tests {
     use engine::domain::OrderSide;
     use engine::orderbook::Orderbook;
     use engine::orders;
+    use engine::orders::OrderRequest;
     use exchange::engine;
     use std::collections::HashMap;
     use std::time::SystemTime;
@@ -58,13 +59,16 @@ mod tests {
         markets.insert(btc_market, btc_orderbook);
         markets.insert(eth_market, eth_orderbook);
 
+        let btc_balance = 0.5;
+        let usd_balance = 300.00;
+
         let request_list = vec![
             orders::new_limit_order_request(
                 btc_asset,
                 usd_asset,
                 OrderSide::Bid,
-                0.98,
-                5.0,
+                41711.76,
+                0.15,
                 SystemTime::now(),
             ),
             orders::new_limit_order_request(
@@ -121,12 +125,60 @@ mod tests {
 
         // processing
         for order in request_list {
-            println!("Processing => {:?}", &order);
-            let res = btc_orderbook.process_order(order);
-            println!("Results => {:?}", res);
+            let valid = match order {
+                OrderRequest::NewLimitOrder {
+                    order_asset: _,
+                    price_asset,
+                    side,
+                    price,
+                    qty,
+                    ts: _,
+                } => {
+                    //let total = price * qty;
+                    // if side == OrderSide::Bid {
+                    //     println!("total cost: {} {:?}", total, price_asset)
+                    // } else {
+                    //     println!("total sale: {} {:?}", total, price_asset)
+                    // }
+                    true
+                }
+                OrderRequest::NewMarketOrder {
+                    order_asset: _,
+                    price_asset: _,
+                    side: _,
+                    qty: _,
+                    ts: _,
+                } => {
+                    //println!("new market order");
+                    true
+                }
+                OrderRequest::AmendOrder {
+                    id: _,
+                    side: _,
+                    price: _,
+                    qty: _,
+                    ts: _,
+                } => {
+                    //println!("amend order");
+                    true
+                }
+                OrderRequest::CancelOrder { id: _, side: _ } => {
+                    //println!("cancel order");
+                    true
+                }
+            };
 
-            if let Some((bid, ask)) = btc_orderbook.current_spread() {
-                println!("Spread => bid: {}, ask: {}\n", bid, ask);
+            if valid {
+                println!("Processing => {:?}", &order);
+                let results = btc_orderbook.process_order(order);
+
+                for result in results {
+                    println!("\tResult => {:?}", result);
+                }
+
+                if let Some((bid, ask)) = btc_orderbook.current_spread() {
+                    println!("Spread => bid: {}, ask: {}\n", bid, ask);
+                }
             }
         }
 
