@@ -1,3 +1,9 @@
+use std::sync::Mutex;
+use exchange::engine;
+use engine::orderbook::Orderbook;
+
+pub mod routes;
+
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum BrokerAsset {
@@ -22,6 +28,10 @@ impl BrokerAsset {
             _ => None,
         }
     }
+}
+
+pub struct AppState {
+    pub order_book: Mutex<Orderbook<BrokerAsset>>,
 }
 
 #[cfg(test)]

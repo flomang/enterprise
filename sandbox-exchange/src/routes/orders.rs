@@ -1,17 +1,14 @@
-use actix_web::{delete, patch, post, web, App, HttpServer, Responder, Result};
+use actix_web::{delete, patch, post, web, Responder, Result};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 
 use exchange::engine;
 use engine::domain::OrderSide;
-use engine::orderbook::Orderbook;
 use engine::orders;
 use std::time::SystemTime;
-use sandbox_exchange::BrokerAsset;
-
+use crate::{AppState, BrokerAsset};
 
 #[derive(Debug, Serialize, Deserialize)]
-struct OrderRequest {
+pub struct OrderRequest {
     order_asset: String,
     price_asset: String,
     side: String,
@@ -20,7 +17,7 @@ struct OrderRequest {
 }
 
 #[derive(Serialize, Deserialize)]
-struct AmendOrderRequest {
+pub struct AmendOrderRequest {
     id: u64,
     side: String,
     price: f64,
@@ -28,17 +25,14 @@ struct AmendOrderRequest {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CancelOrderRequest {
+pub struct CancelOrderRequest {
     id: u64,
     side: String,
 }
 
-struct AppState {
-    order_book: Mutex<Orderbook<BrokerAsset>>,
-}
 
 #[post("/orders")]
-async fn post_order(
+pub async fn post_order(
     state: web::Data<AppState>,
     req: web::Json<OrderRequest>,
 ) -> Result<impl Responder> {
@@ -93,7 +87,7 @@ async fn post_order(
 }
 
 #[patch("/orders/{id}")]
-async fn patch_order(
+pub async fn patch_order(
     path: web::Path<u64>,
     state: web::Data<AppState>,
     req: web::Json<AmendOrderRequest>,
@@ -114,7 +108,7 @@ async fn patch_order(
 }
 
 #[delete("/orders/{id}")]
-async fn delete_order(
+pub async fn delete_order(
     path: web::Path<u64>,
     state: web::Data<AppState>,
     req: web::Json<CancelOrderRequest>,
@@ -132,24 +126,4 @@ async fn delete_order(
         }
         None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
     }
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
-    let data = web::Data::new(AppState {
-        order_book: Mutex::new(order_book),
-    });
-
-    HttpServer::new(move || {
-        App::new().app_data(data.clone()).service(
-            web::scope("/api")
-                .service(post_order)
-                .service(patch_order)
-                .service(delete_order),
-        )
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
 }
