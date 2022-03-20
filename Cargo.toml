@@ -8,7 +8,7 @@ members = [
     "magician",
     "minigrep",
     "sandbox-bevy",
-    "sandbox-exchange",
+    "paper-exchange",
     "sandbox-smart-pointers",
     "sandbox-snake",
     "sandbox-threading",

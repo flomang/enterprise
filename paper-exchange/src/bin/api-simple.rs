@@ -4,9 +4,9 @@ use std::sync::Mutex;
 use exchange::engine;
 use engine::orderbook::Orderbook;
 
-use sandbox_exchange::BrokerAsset;
-use sandbox_exchange::routes::orders as paper;
-use sandbox_exchange::AppState;
+use paper_exchange::BrokerAsset;
+use paper_exchange::routes::orders as paper;
+use paper_exchange::AppState;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

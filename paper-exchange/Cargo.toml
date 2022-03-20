@@ -1,10 +1,10 @@
 [package]
-name = "sandbox-exchange"
+name = "paper-exchange"
 version = "0.1.0"
 edition = "2018"
 
 [lib]
-name = "sandbox_exchange"
+name = "paper_exchange"
 path = "src/lib.rs"
 
 [dependencies]
