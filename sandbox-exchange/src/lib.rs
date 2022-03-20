@@ -75,11 +75,11 @@ mod tests {
                 btc_asset,
                 usd_asset,
                 OrderSide::Ask,
-                1.02,
+                41712.6,
                 1.0,
                 SystemTime::now(),
             ),
-            orders::amend_order_request(1, OrderSide::Bid, 0.99, 4.0, SystemTime::now()),
+            orders::amend_order_request(1, OrderSide::Bid, 40000.00, 0.16, SystemTime::now()),
             orders::new_limit_order_request(
                 btc_asset,
                 usd_asset,
