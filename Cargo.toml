@@ -5,7 +5,7 @@ members = [
     "chat",
     "exchange",
     "iot-one",
-    "magician",
+    "ritual",
     "minigrep",
     "sandbox-bevy",
     "paper-exchange",

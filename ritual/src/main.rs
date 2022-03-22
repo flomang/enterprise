@@ -1,14 +1,14 @@
 extern crate diesel;
-extern crate magician;
 
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-use magician::handlers::{auth_handler, invitation_handler, register_handler, ritual_handler};
-use magician::models;
-use magician::utils;
+use ritual::handlers;
+use ritual::models;
+use ritual::utils;
+use handlers::{auth_handler, invitation_handler, register_handler, ritual_handler};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {

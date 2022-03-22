@@ -3650,30 +3650,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "magician"
-version = "0.1.0"
-dependencies = [
- "actix-identity",
- "actix-rt 1.1.1",
- "actix-web 3.3.2",
- "argonautica",
- "chrono",
- "derive_more",
- "diesel",
- "dotenv 0.15.0",
- "env_logger 0.8.4",
- "futures 0.3.15",
- "lazy_static",
- "r2d2",
- "rust-argon2",
- "serde",
- "serde_derive",
- "serde_json",
- "sparkpost",
- "uuid",
-]
-
-[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4964,6 +4940,30 @@ checksum = "52e44394d2086d010551b14b53b1f24e31647570cd1deb0379e2c21b329aba00"
 dependencies = [
  "hostname",
  "quick-error",
+]
+
+[[package]]
+name = "ritual"
+version = "0.1.0"
+dependencies = [
+ "actix-identity",
+ "actix-rt 1.1.1",
+ "actix-web 3.3.2",
+ "argonautica",
+ "chrono",
+ "derive_more",
+ "diesel",
+ "dotenv 0.15.0",
+ "env_logger 0.8.4",
+ "futures 0.3.15",
+ "lazy_static",
+ "r2d2",
+ "rust-argon2",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sparkpost",
+ "uuid",
 ]
 
 [[package]]
