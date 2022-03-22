@@ -5,8 +5,8 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
+use crate::models::{Pool, Ritual, RitualTime, SlimUser};
 use crate::utils::errors::ServiceError;
-use crate::models::{Pool, Ritual, NewRitualTime, RitualTime, SlimUser};
 
 #[derive(Debug, Deserialize)]
 pub struct RitualData {
@@ -154,24 +154,47 @@ pub async fn get_ritual(
     }
 }
 
-pub fn create_ritual_time(
-    conn: &PgConnection,
-    ritual_id: uuid::Uuid,
-    time: chrono::NaiveDateTime,
-) -> RitualTime {
-    use crate::schema::ritual_times;
-
-    let new_time = NewRitualTime {
-        ritual_id: ritual_id,
-        created_at: time,
-    };
-
-    diesel::insert_into(ritual_times::table)
-        .values(&new_time)
-        .get_result(conn)
-        .expect("Error saving new post")
+#[derive(Deserialize)]
+pub struct RitualTimestamp {
+    time: String,
 }
 
+#[post("/{id}/times")]
+pub async fn create_ritual_time(
+    json: web::Json<RitualTimestamp>,
+    path: web::Path<String>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    use crate::schema::ritual_times;
+
+    let rid = path.into_inner();
+    let rid = uuid::Uuid::parse_str(&rid).unwrap();
+    let data = json.into_inner();
+    // TODO error check input timsssss
+    let time = chrono::NaiveDateTime::parse_from_str(&data.time, "%Y-%m-%dT%H:%M:%S%z");
+    match time {
+        Ok(t) => {
+            let conn = pool.get().unwrap();
+
+            let new_time = RitualTime {
+                id: uuid::Uuid::new_v4(),
+                ritual_id: rid,
+                created_at: t,
+            };
+
+            let rt: RitualTime = diesel::insert_into(ritual_times::table)
+                .values(&new_time)
+                .get_result(&conn)
+                .expect("Error saving new post");
+
+            let json = serde_json::to_string(&rt).unwrap();
+
+            Ok(HttpResponse::Ok().json(json))
+        }
+        Err(e) => Ok(HttpResponse::Ok().json(e.to_string())),
+    }
+}
 
 pub fn publish_ritual(conn: &PgConnection, id: uuid::Uuid) -> Ritual {
     use crate::schema::rituals::dsl::{published, rituals};
