@@ -49,11 +49,8 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/invitations").service(invitation_handler::create_invitation),
                     )
                     .service(web::scope("/register").service(register_handler::register_user))
-                    .service(
-                        web::scope("/auth")
-                            .service(auth_handler::login)
-                            .service(auth_handler::logout),
-                    )
+                    .service(web::scope("/login").service(auth_handler::login))
+                    .service(web::scope("/logout").service(auth_handler::logout))
                     .service(
                         web::scope("/rituals")
                             .service(ritual_handler::create_ritual)

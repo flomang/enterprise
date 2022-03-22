@@ -38,13 +38,13 @@ impl FromRequest for LoggedUser {
     }
 }
 
-#[post("/logout")]
+#[post("")]
 pub async fn logout(id: Identity) -> HttpResponse {
     id.forget();
     HttpResponse::Ok().finish()
 }
 
-#[post("/login")]
+#[post("")]
 pub async fn login(
     auth_data: web::Json<AuthData>,
     id: Identity,
