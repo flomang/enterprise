@@ -196,6 +196,55 @@ pub async fn create_ritual_time(
     }
 }
 
+#[derive(Serialize)]
+struct RitualTimePage {
+    page: i64,
+    page_size: i64,
+    times: Vec<RitualTime>,
+    total: i64,
+}
+
+#[get("/{ritual_id}/times")]
+pub async fn list_ritual_times(
+    info: web::Query<PageInfo>,
+    ritual_id: web::Path<String>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    use crate::utils::pagination::*;
+
+    let ritual_id = ritual_id.into_inner();
+    let ritual_id = uuid::Uuid::parse_str(&ritual_id).unwrap();
+
+    if let Some(str) = id.identity() {
+        use crate::schema::ritual_times::dsl::*;
+
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        let params = info.into_inner();
+        let mut conn = pool.get().unwrap();
+
+        let (results, total_pages) = ritual_times
+            .filter(ritual_id.eq(&ritual_id))
+            .order_by(created_at)
+            .paginate(params.page)
+            .per_page(params.page_size)
+            .load_and_count_pages::<RitualTime>(&mut conn)
+            .expect("query fav failed");
+
+        let page = RitualTimePage {
+            page: params.page,
+            page_size: params.page_size,
+            times: results,
+            total: total_pages,
+        };
+
+        //let json = serde_json::to_string(&page).unwrap();
+        Ok(HttpResponse::Ok().json(page))
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
 pub fn publish_ritual(conn: &PgConnection, id: uuid::Uuid) -> Ritual {
     use crate::schema::rituals::dsl::{published, rituals};
 
