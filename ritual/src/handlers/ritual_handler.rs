@@ -245,6 +245,30 @@ pub async fn list_ritual_times(
     }
 }
 
+#[delete("/{ritual_id}/times/{id}")]
+pub async fn delete_ritual_time(
+    path: web::Path<(String, String)>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(str) = id.identity() {
+        use crate::schema::ritual_times::dsl::*;
+
+        let _user: SlimUser = serde_json::from_str(&str).unwrap();
+        let (_, time_id) = path.into_inner();
+        let rid = uuid::Uuid::parse_str(&time_id).unwrap();
+        let conn = pool.get().unwrap();
+
+        let results = diesel::delete(ritual_times.filter(id.eq(&rid)))
+            .execute(&conn)
+            .expect("Error deleting posts");
+
+        Ok(HttpResponse::Ok().json(results))
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
 pub fn publish_ritual(conn: &PgConnection, id: uuid::Uuid) -> Ritual {
     use crate::schema::rituals::dsl::{published, rituals};
 
