@@ -170,30 +170,34 @@ pub async fn create_ritual_time(
         use crate::schema::ritual_times;
 
         let data = json.into_inner();
-
-        // TODO error check input times
         let time = chrono::NaiveDateTime::parse_from_str(&data.created_at, "%Y-%m-%dT%H:%M:%S%z");
-        match time {
-            Ok(t) => {
+        let rid = uuid::Uuid::parse_str(&data.ritual_id);
+
+        match (time, rid) {
+            (Ok(created_at), Ok(ritual_id)) => {
                 let conn = pool.get().unwrap();
-                let rid = uuid::Uuid::parse_str(&data.ritual_id).unwrap();
 
                 let new_time = RitualTime {
                     id: uuid::Uuid::new_v4(),
-                    ritual_id: rid,
-                    created_at: t,
+                    ritual_id,
+                    created_at,
                 };
 
-                let rt: RitualTime = diesel::insert_into(ritual_times::table)
+                let result = diesel::insert_into(ritual_times::table)
                     .values(&new_time)
-                    .get_result(&conn)
-                    .expect("Error saving new post");
+                    .get_result::<RitualTime>(&conn);
 
-                //let json = serde_json::to_string(&rt).unwrap();
-
-                Ok(HttpResponse::Ok().json(rt))
+                match result {
+                    Ok(t) => Ok(HttpResponse::Ok().json(t)),
+                    Err(e) => Err(ServiceError::BadRequest(e.to_string())),
+                }
             }
-            Err(e) => Err(ServiceError::BadRequest("invalid timestamp format".to_string())),
+            (Err(_), _) => Err(ServiceError::BadRequest(
+                "invalid created_at format".to_string(),
+            )),
+            (_, Err(_)) => Err(ServiceError::BadRequest(
+                "invalid ritual_id format expected uuid".to_string(),
+            )),
         }
     } else {
         Err(ServiceError::Unauthorized)
