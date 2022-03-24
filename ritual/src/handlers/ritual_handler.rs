@@ -157,42 +157,46 @@ pub async fn get_ritual(
 #[derive(Deserialize)]
 pub struct RitualTimestamp {
     ritual_id: String,
-    time: String,
+    created_at: String,
 }
 
 #[post("")]
 pub async fn create_ritual_time(
     json: web::Json<RitualTimestamp>,
-    id: Identity,
+    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use crate::schema::ritual_times;
+    if let Some(json_str) = identity.identity() {
+        use crate::schema::ritual_times;
 
-    let data = json.into_inner();
-    let rid = uuid::Uuid::parse_str(&data.ritual_id).unwrap();
+        let data = json.into_inner();
 
-    // TODO error check input timsssss
-    let time = chrono::NaiveDateTime::parse_from_str(&data.time, "%Y-%m-%dT%H:%M:%S%z");
-    match time {
-        Ok(t) => {
-            let conn = pool.get().unwrap();
+        // TODO error check input times
+        let time = chrono::NaiveDateTime::parse_from_str(&data.created_at, "%Y-%m-%dT%H:%M:%S%z");
+        match time {
+            Ok(t) => {
+                let conn = pool.get().unwrap();
+                let rid = uuid::Uuid::parse_str(&data.ritual_id).unwrap();
 
-            let new_time = RitualTime {
-                id: uuid::Uuid::new_v4(),
-                ritual_id: rid,
-                created_at: t,
-            };
+                let new_time = RitualTime {
+                    id: uuid::Uuid::new_v4(),
+                    ritual_id: rid,
+                    created_at: t,
+                };
 
-            let rt: RitualTime = diesel::insert_into(ritual_times::table)
-                .values(&new_time)
-                .get_result(&conn)
-                .expect("Error saving new post");
+                let rt: RitualTime = diesel::insert_into(ritual_times::table)
+                    .values(&new_time)
+                    .get_result(&conn)
+                    .expect("Error saving new post");
 
-            let json = serde_json::to_string(&rt).unwrap();
+                //let json = serde_json::to_string(&rt).unwrap();
 
-            Ok(HttpResponse::Ok().json(json))
+                Ok(HttpResponse::Ok().json(rt))
+            }
+            Err(e) => Err(ServiceError::BadRequest("invalid timestamp format".to_string())),
         }
-        Err(e) => Ok(HttpResponse::Ok().json(e.to_string())),
+    } else {
+        Err(ServiceError::Unauthorized)
     }
 }
 
@@ -200,15 +204,15 @@ pub async fn create_ritual_time(
 struct RitualTimePage {
     page: i64,
     page_size: i64,
-    times: Vec<RitualTime>,
-    total: i64,
+    timestamps: Vec<RitualTime>,
+    total_pages: i64,
 }
 
 #[get("/{ritual_id}")]
 pub async fn list_ritual_times(
-    info: web::Query<PageInfo>,
+    query_params: web::Query<PageInfo>,
     ritual_id: web::Path<String>,
-    id: Identity,
+    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     use crate::utils::pagination::*;
@@ -216,11 +220,11 @@ pub async fn list_ritual_times(
     let ritual_id = ritual_id.into_inner();
     let ritual_id = uuid::Uuid::parse_str(&ritual_id).unwrap();
 
-    if let Some(str) = id.identity() {
+    if let Some(json_str) = identity.identity() {
         use crate::schema::ritual_times::dsl::*;
 
-        let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let params = info.into_inner();
+        let user: SlimUser = serde_json::from_str(&json_str).unwrap();
+        let params = query_params.into_inner();
         let mut conn = pool.get().unwrap();
 
         let (results, total_pages) = ritual_times
@@ -234,11 +238,10 @@ pub async fn list_ritual_times(
         let page = RitualTimePage {
             page: params.page,
             page_size: params.page_size,
-            times: results,
-            total: total_pages,
+            timestamps: results,
+            total_pages: total_pages,
         };
 
-        //let json = serde_json::to_string(&page).unwrap();
         Ok(HttpResponse::Ok().json(page))
     } else {
         Err(ServiceError::Unauthorized)
@@ -248,14 +251,14 @@ pub async fn list_ritual_times(
 #[delete("/{id}")]
 pub async fn delete_ritual_time(
     path: web::Path<String>,
-    id: Identity,
+    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    if let Some(str) = id.identity() {
+    if let Some(str) = identity.identity() {
         use crate::schema::ritual_times::dsl::*;
 
         let _user: SlimUser = serde_json::from_str(&str).unwrap();
-        let time_id= path.into_inner();
+        let time_id = path.into_inner();
         let rid = uuid::Uuid::parse_str(&time_id).unwrap();
         let conn = pool.get().unwrap();
 
