@@ -156,21 +156,21 @@ pub async fn get_ritual(
 
 #[derive(Deserialize)]
 pub struct RitualTimestamp {
+    ritual_id: String,
     time: String,
 }
 
-#[post("/{id}/times")]
+#[post("")]
 pub async fn create_ritual_time(
     json: web::Json<RitualTimestamp>,
-    path: web::Path<String>,
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     use crate::schema::ritual_times;
 
-    let rid = path.into_inner();
-    let rid = uuid::Uuid::parse_str(&rid).unwrap();
     let data = json.into_inner();
+    let rid = uuid::Uuid::parse_str(&data.ritual_id).unwrap();
+
     // TODO error check input timsssss
     let time = chrono::NaiveDateTime::parse_from_str(&data.time, "%Y-%m-%dT%H:%M:%S%z");
     match time {
@@ -204,7 +204,7 @@ struct RitualTimePage {
     total: i64,
 }
 
-#[get("/{ritual_id}/times")]
+#[get("/{ritual_id}")]
 pub async fn list_ritual_times(
     info: web::Query<PageInfo>,
     ritual_id: web::Path<String>,
@@ -245,9 +245,9 @@ pub async fn list_ritual_times(
     }
 }
 
-#[delete("/{ritual_id}/times/{id}")]
+#[delete("/{id}")]
 pub async fn delete_ritual_time(
-    path: web::Path<(String, String)>,
+    path: web::Path<String>,
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
@@ -255,7 +255,7 @@ pub async fn delete_ritual_time(
         use crate::schema::ritual_times::dsl::*;
 
         let _user: SlimUser = serde_json::from_str(&str).unwrap();
-        let (_, time_id) = path.into_inner();
+        let time_id= path.into_inner();
         let rid = uuid::Uuid::parse_str(&time_id).unwrap();
         let conn = pool.get().unwrap();
 
