@@ -115,12 +115,12 @@ pub async fn delete_ritual(
     if let Some(str) = id.identity() {
         use crate::schema::rituals::dsl::*;
 
-        let _user: SlimUser = serde_json::from_str(&str).unwrap();
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
         let rid = path.into_inner();
         let conn = pool.get().unwrap();
 
         if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
-            match diesel::delete(rituals.filter(id.eq(&ritual_id))).execute(&conn) {
+            match diesel::delete(rituals.filter(user_id.eq(&user.id)).filter(id.eq(&ritual_id))).execute(&conn) {
                 Ok(size) => Ok(HttpResponse::Ok().json(size)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
             }
