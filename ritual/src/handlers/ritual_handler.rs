@@ -96,7 +96,7 @@ pub async fn list_rituals(
                     rituals: results,
                     total_pages: total_pages,
                 };
-        
+
                 Ok(HttpResponse::Ok().json(page))
             }
             Err(error) => Err(ServiceError::BadRequest(error.to_string())),
@@ -117,14 +117,16 @@ pub async fn delete_ritual(
 
         let _user: SlimUser = serde_json::from_str(&str).unwrap();
         let rid = path.into_inner();
-        let rid = uuid::Uuid::parse_str(&rid).unwrap();
         let conn = pool.get().unwrap();
 
-        let results = diesel::delete(rituals.filter(id.eq(&rid)))
-            .execute(&conn)
-            .expect("Error deleting posts");
-
-        Ok(HttpResponse::Ok().json(results))
+        if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
+            match diesel::delete(rituals.filter(id.eq(&ritual_id))).execute(&conn) {
+                Ok(size) => Ok(HttpResponse::Ok().json(size)),
+                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+            }
+        } else {
+            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+        }
     } else {
         Err(ServiceError::Unauthorized)
     }
