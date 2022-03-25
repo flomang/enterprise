@@ -120,7 +120,13 @@ pub async fn delete_ritual(
         let conn = pool.get().unwrap();
 
         if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
-            match diesel::delete(rituals.filter(user_id.eq(&user.id)).filter(id.eq(&ritual_id))).execute(&conn) {
+            match diesel::delete(
+                rituals
+                    .filter(user_id.eq(&user.id))
+                    .filter(id.eq(&ritual_id)),
+            )
+            .execute(&conn)
+            {
                 Ok(size) => Ok(HttpResponse::Ok().json(size)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
             }
@@ -143,19 +149,15 @@ pub async fn get_ritual(
 
         let _user: SlimUser = serde_json::from_str(&str).unwrap();
         let rid = path.into_inner();
-        let rid = uuid::Uuid::parse_str(&rid).unwrap();
         let conn = pool.get().unwrap();
 
-        let results = rituals
-            .filter(id.eq(&rid))
-            .load::<Ritual>(&conn)
-            .expect("could not find ritual by id");
-
-        if results.len() > 0 {
-            let json = serde_json::to_string(&results[0]).unwrap();
-            Ok(HttpResponse::Ok().json(json))
+        if let Ok(rid) = uuid::Uuid::parse_str(&rid) {
+            match rituals.find(rid).first::<Ritual>(&conn) {
+                Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
+                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+            }
         } else {
-            Ok(HttpResponse::NotFound().json(""))
+            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
         }
     } else {
         Err(ServiceError::Unauthorized)
