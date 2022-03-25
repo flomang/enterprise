@@ -44,7 +44,7 @@ pub async fn create_ritual(
 
         match result {
             Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
-            Err(error) => Err(ServiceError::InternalServerError(error.to_string())),
+            Err(_) => Err(ServiceError::InternalServerError),
         }
     } else {
         Err(ServiceError::Unauthorized)
@@ -62,7 +62,7 @@ struct RitualPage {
     page: i64,
     page_size: i64,
     rituals: Vec<Ritual>,
-    total: i64,
+    total_pages: i64,
 }
 
 #[get("")]
@@ -80,23 +80,27 @@ pub async fn list_rituals(
         let params = info.into_inner();
         let mut conn = pool.get().unwrap();
 
-        let (results, total_pages) = rituals
+        //let (results, total_pages) = rituals
+        let result = rituals
             .filter(user_id.eq(&user.id))
             .order_by(created_at)
             .paginate(params.page)
             .per_page(params.page_size)
-            .load_and_count_pages::<Ritual>(&mut conn)
-            .expect("query fav failed");
+            .load_and_count_pages::<Ritual>(&mut conn);
 
-        let page = RitualPage {
-            page: params.page,
-            page_size: params.page_size,
-            rituals: results,
-            total: total_pages,
-        };
-
-        let json = serde_json::to_string(&page).unwrap();
-        Ok(HttpResponse::Ok().json(json))
+        match result {
+            Ok((results, total_pages)) => {
+                let page = RitualPage {
+                    page: params.page,
+                    page_size: params.page_size,
+                    rituals: results,
+                    total_pages: total_pages,
+                };
+        
+                Ok(HttpResponse::Ok().json(page))
+            }
+            Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+        }
     } else {
         Err(ServiceError::Unauthorized)
     }
