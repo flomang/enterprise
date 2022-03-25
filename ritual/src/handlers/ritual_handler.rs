@@ -26,7 +26,7 @@ pub async fn create_ritual(
     if let Some(str) = id.identity() {
         let data = ritual_data.into_inner();
         let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let conn: &PgConnection = &pool.get().unwrap();
+        let conn = pool.get().unwrap();
         let now = Utc::now().naive_utc();
         let new_ritual = Ritual {
             id: uuid::Uuid::new_v4(),
@@ -37,13 +37,15 @@ pub async fn create_ritual(
             created_at: now,
             updated_at: now,
         };
-        let ritual: Ritual = diesel::insert_into(rituals::table)
-            .values(&new_ritual)
-            .get_result(conn)
-            .expect("Error saving new post");
-        let json = serde_json::to_string(&ritual).unwrap();
 
-        Ok(HttpResponse::Ok().json(json))
+        let result = diesel::insert_into(rituals::table)
+            .values(&new_ritual)
+            .get_result::<Ritual>(&conn);
+
+        match result {
+            Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
+            Err(error) => Err(ServiceError::InternalServerError(error.to_string())),
+        }
     } else {
         Err(ServiceError::Unauthorized)
     }
