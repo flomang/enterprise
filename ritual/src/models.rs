@@ -17,9 +17,9 @@ pub struct Ritual {
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(AsChangeset, Debug, Insertable, Queryable, Serialize)]
+#[derive(AsChangeset)]
 #[table_name = "rituals"]
-pub struct Ritual2 {
+pub struct UpdateRitual {
     pub id: uuid::Uuid,
     pub user_id: Option<uuid::Uuid>,
     pub title: Option<String>,

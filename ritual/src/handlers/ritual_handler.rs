@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::models::{Pool, Ritual, Ritual2, RitualTime, SlimUser};
+use crate::models::{Pool, Ritual, UpdateRitual, RitualTime, SlimUser};
 use crate::utils::errors::ServiceError;
 
 #[derive(Debug, Deserialize)]
@@ -190,7 +190,7 @@ pub async fn patch_ritual(
             let data = data.into_inner();
             let now = Utc::now().naive_utc();
 
-            let ritual = Ritual2{
+            let update_ritual = UpdateRitual{
                 id: ritual_id,
                 title: data.title,
                 body: data.body,
@@ -201,7 +201,7 @@ pub async fn patch_ritual(
             };
 
             let result = diesel::update(rituals::table)
-                .set(&ritual)
+                .set(&update_ritual)
                 .get_result::<Ritual>(&conn);
 
             match result {
