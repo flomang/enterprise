@@ -195,9 +195,7 @@ pub async fn patch_ritual(
                 title: data.title,
                 body: data.body,
                 published: data.published,
-                user_id: None,
-                created_at: None,
-                updated_at: Some(now),
+                updated_at: now,
             };
 
             let result = diesel::update(rituals::table)

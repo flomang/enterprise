@@ -21,12 +21,10 @@ pub struct Ritual {
 #[table_name = "rituals"]
 pub struct UpdateRitual {
     pub id: uuid::Uuid,
-    pub user_id: Option<uuid::Uuid>,
     pub title: Option<String>,
     pub body: Option<String>,
     pub published: Option<bool>,
-    pub created_at: Option<chrono::NaiveDateTime>,
-    pub updated_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
