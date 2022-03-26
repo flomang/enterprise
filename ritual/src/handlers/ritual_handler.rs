@@ -1,11 +1,11 @@
 use actix_identity::Identity;
-use actix_web::{delete, get, post, web, HttpResponse};
+use actix_web::{delete, get, patch, post, web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::models::{Pool, Ritual, RitualTime, SlimUser};
+use crate::models::{Pool, Ritual, Ritual2, RitualTime, SlimUser};
 use crate::utils::errors::ServiceError;
 
 #[derive(Debug, Deserialize)]
@@ -154,6 +154,57 @@ pub async fn get_ritual(
 
         if let Ok(rid) = uuid::Uuid::parse_str(&rid) {
             match rituals.find(rid).first::<Ritual>(&conn) {
+                Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
+                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+            }
+        } else {
+            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+        }
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RitualEditData {
+    pub title: Option<String>,
+    pub body: Option<String>,
+    pub published: Option<bool>,
+}
+
+#[patch("/{id}")]
+pub async fn patch_ritual(
+    path: web::Path<String>,
+    data: web::Json<RitualEditData>,
+    identity: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(str) = identity.identity() {
+        let rid = path.into_inner();
+
+        if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
+            use crate::schema::rituals;
+
+            let _user: SlimUser = serde_json::from_str(&str).unwrap();
+            let conn = pool.get().unwrap();
+            let data = data.into_inner();
+            let now = Utc::now().naive_utc();
+
+            let ritual = Ritual2{
+                id: ritual_id,
+                title: data.title,
+                body: data.body,
+                published: data.published,
+                user_id: None,
+                created_at: None,
+                updated_at: Some(now),
+            };
+
+            let result = diesel::update(rituals::table)
+                .set(&ritual)
+                .get_result::<Ritual>(&conn);
+
+            match result {
                 Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
             }

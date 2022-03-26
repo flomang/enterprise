@@ -56,7 +56,8 @@ async fn main() -> std::io::Result<()> {
                             .service(ritual_handler::create_ritual)
                             .service(ritual_handler::list_rituals)
                             .service(ritual_handler::delete_ritual)
-                            .service(ritual_handler::get_ritual),
+                            .service(ritual_handler::get_ritual)
+                            .service(ritual_handler::patch_ritual),
                     )
                     .service(
                         web::scope("/times")

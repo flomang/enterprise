@@ -17,16 +17,17 @@ pub struct Ritual {
     pub updated_at: chrono::NaiveDateTime,
 }
 
-//#[derive(Insertable)]
-//#[table_name = "rituals"]
-//pub struct NewRitual<'a> {
-//    pub id: uuid::Uuid,
-//    pub user_id: uuid::Uuid,
-//    pub title: &'a str,
-//    pub body: &'a str,
-//    pub created_at: chrono::NaiveDateTime,
-//    pub updated_at: chrono::NaiveDateTime,
-//}
+#[derive(AsChangeset, Debug, Insertable, Queryable, Serialize)]
+#[table_name = "rituals"]
+pub struct Ritual2 {
+    pub id: uuid::Uuid,
+    pub user_id: Option<uuid::Uuid>,
+    pub title: Option<String>,
+    pub body: Option<String>,
+    pub published: Option<bool>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
+}
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
 #[table_name = "ritual_times"]
