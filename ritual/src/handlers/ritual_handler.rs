@@ -2,7 +2,6 @@ use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
-use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Pool, Ritual, UpdateRitual, RitualTime, SlimUser};
@@ -16,7 +15,7 @@ pub struct RitualData {
 
 #[post("")]
 pub async fn create_ritual(
-    ritual_data: web::Json<RitualData>,
+    data: web::Json<RitualData>,
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
@@ -24,7 +23,7 @@ pub async fn create_ritual(
 
     // access request identity
     if let Some(str) = id.identity() {
-        let data = ritual_data.into_inner();
+        let data = data.into_inner();
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let conn = pool.get().unwrap();
         let now = Utc::now().naive_utc();
@@ -67,7 +66,7 @@ struct RitualPage {
 
 #[get("")]
 pub async fn list_rituals(
-    info: web::Query<PageInfo>,
+    params: web::Query<PageInfo>,
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
@@ -77,10 +76,8 @@ pub async fn list_rituals(
         use crate::schema::rituals::dsl::*;
 
         let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let params = info.into_inner();
         let mut conn = pool.get().unwrap();
 
-        //let (results, total_pages) = rituals
         let result = rituals
             .filter(user_id.eq(&user.id))
             .order_by(created_at)
@@ -116,14 +113,14 @@ pub async fn delete_ritual(
         use crate::schema::rituals::dsl::*;
 
         let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let rid = path.into_inner();
+        let ritual_id = path.into_inner();
         let conn = pool.get().unwrap();
 
-        if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
+        if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
             let result = diesel::delete(
                 rituals
                     .filter(user_id.eq(&user.id))
-                    .filter(id.eq(&ritual_id)),
+                    .filter(id.eq(&rid)),
             )
             .execute(&conn);
 
@@ -149,10 +146,10 @@ pub async fn get_ritual(
         use crate::schema::rituals::dsl::*;
 
         let _user: SlimUser = serde_json::from_str(&str).unwrap();
-        let rid = path.into_inner();
+        let ritual_id = path.into_inner();
         let conn = pool.get().unwrap();
 
-        if let Ok(rid) = uuid::Uuid::parse_str(&rid) {
+        if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
             match rituals.find(rid).first::<Ritual>(&conn) {
                 Ok(ritual) => Ok(HttpResponse::Ok().json(ritual)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
@@ -180,9 +177,9 @@ pub async fn patch_ritual(
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     if let Some(str) = identity.identity() {
-        let rid = path.into_inner();
+        let ritual_id = path.into_inner();
 
-        if let Ok(ritual_id) = uuid::Uuid::parse_str(&rid) {
+        if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
             use crate::schema::rituals;
 
             let _user: SlimUser = serde_json::from_str(&str).unwrap();
@@ -191,7 +188,7 @@ pub async fn patch_ritual(
             let now = Utc::now().naive_utc();
 
             let update_ritual = UpdateRitual{
-                id: ritual_id,
+                id: rid,
                 title: data.title,
                 body: data.body,
                 published: data.published,
@@ -222,14 +219,12 @@ pub struct RitualTimestamp {
 
 #[post("")]
 pub async fn create_ritual_time(
-    json: web::Json<RitualTimestamp>,
+    data: web::Json<RitualTimestamp>,
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     if let Some(_json_str) = identity.identity() {
         use crate::schema::ritual_times;
-
-        let data = json.into_inner();
 
         if let Ok(ritual_id) = uuid::Uuid::parse_str(&data.ritual_id) {
             let time =
@@ -275,20 +270,19 @@ struct RitualTimePage {
 
 #[get("/{ritual_id}")]
 pub async fn list_ritual_times(
-    query_params: web::Query<PageInfo>,
-    ritual_id: web::Path<String>,
+    params: web::Query<PageInfo>,
+    path: web::Path<String>,
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     use crate::utils::pagination::*;
 
     if let Some(json_str) = identity.identity() {
-        let ritual_id = ritual_id.into_inner();
+        let ritual_id = path.into_inner();
 
         if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
             use crate::schema::ritual_times::dsl::*;
             let _user: SlimUser = serde_json::from_str(&json_str).unwrap();
-            let params = query_params.into_inner();
             let mut conn = pool.get().unwrap();
 
             let result = ritual_times
@@ -345,15 +339,6 @@ pub async fn delete_ritual_time(
     } else {
         Err(ServiceError::Unauthorized)
     }
-}
-
-pub fn publish_ritual(conn: &PgConnection, id: uuid::Uuid) -> Ritual {
-    use crate::schema::rituals::dsl::{published, rituals};
-
-    diesel::update(rituals.find(id))
-        .set(published.eq(true))
-        .get_result::<Ritual>(conn)
-        .expect(&format!("Unable to find ritual {}", id))
 }
 
 #[cfg(test)]
