@@ -28,10 +28,11 @@ pub struct UpdateRitual {
 }
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
-#[table_name = "ritual_times"]
-pub struct RitualTime {
+#[table_name = "ritual_moments"]
+pub struct RitualMoment {
     pub id: uuid::Uuid,
     pub ritual_id: uuid::Uuid,
+    pub notes: Option<String>,
     pub created_at: chrono::NaiveDateTime,
 }
 

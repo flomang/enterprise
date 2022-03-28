@@ -7,9 +7,10 @@ table! {
 }
 
 table! {
-    ritual_times (id) {
+    ritual_moments (id) {
         id -> Uuid,
         ritual_id -> Uuid,
+        notes -> Nullable<Text>,
         created_at -> Timestamp,
     }
 }
@@ -36,12 +37,12 @@ table! {
     }
 }
 
-joinable!(ritual_times -> rituals (ritual_id));
+joinable!(ritual_moments -> rituals (ritual_id));
 joinable!(rituals -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     invitations,
-    ritual_times,
+    ritual_moments,
     rituals,
     users,
 );

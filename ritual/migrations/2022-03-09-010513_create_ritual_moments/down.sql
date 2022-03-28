@@ -1,2 +1,2 @@
 -- This file should undo anything in `up.sql`
-drop table ritual_times;
+drop table ritual_moments;

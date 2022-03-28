@@ -4,40 +4,43 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use super::PageInfo;
 
-use crate::models::{Pool, RitualTime, SlimUser};
+use crate::models::{Pool, RitualMoment, SlimUser};
 use crate::utils::errors::ServiceError;
 
 #[derive(Deserialize)]
 pub struct RitualTimestamp {
     ritual_id: String,
+    notes: Option<String>,
     created_at: String,
 }
 
 #[post("")]
-pub async fn create_ritual_time(
+pub async fn create_ritual_moment(
     data: web::Json<RitualTimestamp>,
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     if let Some(_json_str) = identity.identity() {
-        use crate::schema::ritual_times;
+        use crate::schema::ritual_moments;
 
         if let Ok(ritual_id) = uuid::Uuid::parse_str(&data.ritual_id) {
+            let data = data.into_inner();
             let time =
                 chrono::NaiveDateTime::parse_from_str(&data.created_at, "%Y-%m-%dT%H:%M:%S%z");
 
             if let Ok(created_at) = time {
                 let conn = pool.get().unwrap();
 
-                let new_time = RitualTime {
+                let new_moment = RitualMoment {
                     id: uuid::Uuid::new_v4(),
                     ritual_id,
+                    notes: data.notes,
                     created_at,
                 };
 
-                let result = diesel::insert_into(ritual_times::table)
-                    .values(&new_time)
-                    .get_result::<RitualTime>(&conn);
+                let result = diesel::insert_into(ritual_moments::table)
+                    .values(&new_moment)
+                    .get_result::<RitualMoment>(&conn);
 
                 match result {
                     Ok(t) => Ok(HttpResponse::Ok().json(t)),
@@ -57,15 +60,15 @@ pub async fn create_ritual_time(
 }
 
 #[derive(Serialize)]
-struct RitualTimePage {
+struct RitualMomentPage {
     page: i64,
     page_size: i64,
-    timestamps: Vec<RitualTime>,
     total_pages: i64,
+    moments: Vec<RitualMoment>,
 }
 
 #[get("/{ritual_id}")]
-pub async fn list_ritual_times(
+pub async fn list_ritual_moments(
     params: web::Query<PageInfo>,
     path: web::Path<String>,
     identity: Identity,
@@ -77,23 +80,23 @@ pub async fn list_ritual_times(
         let ritual_id = path.into_inner();
 
         if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
-            use crate::schema::ritual_times::dsl::*;
+            use crate::schema::ritual_moments::dsl::*;
             let _user: SlimUser = serde_json::from_str(&json_str).unwrap();
             let mut conn = pool.get().unwrap();
 
-            let result = ritual_times
+            let result = ritual_moments
                 .filter(ritual_id.eq(&rid))
                 .order_by(created_at)
                 .paginate(params.page)
                 .per_page(params.page_size)
-                .load_and_count_pages::<RitualTime>(&mut conn);
+                .load_and_count_pages::<RitualMoment>(&mut conn);
 
             match result {
                 Ok((results, total_pages)) => {
-                    let page = RitualTimePage {
+                    let page = RitualMomentPage {
                         page: params.page,
                         page_size: params.page_size,
-                        timestamps: results,
+                        moments: results,
                         total_pages: total_pages,
                     };
 
@@ -109,22 +112,22 @@ pub async fn list_ritual_times(
     }
 }
 
-#[delete("/{id}")]
-pub async fn delete_ritual_time(
+#[delete("/{moment_id}")]
+pub async fn delete_ritual_moment(
     path: web::Path<String>,
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     if let Some(str) = identity.identity() {
-        use crate::schema::ritual_times::dsl::*;
+        use crate::schema::ritual_moments::dsl::*;
 
-        let time_id = path.into_inner();
+        let moment_id = path.into_inner();
 
-        if let Ok(tid) = uuid::Uuid::parse_str(&time_id) {
+        if let Ok(mid) = uuid::Uuid::parse_str(&moment_id) {
             let conn = pool.get().unwrap();
             let _user: SlimUser = serde_json::from_str(&str).unwrap();
 
-            let result = diesel::delete(ritual_times.filter(id.eq(&tid))).execute(&conn);
+            let result = diesel::delete(ritual_moments.filter(id.eq(&mid))).execute(&conn);
             match result {
                 Ok(size) => Ok(HttpResponse::Ok().json(size)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
