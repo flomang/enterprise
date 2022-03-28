@@ -3,8 +3,9 @@ use actix_web::{delete, get, patch, post, web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use super::PageInfo;
 
-use crate::models::{Pool, Ritual, UpdateRitual, RitualTime, SlimUser};
+use crate::models::{Pool, Ritual, UpdateRitual, SlimUser};
 use crate::utils::errors::ServiceError;
 
 #[derive(Debug, Deserialize)]
@@ -48,12 +49,6 @@ pub async fn create_ritual(
     } else {
         Err(ServiceError::Unauthorized)
     }
-}
-
-#[derive(Deserialize)]
-pub struct PageInfo {
-    page: i64,
-    page_size: i64,
 }
 
 #[derive(Serialize)]
@@ -211,173 +206,132 @@ pub async fn patch_ritual(
     }
 }
 
-#[derive(Deserialize)]
-pub struct RitualTimestamp {
-    ritual_id: String,
-    created_at: String,
-}
+// #[derive(Deserialize)]
+// pub struct RitualTimestamp {
+//     ritual_id: String,
+//     created_at: String,
+// }
 
-#[post("")]
-pub async fn create_ritual_time(
-    data: web::Json<RitualTimestamp>,
-    identity: Identity,
-    pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
-    if let Some(_json_str) = identity.identity() {
-        use crate::schema::ritual_times;
+// #[post("")]
+// pub async fn create_ritual_time(
+//     data: web::Json<RitualTimestamp>,
+//     identity: Identity,
+//     pool: web::Data<Pool>,
+// ) -> Result<HttpResponse, ServiceError> {
+//     if let Some(_json_str) = identity.identity() {
+//         use crate::schema::ritual_times;
 
-        if let Ok(ritual_id) = uuid::Uuid::parse_str(&data.ritual_id) {
-            let time =
-                chrono::NaiveDateTime::parse_from_str(&data.created_at, "%Y-%m-%dT%H:%M:%S%z");
+//         if let Ok(ritual_id) = uuid::Uuid::parse_str(&data.ritual_id) {
+//             let time =
+//                 chrono::NaiveDateTime::parse_from_str(&data.created_at, "%Y-%m-%dT%H:%M:%S%z");
 
-            if let Ok(created_at) = time {
-                let conn = pool.get().unwrap();
+//             if let Ok(created_at) = time {
+//                 let conn = pool.get().unwrap();
 
-                let new_time = RitualTime {
-                    id: uuid::Uuid::new_v4(),
-                    ritual_id,
-                    created_at,
-                };
+//                 let new_time = RitualTime {
+//                     id: uuid::Uuid::new_v4(),
+//                     ritual_id,
+//                     created_at,
+//                 };
 
-                let result = diesel::insert_into(ritual_times::table)
-                    .values(&new_time)
-                    .get_result::<RitualTime>(&conn);
+//                 let result = diesel::insert_into(ritual_times::table)
+//                     .values(&new_time)
+//                     .get_result::<RitualTime>(&conn);
 
-                match result {
-                    Ok(t) => Ok(HttpResponse::Ok().json(t)),
-                    Err(e) => Err(ServiceError::BadRequest(e.to_string())),
-                }
-            } else {
-                Err(ServiceError::BadRequest(
-                    "invalid timestamp format for created_at".to_string(),
-                ))
-            }
-        } else {
-            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
-        }
-    } else {
-        Err(ServiceError::Unauthorized)
-    }
-}
+//                 match result {
+//                     Ok(t) => Ok(HttpResponse::Ok().json(t)),
+//                     Err(e) => Err(ServiceError::BadRequest(e.to_string())),
+//                 }
+//             } else {
+//                 Err(ServiceError::BadRequest(
+//                     "invalid timestamp format for created_at".to_string(),
+//                 ))
+//             }
+//         } else {
+//             Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+//         }
+//     } else {
+//         Err(ServiceError::Unauthorized)
+//     }
+// }
 
-#[derive(Serialize)]
-struct RitualTimePage {
-    page: i64,
-    page_size: i64,
-    timestamps: Vec<RitualTime>,
-    total_pages: i64,
-}
+// #[derive(Serialize)]
+// struct RitualTimePage {
+//     page: i64,
+//     page_size: i64,
+//     timestamps: Vec<RitualTime>,
+//     total_pages: i64,
+// }
 
-#[get("/{ritual_id}")]
-pub async fn list_ritual_times(
-    params: web::Query<PageInfo>,
-    path: web::Path<String>,
-    identity: Identity,
-    pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
-    use crate::utils::pagination::*;
+// #[get("/{ritual_id}")]
+// pub async fn list_ritual_times(
+//     params: web::Query<PageInfo>,
+//     path: web::Path<String>,
+//     identity: Identity,
+//     pool: web::Data<Pool>,
+// ) -> Result<HttpResponse, ServiceError> {
+//     use crate::utils::pagination::*;
 
-    if let Some(json_str) = identity.identity() {
-        let ritual_id = path.into_inner();
+//     if let Some(json_str) = identity.identity() {
+//         let ritual_id = path.into_inner();
 
-        if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
-            use crate::schema::ritual_times::dsl::*;
-            let _user: SlimUser = serde_json::from_str(&json_str).unwrap();
-            let mut conn = pool.get().unwrap();
+//         if let Ok(rid) = uuid::Uuid::parse_str(&ritual_id) {
+//             use crate::schema::ritual_times::dsl::*;
+//             let _user: SlimUser = serde_json::from_str(&json_str).unwrap();
+//             let mut conn = pool.get().unwrap();
 
-            let result = ritual_times
-                .filter(ritual_id.eq(&rid))
-                .order_by(created_at)
-                .paginate(params.page)
-                .per_page(params.page_size)
-                .load_and_count_pages::<RitualTime>(&mut conn);
+//             let result = ritual_times
+//                 .filter(ritual_id.eq(&rid))
+//                 .order_by(created_at)
+//                 .paginate(params.page)
+//                 .per_page(params.page_size)
+//                 .load_and_count_pages::<RitualTime>(&mut conn);
 
-            match result {
-                Ok((results, total_pages)) => {
-                    let page = RitualTimePage {
-                        page: params.page,
-                        page_size: params.page_size,
-                        timestamps: results,
-                        total_pages: total_pages,
-                    };
+//             match result {
+//                 Ok((results, total_pages)) => {
+//                     let page = RitualTimePage {
+//                         page: params.page,
+//                         page_size: params.page_size,
+//                         timestamps: results,
+//                         total_pages: total_pages,
+//                     };
 
-                    Ok(HttpResponse::Ok().json(page))
-                }
-                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
-            }
-        } else {
-            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
-        }
-    } else {
-        Err(ServiceError::Unauthorized)
-    }
-}
+//                     Ok(HttpResponse::Ok().json(page))
+//                 }
+//                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+//             }
+//         } else {
+//             Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+//         }
+//     } else {
+//         Err(ServiceError::Unauthorized)
+//     }
+// }
 
-#[delete("/{id}")]
-pub async fn delete_ritual_time(
-    path: web::Path<String>,
-    identity: Identity,
-    pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
-    if let Some(str) = identity.identity() {
-        use crate::schema::ritual_times::dsl::*;
+// #[delete("/{id}")]
+// pub async fn delete_ritual_time(
+//     path: web::Path<String>,
+//     identity: Identity,
+//     pool: web::Data<Pool>,
+// ) -> Result<HttpResponse, ServiceError> {
+//     if let Some(str) = identity.identity() {
+//         use crate::schema::ritual_times::dsl::*;
 
-        let time_id = path.into_inner();
+//         let time_id = path.into_inner();
 
-        if let Ok(tid) = uuid::Uuid::parse_str(&time_id) {
-            let conn = pool.get().unwrap();
-            let _user: SlimUser = serde_json::from_str(&str).unwrap();
+//         if let Ok(tid) = uuid::Uuid::parse_str(&time_id) {
+//             let conn = pool.get().unwrap();
+//             let _user: SlimUser = serde_json::from_str(&str).unwrap();
 
-            let result = diesel::delete(ritual_times.filter(id.eq(&tid))).execute(&conn);
-            match result {
-                Ok(size) => Ok(HttpResponse::Ok().json(size)),
-                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
-            }
-        } else {
-            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
-        }
-    } else {
-        Err(ServiceError::Unauthorized)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::establish_connection;
-
-    #[test]
-    fn test_ritual() {
-        let mut conn = establish_connection();
-        //create_ritual(&conn, "Quit Weed1", "one");
-        //create_ritual(&conn, "Quit Weed2", "two");
-        //create_ritual(&conn, "Quit Weed3", "three");
-        //create_ritual(&conn, "Quit Weed4", "four");
-        //create_ritual(&conn, "Quit Weed5", "five");
-        //create_ritual(&conn, "Quit Weed6", "six");
-        // let page_size = 3;
-        // let (results, total_pages) = list_rituals(&mut conn, 2, page_size);
-        // println!(
-        //     "Displaying {} of total: {}",
-        //     results.len(),
-        //     (total_pages * page_size)
-        // );
-        // for ritual in results {
-        //     println!("title: {}", ritual.title);
-        //     println!("body: {}", ritual.body);
-        //     println!("----------\n");
-        // }
-
-        // let mut weed = Ritual::new(String::from("Smoking Weed"));
-
-        // weed.times = vec![
-        //     Utc.ymd(2022, 3, 2).and_hms(12, 30, 11),
-        //     Utc.ymd(2022, 3, 2).and_hms(1, 30, 10),
-        //     Utc.ymd(2022, 3, 2).and_hms(17, 40, 10),
-        // ];
-
-        // weed.times.push( Utc.ymd(2022, 3, 2).and_hms(17, 40, 10));
-
-        //assert_eq!(5, weed.times.len());
-        assert_eq!(true, true);
-    }
-}
+//             let result = diesel::delete(ritual_times.filter(id.eq(&tid))).execute(&conn);
+//             match result {
+//                 Ok(size) => Ok(HttpResponse::Ok().json(size)),
+//                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+//             }
+//         } else {
+//             Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+//         }
+//     } else {
+//         Err(ServiceError::Unauthorized)
+//     }
+// }

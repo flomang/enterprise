@@ -8,7 +8,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use ritual::handlers;
 use ritual::models;
 use ritual::utils;
-use handlers::{auth_handler, invitation_handler, register_handler, ritual_handler};
+use handlers::{auth, invitation, register, ritual as rite, moment};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -46,24 +46,24 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .service(
-                        web::scope("/invitations").service(invitation_handler::create_invitation),
+                        web::scope("/invitations").service(invitation::create_invitation),
                     )
-                    .service(web::scope("/register").service(register_handler::register_user))
-                    .service(web::scope("/login").service(auth_handler::login))
-                    .service(web::scope("/logout").service(auth_handler::logout))
+                    .service(web::scope("/register").service(register::register_user))
+                    .service(web::scope("/login").service(auth::login))
+                    .service(web::scope("/logout").service(auth::logout))
                     .service(
                         web::scope("/rituals")
-                            .service(ritual_handler::create_ritual)
-                            .service(ritual_handler::list_rituals)
-                            .service(ritual_handler::delete_ritual)
-                            .service(ritual_handler::get_ritual)
-                            .service(ritual_handler::patch_ritual),
+                            .service(rite::create_ritual)
+                            .service(rite::list_rituals)
+                            .service(rite::delete_ritual)
+                            .service(rite::get_ritual)
+                            .service(rite::patch_ritual),
                     )
                     .service(
                         web::scope("/times")
-                            .service(ritual_handler::create_ritual_time)
-                            .service(ritual_handler::list_ritual_times)
-                            .service(ritual_handler::delete_ritual_time),
+                            .service(moment::create_ritual_time)
+                            .service(moment::list_ritual_times)
+                            .service(moment::delete_ritual_time),
                     ),
             )
     })
