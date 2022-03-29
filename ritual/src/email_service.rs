@@ -25,7 +25,7 @@ pub fn send_invitation(invitation: &Invitation) -> Result<(), ServiceError> {
     };
 
     // recipient from the invitation email
-    let recipient: Recipient = invitation.email.as_str().into();
+    let recipient: Recipient = invitation.recipient_email.as_str().into();
 
     let email_body = format!(
         "Please click on the link below to complete registration. <br/>
@@ -33,7 +33,7 @@ pub fn send_invitation(invitation: &Invitation) -> Result<(), ServiceError> {
          http://localhost:3030/register</a> <br>
          your Invitation expires on <strong>{}</strong>",
         invitation.id,
-        invitation.email,
+        invitation.recipient_email,
         invitation
             .expires_at
             .format("%I:%M %p %A, %-d %B, %C%y")

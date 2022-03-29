@@ -4,11 +4,13 @@ use actix_web::{
 };
 use diesel::prelude::*;
 use diesel::PgConnection;
+use chrono::prelude::Utc;
 use futures::future::{err, ok, Ready};
 use serde::Deserialize;
+use crate::utils::hash_password;
 
 use crate::utils::errors::ServiceError;
-use crate::models::{Pool, SlimUser, User};
+use crate::models::{Pool, SlimUser, User, UpdateUserPassword};
 use crate::utils::verify;
 
 #[derive(Debug, Deserialize)]
@@ -81,13 +83,33 @@ pub async fn get_me(identity: Identity) -> HttpResponse {
 /// Diesel query
 fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, ServiceError> {
     use crate::schema::users::dsl::{email, users};
+
     let conn: &PgConnection = &pool.get().unwrap();
-    let mut items = users
+    let mut people = users
         .filter(email.eq(&auth_data.email))
         .load::<User>(conn)?;
 
-    if let Some(user) = items.pop() {
-        if let Ok(matching) = verify(&user.hash, &auth_data.password) {
+    if let Some(user) = people.pop() {
+
+        // set auth password if not set for master splinter
+        if user.email == "master@splinter.com" && user.hash == "" {
+            let now = Utc::now().naive_utc();
+            let password =  hash_password(&auth_data.password)?;
+            let set_pwd = UpdateUserPassword{
+                id: user.id,
+                hash: password,
+                updated_at: now,
+            };
+
+            let result = diesel::update(users)
+                .set(&set_pwd)
+                .get_result::<User>(conn);
+
+            match result {
+                Ok(u) =>  return Ok(u.into()),
+                Err(e) => return Err(ServiceError::BadRequest(e.to_string())),
+            }
+        } else if let Ok(matching) = verify(&user.hash, &auth_data.password) {
             if matching {
                 return Ok(user.into());
             }

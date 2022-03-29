@@ -56,7 +56,7 @@ fn query(
                     // try hashing the password, else return the error that will be converted to ServiceError
                     let password: String = hash_password(&password)?;
                     dbg!(&password);
-                    let user = User::from_details(invitation.email, password);
+                    let user = User::from_details(invitation.recipient_email, password);
                     let inserted_user: User =
                         diesel::insert_into(users).values(&user).get_result(conn)?;
                     dbg!(&inserted_user);

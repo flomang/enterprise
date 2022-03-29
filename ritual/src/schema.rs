@@ -1,7 +1,8 @@
 table! {
     invitations (id) {
         id -> Uuid,
-        email -> Varchar,
+        sender_id -> Uuid,
+        recipient_email -> Varchar,
         expires_at -> Timestamp,
     }
 }
@@ -31,12 +32,14 @@ table! {
     users (id) {
         id -> Uuid,
         email -> Varchar,
+        email_verified -> Bool,
         hash -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
 }
 
+joinable!(invitations -> users (sender_id));
 joinable!(ritual_moments -> rituals (ritual_id));
 joinable!(rituals -> users (user_id));
 
