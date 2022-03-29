@@ -39,15 +39,15 @@ impl FromRequest for LoggedUser {
 }
 
 #[post("")]
-pub async fn logout(id: Identity) -> HttpResponse {
-    id.forget();
+pub async fn logout(identity: Identity) -> HttpResponse {
+    identity.forget();
     HttpResponse::Ok().finish()
 }
 
 #[post("")]
 pub async fn login(
     auth_data: web::Json<AuthData>,
-    id: Identity,
+    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     let res = web::block(move || query(auth_data.into_inner(), pool)).await;
@@ -55,7 +55,7 @@ pub async fn login(
     match res {
         Ok(user) => {
             let user_string = serde_json::to_string(&user).unwrap();
-            id.remember(user_string);
+            identity.remember(user_string);
             Ok(HttpResponse::Ok().json(user))
         }
         Err(err) => match err {
@@ -66,9 +66,9 @@ pub async fn login(
 }
 
 #[get("/")]
-pub async fn get_me(id: Identity) -> HttpResponse {
+pub async fn get_me(identity: Identity) -> HttpResponse {
      // access request identity
-     if let Some(str) = id.identity() {
+     if let Some(str) = identity.identity() {
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         println!("user: {:?}", user);
 
