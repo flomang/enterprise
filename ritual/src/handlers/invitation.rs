@@ -20,7 +20,7 @@ pub async fn create_invitation(
     let res = web::block(move || insert_invitation_and_send(invitation_data.into_inner().email, pool)).await;
 
     match res {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Ok(invite) => Ok(HttpResponse::Ok().json(invite)),
         Err(err) => match err {
             BlockingError::Error(service_error) => Err(service_error),
             BlockingError::Canceled => Err(ServiceError::InternalServerError),
@@ -31,11 +31,11 @@ pub async fn create_invitation(
 fn insert_invitation_and_send(
     eml: String,
     pool: web::Data<Pool>,
-) -> Result<(), ServiceError> {
-    let _invitation = dbg!(query(eml, pool)?);
+) -> Result<Invitation, ServiceError> {
+    let invitation = dbg!(query(eml, pool)?);
     
-    Ok(())
     //send_invitation(&invitation)
+    Ok(invitation)
 }
 
 /// Diesel query
