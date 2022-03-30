@@ -98,7 +98,7 @@ pub async fn list_rituals(
     }
 }
 
-#[delete("/{id}")]
+#[delete("/{ritual_id}")]
 pub async fn delete_ritual(
     path: web::Path<String>,
     id: Identity,
@@ -131,7 +131,7 @@ pub async fn delete_ritual(
     }
 }
 
-#[get("/{id}")]
+#[get("/{ritual_id}")]
 pub async fn get_ritual(
     path: web::Path<String>,
     id: Identity,
@@ -164,7 +164,7 @@ pub struct RitualEditData {
     pub published: Option<bool>,
 }
 
-#[patch("/{id}")]
+#[patch("/{ritual_id}")]
 pub async fn patch_ritual(
     path: web::Path<String>,
     data: web::Json<RitualEditData>,

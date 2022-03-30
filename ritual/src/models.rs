@@ -36,6 +36,14 @@ pub struct RitualMoment {
     pub created_at: chrono::NaiveDateTime,
 }
 
+#[derive(AsChangeset, Deserialize)]
+#[table_name = "ritual_moments"]
+pub struct UpdateRitualMoment {
+    pub id: uuid::Uuid,
+    pub notes: Option<String>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
 pub struct User {

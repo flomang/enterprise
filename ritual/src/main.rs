@@ -63,7 +63,8 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/moments")
                             .service(moment::create_ritual_moment)
                             .service(moment::list_ritual_moments)
-                            .service(moment::delete_ritual_moment),
+                            .service(moment::delete_ritual_moment)
+                            .service(moment::patch_ritual_moment),
                     ),
             )
     })

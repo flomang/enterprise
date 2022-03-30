@@ -1,10 +1,10 @@
+use super::PageInfo;
 use actix_identity::Identity;
-use actix_web::{delete, get, post, web, HttpResponse};
+use actix_web::{delete, get, patch, post, web, HttpResponse};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use super::PageInfo;
 
-use crate::models::{Pool, RitualMoment, SlimUser};
+use crate::models::{Pool, RitualMoment, SlimUser, UpdateRitualMoment};
 use crate::utils::errors::ServiceError;
 
 #[derive(Deserialize)]
@@ -130,6 +130,66 @@ pub async fn delete_ritual_moment(
             let result = diesel::delete(ritual_moments.filter(id.eq(&mid))).execute(&conn);
             match result {
                 Ok(size) => Ok(HttpResponse::Ok().json(size)),
+                Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+            }
+        } else {
+            Err(ServiceError::BadRequest("invalid ritual id".to_string()))
+        }
+    } else {
+        Err(ServiceError::Unauthorized)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MomentEditData {
+    pub notes: Option<String>,
+    pub created_at: Option<String>,
+}
+
+#[patch("/{moment_id}")]
+pub async fn patch_ritual_moment(
+    path: web::Path<String>,
+    data: web::Json<MomentEditData>,
+    identity: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(str) = identity.identity() {
+        let moment_id = path.into_inner();
+
+        if let Ok(id) = uuid::Uuid::parse_str(&moment_id) {
+            use crate::schema::ritual_moments;
+
+            let _user: SlimUser = serde_json::from_str(&str).unwrap();
+            let data = data.into_inner();
+            let notes = data.notes;
+            let created_at: Option<chrono::NaiveDateTime> = match data.created_at {
+                Some(date_str) => {
+                    if let Ok(time) =
+                        chrono::NaiveDateTime::parse_from_str(&date_str, "%Y-%m-%dT%H:%M:%S%z")
+                    {
+                        Some(time)
+                    } else {
+                        return  Err(ServiceError::BadRequest(
+                            "invalid timestamp format for created_at".to_string(),
+                        ));
+                    }
+                }
+                _ => None,
+            };
+
+            let update_ritual = UpdateRitualMoment {
+                id,
+                notes,
+                created_at,
+            };
+
+            let conn = pool.get().unwrap();
+            let result = diesel::update(ritual_moments::table)
+                .set(&update_ritual)
+                .get_result::<RitualMoment>(&conn);
+
+            match result {
+                Ok(moment) => Ok(HttpResponse::Ok().json(moment)),
                 Err(error) => Err(ServiceError::BadRequest(error.to_string())),
             }
         } else {
