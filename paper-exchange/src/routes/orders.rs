@@ -1,3 +1,4 @@
+use actix_identity::{Identity};
 use actix_web::{delete, patch, post, web, Responder, Result};
 use serde::{Deserialize, Serialize};
 
@@ -33,9 +34,11 @@ pub struct CancelOrderRequest {
 
 #[post("/orders")]
 pub async fn post_order(
+    id: Identity,
     state: web::Data<AppState>,
     req: web::Json<OrderRequest>,
 ) -> Result<impl Responder> {
+     // access request identity
     let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
     let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
     let side_opt = OrderSide::from_string(&req.side);

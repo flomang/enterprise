@@ -30,8 +30,6 @@ async fn main() -> std::io::Result<()> {
     // Start http server
     HttpServer::new(move || {
         App::new()
-            .data(pool.clone())
-            // enable logger
             .wrap(middleware::Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(utils::SECRET_KEY.as_bytes())
@@ -41,6 +39,7 @@ async fn main() -> std::io::Result<()> {
                     .max_age(86400) // one day in seconds
                     .secure(false), // this can only be true if you have https
             ))
+            .data(pool.clone())
             .data(web::JsonConfig::default().limit(4096))
             // everything under '/api/' route
             .service(

@@ -11,7 +11,7 @@ pub struct UserData {
     pub password: String,
 }
 
-#[post("/{id}")]
+#[post("/{invitation_id}")]
 pub async fn register_user(
     invitation_id: web::Path<String>,
     user_data: web::Json<UserData>,
