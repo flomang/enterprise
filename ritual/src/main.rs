@@ -6,10 +6,10 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use time::Duration;
 
+use handlers::{auth, invitation, moment, register, ritual as rite};
 use ritual::handlers;
 use ritual::models;
 use ritual::utils;
-use handlers::{auth, invitation, register, ritual as rite, moment};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,6 +19,7 @@ async fn main() -> std::io::Result<()> {
         "simple-auth-server=debug,actix_web=info,actix_server=info",
     );
     env_logger::init();
+
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     // create db connection pool
@@ -31,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     // Start http server
     HttpServer::new(move || {
         App::new()
-            .app_data(pool.clone())
+            .app_data(web::Data::new(pool.clone()))
             .wrap(middleware::Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(utils::SECRET_KEY.as_bytes())
@@ -45,9 +46,7 @@ async fn main() -> std::io::Result<()> {
             // everything under '/api/' route
             .service(
                 web::scope("/api")
-                    .service(
-                        web::scope("/invitations").service(invitation::create_invitation),
-                    )
+                    .service(web::scope("/invitations").service(invitation::create_invitation))
                     .service(web::scope("/register").service(register::register_user))
                     .service(web::scope("/login").service(auth::login))
                     .service(web::scope("/logout").service(auth::logout))
