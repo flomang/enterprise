@@ -1,9 +1,9 @@
-use actix_web::{error::BlockingError, post, web, HttpResponse};
+use actix_web::{post, web, HttpResponse};
 use diesel::prelude::*;
 use serde::Deserialize;
 
-use crate::utils::errors::ServiceError;
 use crate::models::{Invitation, Pool, SlimUser, User};
+use crate::utils::errors::ServiceError;
 use crate::utils::hash_password;
 // UserData is used to extract data from a post request by the client
 #[derive(Debug, Deserialize)]
@@ -16,7 +16,7 @@ pub async fn register_user(
     invitation_id: web::Path<String>,
     user_data: web::Json<UserData>,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, actix_web::Error> {
     let res = web::block(move || {
         query(
             invitation_id.into_inner(),
@@ -24,15 +24,16 @@ pub async fn register_user(
             pool,
         )
     })
-    .await;
+    .await??;
+    Ok(HttpResponse::Ok().json(&res))
 
-    match res {
-        Ok(user) => Ok(HttpResponse::Ok().json(&user)),
-        Err(err) => match err {
-            BlockingError::Error(service_error) => Err(service_error),
-            BlockingError::Canceled => Err(ServiceError::InternalServerError),
-        },
-    }
+    //match res {
+    //    Ok(user) => Ok(HttpResponse::Ok().json(&user)),
+    //    Err(err) => match err {
+    //        BlockingError::Error(service_error) => Err(service_error),
+    //        BlockingError::Canceled => Err(ServiceError::InternalServerError),
+    //    },
+    //}
 }
 
 fn query(

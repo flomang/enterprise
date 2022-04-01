@@ -4,13 +4,14 @@ use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use time::Duration;
 
 use ritual::handlers;
 use ritual::models;
 use ritual::utils;
 use handlers::{auth, invitation, register, ritual as rite, moment};
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     std::env::set_var(
@@ -30,17 +31,17 @@ async fn main() -> std::io::Result<()> {
     // Start http server
     HttpServer::new(move || {
         App::new()
+            .app_data(pool.clone())
             .wrap(middleware::Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(utils::SECRET_KEY.as_bytes())
                     .name("auth")
                     .path("/")
                     .domain(domain.as_str())
-                    .max_age(86400) // one day in seconds
+                    .max_age(Duration::days(1)) // one day in seconds
                     .secure(false), // this can only be true if you have https
             ))
-            .data(pool.clone())
-            .data(web::JsonConfig::default().limit(4096))
+            .app_data(web::JsonConfig::default().limit(4096))
             // everything under '/api/' route
             .service(
                 web::scope("/api")
@@ -67,7 +68,7 @@ async fn main() -> std::io::Result<()> {
                     ),
             )
     })
-    .bind("127.0.0.1:3000")?
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }

@@ -1,6 +1,5 @@
-
 use actix_identity::Identity;
-use actix_web::{error::BlockingError, post, web, HttpResponse};
+use actix_web::{post, web, HttpResponse};
 use diesel::{prelude::*, PgConnection};
 use serde::Deserialize;
 
@@ -18,27 +17,21 @@ pub async fn create_invitation(
     invitation_data: web::Json<InvitationData>,
     identity: Identity,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
-
+) -> Result<HttpResponse, actix_web::Error> {
     // must be logged in
-    if let Some(str) = identity.identity() {
+    let str = identity.identity().expect(        "unauthorized");
 
-        let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let res = web::block(move || {
-            insert_invitation_and_send(user.id, invitation_data.into_inner().email, pool)
-        })
-        .await;
+    let user: SlimUser = serde_json::from_str(&str).unwrap();
+    let result = web::block(move || {
+        insert_invitation_and_send(user.id, invitation_data.into_inner().email, pool)
+    })
+    .await??;
+    Ok(HttpResponse::Ok().json(result))
 
-        match res {
-            Ok(invite) => Ok(HttpResponse::Ok().json(invite)),
-            Err(err) => match err {
-                BlockingError::Error(service_error) => Err(service_error),
-                BlockingError::Canceled => Err(ServiceError::InternalServerError),
-            },
-        }
-    } else {
-        Err(ServiceError::Unauthorized)
-    }
+    //match result {
+    //    Ok(invite) => Ok(HttpResponse::Ok().json(invite)),
+    //    Err(err) => Err(ServiceError::BadRequest(err.to_string()))
+    //}
 }
 
 fn insert_invitation_and_send(
@@ -53,7 +46,11 @@ fn insert_invitation_and_send(
 }
 
 /// Diesel query
-fn query( sender_id: uuid::Uuid, eml: String, pool: web::Data<Pool>) -> Result<Invitation, ServiceError> {
+fn query(
+    sender_id: uuid::Uuid,
+    eml: String,
+    pool: web::Data<Pool>,
+) -> Result<Invitation, ServiceError> {
     use crate::schema::invitations::dsl::invitations;
 
     let new_invitation: Invitation = Invitation::new(sender_id, eml);

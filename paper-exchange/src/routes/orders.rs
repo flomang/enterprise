@@ -1,12 +1,13 @@
-use actix_identity::{Identity};
-use actix_web::{delete, patch, post, web, Responder, Result};
+use actix_identity::Identity;
+use actix_web::{delete, patch, post, web, Responder, Result, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-use exchange::engine;
+use crate::{AppState, BrokerAsset};
 use engine::domain::OrderSide;
 use engine::orders;
+use exchange::engine;
+use ritual::utils::errors::ServiceError;
 use std::time::SystemTime;
-use crate::{AppState, BrokerAsset};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrderRequest {
@@ -31,61 +32,65 @@ pub struct CancelOrderRequest {
     side: String,
 }
 
-
 #[post("/orders")]
 pub async fn post_order(
     id: Identity,
     state: web::Data<AppState>,
     req: web::Json<OrderRequest>,
-) -> Result<impl Responder> {
-     // access request identity
-    let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
-    let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
-    let side_opt = OrderSide::from_string(&req.side);
-    let price_opt = req.price;
+) -> Result<HttpResponse, ServiceError> {
+    // access request identity
+    if let Some(id) = id.identity() {
+        // access request identity
+        let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
+        let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
+        let side_opt = OrderSide::from_string(&req.side);
+        let price_opt = req.price;
 
-    let mut errors: Vec<String> = vec![];
-    if order_asset_opt.is_none() {
-        errors.push("bad order asset".to_string());
-    }
-    if price_asset_opt.is_none() {
-        errors.push("bad price asset".to_string());
-    }
-    if side_opt.is_none() {
-        errors.push("side must be bid or ask".to_string());
-    }
-
-    let order = match (order_asset_opt, price_asset_opt, side_opt, price_opt) {
-        (Some(order_asset), Some(price_asset), Some(side), Some(price)) => {
-            Some(orders::new_limit_order_request(
-                order_asset,
-                price_asset,
-                side,
-                price,
-                req.qty,
-                SystemTime::now(),
-            ))
+        let mut errors: Vec<String> = vec![];
+        if order_asset_opt.is_none() {
+            errors.push("bad order asset".to_string());
         }
-        (Some(order_asset), Some(price_asset), Some(side), None) => {
-            Some(orders::new_market_order_request(
-                order_asset,
-                price_asset,
-                side,
-                req.qty,
-                SystemTime::now(),
-            ))
+        if price_asset_opt.is_none() {
+            errors.push("bad price asset".to_string());
         }
-        _ => None,
-    };
+        if side_opt.is_none() {
+            errors.push("side must be bid or ask".to_string());
+        }
 
-    if let Some(o) = order {
-        let mut book = state.order_book.lock().unwrap();
-        let res = book.process_order(o);
-        let value = serde_json::json!(res);
-        Ok(web::Json(value))
+        let order = match (order_asset_opt, price_asset_opt, side_opt, price_opt) {
+            (Some(order_asset), Some(price_asset), Some(side), Some(price)) => {
+                Some(orders::new_limit_order_request(
+                    order_asset,
+                    price_asset,
+                    side,
+                    price,
+                    req.qty,
+                    SystemTime::now(),
+                ))
+            }
+            (Some(order_asset), Some(price_asset), Some(side), None) => {
+                Some(orders::new_market_order_request(
+                    order_asset,
+                    price_asset,
+                    side,
+                    req.qty,
+                    SystemTime::now(),
+                ))
+            }
+            _ => None,
+        };
+
+        if let Some(o) = order {
+            let mut book = state.order_book.lock().unwrap();
+            let res = book.process_order(o);
+            let value = serde_json::json!(res);
+            Ok(HttpResponse::Ok().json(value))
+        } else {
+            let value = serde_json::json!(errors);
+            Ok(HttpResponse::Ok().json(value))
+        }
     } else {
-        let value = serde_json::json!(errors);
-        Ok(web::Json(value))
+        Err(ServiceError::Unauthorized)
     }
 }
 

@@ -1,11 +1,11 @@
 use actix_identity::Identity;
 use actix_web::{
-    dev::Payload, error::BlockingError, get, post, web, Error, FromRequest, HttpRequest, HttpResponse,
+    dev::Payload, get, post, web, Error, FromRequest, HttpRequest, HttpResponse,
 };
 use diesel::prelude::*;
 use diesel::PgConnection;
 use chrono::prelude::Utc;
-use futures::future::{err, ok, Ready};
+use futures::future::{ready, Ready};
 use serde::Deserialize;
 use crate::utils::hash_password;
 
@@ -24,7 +24,6 @@ pub struct AuthData {
 pub type LoggedUser = SlimUser;
 
 impl FromRequest for LoggedUser {
-    type Config = ();
     type Error = Error;
     type Future = Ready<Result<LoggedUser, Error>>;
 
@@ -32,11 +31,12 @@ impl FromRequest for LoggedUser {
         if let Ok(identity) = Identity::from_request(req, pl).into_inner() {
             if let Some(user_json) = identity.identity() {
                 if let Ok(user) = serde_json::from_str(&user_json) {
-                    return ok(user);
+                    return ready(Ok(user));
                 }
             }
         }
-        err(ServiceError::Unauthorized.into())
+
+        ready(Err(ServiceError::Unauthorized.into()))
     }
 }
 
@@ -51,20 +51,11 @@ pub async fn login(
     auth_data: web::Json<AuthData>,
     identity: Identity,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, ServiceError> {
-    let res = web::block(move || query(auth_data.into_inner(), pool)).await;
-
-    match res {
-        Ok(user) => {
-            let user_string = serde_json::to_string(&user).unwrap();
-            identity.remember(user_string);
-            Ok(HttpResponse::Ok().json(user))
-        }
-        Err(err) => match err {
-            BlockingError::Error(service_error) => Err(service_error),
-            BlockingError::Canceled => Err(ServiceError::InternalServerError),
-        },
-    }
+) -> Result<HttpResponse, actix_web::Error> {
+    let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
+    let user_string = serde_json::to_string(&user).unwrap();
+    identity.remember(user_string);
+    Ok(HttpResponse::Ok().json(user))
 }
 
 #[get("/")]
@@ -84,6 +75,7 @@ pub async fn get_me(identity: Identity) -> HttpResponse {
 fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, ServiceError> {
     use crate::schema::users::dsl::{email, users};
 
+    println!("{:?}", auth_data);
     let conn: &PgConnection = &pool.get().unwrap();
     let mut people = users
         .filter(email.eq(&auth_data.email))
