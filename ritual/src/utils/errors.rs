@@ -1,4 +1,4 @@
-use actix_web::{error::ResponseError, HttpResponse};
+use actix_web::{error::ResponseError, error::BlockingError, HttpResponse};
 use derive_more::Display;
 use diesel::result::{DatabaseErrorKind, Error as DBError};
 use std::convert::From;
@@ -34,6 +34,12 @@ impl ResponseError for ServiceError {
 impl From<ParseError> for ServiceError {
     fn from(_: ParseError) -> ServiceError {
         ServiceError::BadRequest("Invalid UUID".into())
+    }
+}
+
+impl From<BlockingError> for ServiceError {
+    fn from(_: BlockingError) -> ServiceError {
+        ServiceError::BadRequest("encountered blocking error".into())
     }
 }
 

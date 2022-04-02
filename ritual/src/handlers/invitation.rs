@@ -17,21 +17,19 @@ pub async fn create_invitation(
     invitation_data: web::Json<InvitationData>,
     identity: Identity,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, ServiceError> {
     // must be logged in
-    let str = identity.identity().expect(        "unauthorized");
-
-    let user: SlimUser = serde_json::from_str(&str).unwrap();
-    let result = web::block(move || {
-        insert_invitation_and_send(user.id, invitation_data.into_inner().email, pool)
-    })
-    .await??;
-    Ok(HttpResponse::Ok().json(result))
-
-    //match result {
-    //    Ok(invite) => Ok(HttpResponse::Ok().json(invite)),
-    //    Err(err) => Err(ServiceError::BadRequest(err.to_string()))
-    //}
+    match identity.identity() {
+        Some(str) => {
+            let user: SlimUser = serde_json::from_str(&str).unwrap();
+            let result = web::block(move || {
+                insert_invitation_and_send(user.id, invitation_data.into_inner().email, pool)
+            })
+            .await??;
+            Ok(HttpResponse::Ok().json(result))
+        }
+        None => Err(ServiceError::Unauthorized),
+    }
 }
 
 fn insert_invitation_and_send(
