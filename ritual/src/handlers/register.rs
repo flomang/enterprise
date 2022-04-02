@@ -16,7 +16,7 @@ pub async fn register_user(
     invitation_id: web::Path<String>,
     user_data: web::Json<UserData>,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, ServiceError> {
     let res = web::block(move || {
         query(
             invitation_id.into_inner(),
@@ -26,14 +26,6 @@ pub async fn register_user(
     })
     .await??;
     Ok(HttpResponse::Ok().json(&res))
-
-    //match res {
-    //    Ok(user) => Ok(HttpResponse::Ok().json(&user)),
-    //    Err(err) => match err {
-    //        BlockingError::Error(service_error) => Err(service_error),
-    //        BlockingError::Canceled => Err(ServiceError::InternalServerError),
-    //    },
-    //}
 }
 
 fn query(

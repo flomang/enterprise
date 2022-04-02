@@ -49,7 +49,7 @@ pub async fn login(
     auth_data: web::Json<AuthData>,
     identity: Identity,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, ServiceError> {
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
     let user_string = serde_json::to_string(&user).unwrap();
     identity.remember(user_string);
