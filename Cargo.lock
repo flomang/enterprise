@@ -828,6 +828,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "authentication"
+version = "0.1.0"
+dependencies = [
+ "actix-identity",
+ "actix-web 4.0.1",
+ "argonautica",
+ "chrono",
+ "derive_more",
+ "diesel",
+ "dotenv 0.15.0",
+ "env_logger 0.9.0",
+ "futures 0.3.15",
+ "lazy_static",
+ "r2d2",
+ "rust-argon2",
+ "serde",
+ "serde_json",
+ "sparkpost",
+ "time 0.3.7",
+ "uuid",
+]
+
+[[package]]
 name = "autocfg"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
