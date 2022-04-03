@@ -1,22 +1,13 @@
 table! {
-    invitations (id) {
+    orders (id) {
         id -> Uuid,
-        email -> Varchar,
-        expires_at -> Timestamp,
-    }
-}
-
-table! {
-    users (id) {
-        id -> Uuid,
-        email -> Varchar,
-        hash -> Varchar,
+        user_id -> Uuid,
+        price -> Nullable<Numeric>,
+        qty -> Nullable<Numeric>,
+        typ -> Varchar,
+        side -> Varchar,
+        status -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
 }
-
-allow_tables_to_appear_in_same_query!(
-    invitations,
-    users,
-);
