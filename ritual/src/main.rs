@@ -3,12 +3,10 @@ extern crate diesel;
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use time::Duration;
-
-use handlers::{auth, invitation, moment, register, ritual as rite};
-use ritual::handlers;
-use ritual::models;
 use kitchen::utils;
+use ritual::handlers::{auth, invitation, moment, register, ritual as rite};
+use ritual::models;
+use time::Duration;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,7 +31,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .wrap(middleware::Logger::default())
-            .wrap(utils::auth::cookie_policy(domain.clone(), Duration::new(86400, 0)))
+            .wrap(utils::auth::cookie_policy(
+                domain.clone(),
+                Duration::new(86400, 0),
+            ))
             .app_data(web::JsonConfig::default().limit(4096))
             // everything under '/api/' route
             .service(
