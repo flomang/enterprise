@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+kitchen = { path = "../kitchen" }
 actix-web = "4"
 actix-identity = "0.4"
 argonautica = "0.2.0"
