@@ -7,7 +7,6 @@ pub mod handlers;
 pub mod email_service;
 pub mod models;
 pub mod schema;
-pub mod utils;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

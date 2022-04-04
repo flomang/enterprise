@@ -7,7 +7,8 @@ use diesel::r2d2::{self, ConnectionManager};
 use time::Duration;
 
 use authentication::handlers::{auth, invitation, register};
-use authentication::{models, utils};
+use authentication::models;
+use kitchen::utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

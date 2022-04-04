@@ -3,8 +3,8 @@ use diesel::prelude::*;
 use serde::Deserialize;
 
 use crate::models::{Invitation, Pool, SlimUser, User};
-use crate::utils::errors::ServiceError;
-use crate::utils::hash_password;
+use kitchen::utils::errors::ServiceError;
+use kitchen::utils::hash_password;
 // UserData is used to extract data from a post request by the client
 #[derive(Debug, Deserialize)]
 pub struct UserData {
