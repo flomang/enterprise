@@ -3,10 +3,10 @@ use actix_web::{delete, get, patch, post, web, HttpResponse};
 use chrono::prelude::Utc;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use super::PageInfo;
+use kitchen::utils::pagination::PageInfo;
+use kitchen::utils::errors::ServiceError;
 
 use crate::models::{Pool, Ritual, UpdateRitual, SlimUser};
-use crate::utils::errors::ServiceError;
 
 #[derive(Debug, Deserialize)]
 pub struct RitualData {
@@ -65,7 +65,7 @@ pub async fn list_rituals(
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use crate::utils::pagination::*;
+    use kitchen::utils::pagination::*;
 
     if let Some(str) = id.identity() {
         use crate::schema::rituals::dsl::*;

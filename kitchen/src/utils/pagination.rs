@@ -4,6 +4,7 @@ use diesel::query_builder::*;
 use diesel::query_dsl::methods::LoadQuery;
 use diesel::sql_types::BigInt;
 use diesel::QueryId;
+use serde::Deserialize;
 
 pub trait Paginate: Sized {
     fn paginate(self, page: i64) -> Paginated<Self>;
@@ -71,4 +72,10 @@ where
         out.push_bind_param::<BigInt, _>(&self.offset)?;
         Ok(())
     }
+}
+
+#[derive(Deserialize)]
+pub struct PageInfo {
+    pub page: i64,
+    pub page_size: i64,
 }

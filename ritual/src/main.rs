@@ -1,6 +1,5 @@
 extern crate diesel;
 
-use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
@@ -9,7 +8,7 @@ use time::Duration;
 use handlers::{auth, invitation, moment, register, ritual as rite};
 use ritual::handlers;
 use ritual::models;
-use ritual::utils;
+use kitchen::utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -34,14 +33,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .wrap(middleware::Logger::default())
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(utils::SECRET_KEY.as_bytes())
-                    .name("auth")
-                    .path("/")
-                    .domain(domain.as_str())
-                    .max_age(Duration::days(1)) // one day in seconds
-                    .secure(false), // this can only be true if you have https
-            ))
+            .wrap(utils::auth::cookie_policy(domain.clone(), Duration::new(86400, 0)))
             .app_data(web::JsonConfig::default().limit(4096))
             // everything under '/api/' route
             .service(
@@ -67,7 +59,7 @@ async fn main() -> std::io::Result<()> {
                     ),
             )
     })
-    .bind("127.0.0.1:3000")?
+    .bind("127.0.0.1:3002")?
     .run()
     .await
 }

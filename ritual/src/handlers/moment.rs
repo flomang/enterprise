@@ -1,11 +1,11 @@
-use super::PageInfo;
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, web, HttpResponse};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Pool, RitualMoment, SlimUser, UpdateRitualMoment};
-use crate::utils::errors::ServiceError;
+use kitchen::utils::errors::ServiceError;
+use kitchen::utils::pagination::PageInfo;
 
 #[derive(Deserialize)]
 pub struct RitualTimestamp {
@@ -74,7 +74,7 @@ pub async fn list_ritual_moments(
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use crate::utils::pagination::*;
+    use kitchen::utils::pagination::*;
 
     if let Some(json_str) = identity.identity() {
         let ritual_id = path.into_inner();

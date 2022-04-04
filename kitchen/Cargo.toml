@@ -12,5 +12,6 @@ argonautica = "0.2.0"
 derive_more = "0.99"
 diesel = { version = "1.4.5", features = ["postgres","uuidv07", "r2d2", "chrono"] }
 lazy_static = "1.4"
-uuid = { version = "0.8", features = ["serde", "v4"] }
+serde = { version = "1", features = ["derive"] }
 time = "0.3"
+uuid = { version = "0.8", features = ["serde", "v4"] }

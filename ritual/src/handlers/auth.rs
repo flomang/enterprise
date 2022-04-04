@@ -1,4 +1,3 @@
-use crate::utils::hash_password;
 use actix_identity::Identity;
 use actix_web::{dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse};
 use chrono::prelude::Utc;
@@ -8,8 +7,9 @@ use std::future::{ready, Ready};
 use serde::Deserialize;
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
-use crate::utils::errors::ServiceError;
-use crate::utils::verify;
+use kitchen::utils::errors::ServiceError;
+use kitchen::utils::verify;
+use kitchen::utils::hash_password;
 
 #[derive(Debug, Deserialize)]
 pub struct AuthData {
