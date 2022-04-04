@@ -1,4 +1,3 @@
-use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware, web, App, HttpServer};
 use actix_web::cookie::time::Duration;
 use std::sync::Mutex;
@@ -9,8 +8,7 @@ use exchange::engine;
 use paper_exchange::routes::orders as paper;
 use paper_exchange::AppState;
 use paper_exchange::BrokerAsset;
-use ritual::utils;
-use kitchen::utils::auth;
+use kitchen::utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .wrap(auth::cookie_policy(domain, Duration::new(86400, 0)))
+            .wrap(utils::auth::cookie_policy(domain.clone(), Duration::new(86400, 0)))
             .app_data(data.clone())
             .app_data(web::JsonConfig::default().limit(4096))
             .service(

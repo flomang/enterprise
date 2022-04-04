@@ -10,6 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 exchange = { path = "../exchange" }
 ritual = { path = "../ritual" }
+kitchen = { path = "../kitchen" }
 actix-identity = "0.4"
 actix-web = "4"
 futures = "0.3"
