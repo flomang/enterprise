@@ -28,6 +28,34 @@ pub struct UpdateRitual {
 }
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
+#[table_name = "goals"]
+pub struct Goal {
+    pub id: uuid::Uuid,
+    pub ritual_id: uuid::Uuid,
+    pub interval_minutes: i32,
+    pub status: String,
+    pub emojii_url: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(AsChangeset)]
+#[table_name = "goals"]
+pub struct UpdateGoal {
+    pub id: uuid::Uuid,
+    pub status: String,
+    pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, Queryable, Serialize)]
+#[table_name = "achievements"]
+pub struct Achievement {
+    pub id: uuid::Uuid,
+    pub goal_id: uuid::Uuid,
+    pub created_at: chrono::NaiveDateTime
+}
+
+#[derive(Debug, Insertable, Queryable, Serialize)]
 #[table_name = "ritual_moments"]
 pub struct RitualMoment {
     pub id: uuid::Uuid,
