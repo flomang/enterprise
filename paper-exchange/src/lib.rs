@@ -191,4 +191,17 @@ mod tests {
 
         assert_eq!(true, true);
     }
+
+    #[test]
+    fn sketch2() {
+        use diesel::pg::data_types::PgNumeric;
+        use bigdecimal::BigDecimal;
+        use std::str::FromStr;
+
+        let input = "0.12345678";
+        let dec = BigDecimal::from_str(&input).unwrap();
+        let number = PgNumeric::from(dec);
+        println!("{:?}", number);
+    }
 }
+

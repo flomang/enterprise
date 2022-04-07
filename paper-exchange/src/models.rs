@@ -6,6 +6,7 @@ use diesel::pg::data_types::PgNumeric;
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
+// https://stackoverflow.com/questions/38175300/how-to-insert-a-decimal-number-with-diesels-pgnumeric-type
 #[derive(Debug, Insertable, Queryable)]
 #[table_name = "orders"]
 pub struct Order {
