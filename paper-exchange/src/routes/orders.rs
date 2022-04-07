@@ -6,7 +6,7 @@ use crate::{AppState, BrokerAsset};
 use engine::domain::OrderSide;
 use engine::orders;
 use exchange::engine;
-use ritual::utils::errors::ServiceError;
+use kitchen::utils::errors::ServiceError;
 use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize)]
