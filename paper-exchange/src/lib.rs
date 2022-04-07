@@ -1,8 +1,15 @@
+#[macro_use]
+extern crate diesel;
+extern crate chrono;
+extern crate dotenv;
+
 use engine::orderbook::Orderbook;
 use exchange::engine;
 use std::sync::Mutex;
 
 pub mod routes;
+pub mod models;
+pub mod schema;
 
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
