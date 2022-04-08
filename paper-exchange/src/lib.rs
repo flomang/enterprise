@@ -7,8 +7,8 @@ use engine::orderbook::Orderbook;
 use exchange::engine;
 use std::sync::Mutex;
 
-pub mod routes;
 pub mod models;
+pub mod routes;
 pub mod schema;
 
 // please keep these organized while editing
@@ -193,15 +193,45 @@ mod tests {
     }
 
     #[test]
-    fn sketch2() {
-        use diesel::pg::data_types::PgNumeric;
+    fn insert_dummy_order() {
+        use super::schema::orders::dsl::*;
         use bigdecimal::BigDecimal;
+        use diesel::pg::data_types::PgNumeric;
+        use diesel::prelude::*;
+        use diesel::r2d2::{self, ConnectionManager};
         use std::str::FromStr;
 
-        let input = "0.12345678";
-        let dec = BigDecimal::from_str(&input).unwrap();
-        let number = PgNumeric::from(dec);
-        println!("{:?}", number);
+        let pric = "50000.0001";
+        let quantity = "0.00005678";
+
+        let bigdecimal_price = BigDecimal::from_str(&pric).unwrap();
+        let bigdecimal_quantity = BigDecimal::from_str(&quantity).unwrap();
+
+        let pricee = PgNumeric::from(bigdecimal_price);
+        let qtyee = PgNumeric::from(bigdecimal_quantity);
+
+        let database_url = "postgres://bishop@localhost/paper_dev".to_string();
+
+        // create db connection pool
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
+        let pool: models::Pool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+
+        let now = chrono::Local::now().naive_local();
+        let order = super::models::Order {
+            user_id: uuid::Uuid::from_str("da8cc5a0-bddc-4ee8-a6d2-6e3a92b71600").unwrap(),
+            id: uuid::Uuid::new_v4(),
+            price: Some(pricee), 
+            qty: Some(qtyee),
+            typ: "market".to_string(),
+            side: "bid".to_string(),
+            status: "open".to_string(),
+            created_at: now,
+            updated_at: now,
+        };
+
+        let conn: &PgConnection = &pool.get().unwrap();
+        diesel::insert_into(orders).values(order).execute(conn);
     }
 }
-
