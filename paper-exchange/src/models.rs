@@ -12,9 +12,11 @@ pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub struct Order {
     pub id: uuid::Uuid,
     pub user_id: uuid::Uuid,
+    pub order_asset: String,
+    pub price_asset: String,
     pub price: Option<PgNumeric>,
-    pub qty: Option<PgNumeric>,
-    pub typ: String,
+    pub quantity: PgNumeric,
+    pub order_type: String,
     pub side: String,
     pub status: String,
     pub created_at: NaiveDateTime,
@@ -26,7 +28,7 @@ pub struct Order {
 pub struct UpdateOrder {
     pub id: uuid::Uuid,
     pub price: Option<PgNumeric>,
-    pub qty: Option<PgNumeric>,
+    pub quantity: PgNumeric,
     pub status: String,
     pub updated_at: NaiveDateTime,
 }

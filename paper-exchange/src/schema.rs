@@ -2,9 +2,11 @@ table! {
     orders (id) {
         id -> Uuid,
         user_id -> Uuid,
+        order_asset -> Varchar,
+        price_asset -> Varchar,
         price -> Nullable<Numeric>,
-        qty -> Nullable<Numeric>,
-        typ -> Varchar,
+        quantity -> Numeric,
+        order_type -> Varchar,
         side -> Varchar,
         status -> Varchar,
         created_at -> Timestamp,
