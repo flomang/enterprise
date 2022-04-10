@@ -1,4 +1,4 @@
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::time::SystemTime;
@@ -16,12 +16,6 @@ const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
 pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
 
-// impl From<BigDecimal> for f64 {
-//     fn from(num: BigDecimal) -> f64 {
-//         num.to_f64.unwrap()
-//     }
-// }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success {
     Accepted {
@@ -34,8 +28,8 @@ pub enum Success {
         order_id: u64,
         side: OrderSide,
         order_type: OrderType,
-        price: f64,
-        qty: f64,
+        price: BigDecimal,
+        qty: BigDecimal,
         ts: SystemTime,
     },
 
@@ -43,15 +37,15 @@ pub enum Success {
         order_id: u64,
         side: OrderSide,
         order_type: OrderType,
-        price: f64,
-        qty: f64,
+        price: BigDecimal,
+        qty: BigDecimal,
         ts: SystemTime,
     },
 
     Amended {
         id: u64,
-        price: f64,
-        qty: f64,
+        price: BigDecimal,
+        qty: BigDecimal,
         ts: SystemTime,
     },
 
@@ -367,8 +361,8 @@ where
         ) {
             results.push(Ok(Success::Amended {
                 id: order_id,
-                price: price.to_f64().unwrap(),
-                qty: qty.to_f64().unwrap(),
+                price,
+                qty,
                 ts: SystemTime::now(),
             }));
         } else {
@@ -454,8 +448,8 @@ where
                 order_id,
                 side,
                 order_type,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty: qty.clone(),
                 ts: deal_time,
             }));
 
@@ -464,8 +458,8 @@ where
                 order_id: opposite_order.order_id,
                 side: opposite_order.side,
                 order_type: OrderType::Limit,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty: qty.clone(),
                 ts: deal_time,
             }));
 
@@ -492,8 +486,8 @@ where
                 order_id,
                 side,
                 order_type,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: opposite_order.qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty: opposite_order.qty.clone(),
                 ts: deal_time,
             }));
 
@@ -502,8 +496,8 @@ where
                 order_id: opposite_order.order_id,
                 side: opposite_order.side,
                 order_type: OrderType::Limit,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: opposite_order.qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty: opposite_order.qty.clone(),
                 ts: deal_time,
             }));
 
@@ -526,8 +520,8 @@ where
                 order_id,
                 side,
                 order_type,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty: qty.clone(),
                 ts: deal_time,
             }));
             // report filled opposite limit order
@@ -535,8 +529,8 @@ where
                 order_id: opposite_order.order_id,
                 side: opposite_order.side,
                 order_type: OrderType::Limit,
-                price: opposite_order.price.to_f64().unwrap(),
-                qty: qty.to_f64().unwrap(),
+                price: opposite_order.price.clone(),
+                qty,
                 ts: deal_time,
             }));
 
