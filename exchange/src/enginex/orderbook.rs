@@ -1,31 +1,26 @@
-
-use std::time::SystemTime;
-use std::fmt::Debug;
-use serde::{Deserialize, Serialize};
 use bigdecimal::{BigDecimal, ToPrimitive};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::time::SystemTime;
 
 use super::domain::{Order, OrderSide, OrderType};
-use super::orders::OrderRequest;
 use super::order_queues::OrderQueue;
+use super::orders::OrderRequest;
 use super::sequence;
 use super::validation::OrderRequestValidator;
-
 
 const MIN_SEQUENCE_ID: u64 = 1;
 const MAX_SEQUENCE_ID: u64 = 1000;
 const MAX_STALLED_INDICES_IN_QUEUE: u64 = 10;
 const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
-
 pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
-
 
 // impl From<BigDecimal> for f64 {
 //     fn from(num: BigDecimal) -> f64 {
 //         num.to_f64.unwrap()
 //     }
 // }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success {
@@ -60,9 +55,11 @@ pub enum Success {
         ts: SystemTime,
     },
 
-    Cancelled { id: u64, ts: SystemTime },
+    Cancelled {
+        id: u64,
+        ts: SystemTime,
+    },
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Failed {
@@ -71,7 +68,6 @@ pub enum Failed {
     NoMatch(u64),
     OrderNotFound(u64),
 }
-
 
 pub struct Orderbook<Asset>
 where
@@ -84,7 +80,6 @@ where
     seq: sequence::TradeSequence,
     order_validator: OrderRequestValidator<Asset>,
 }
-
 
 impl<Asset> Orderbook<Asset>
 where
@@ -124,7 +119,6 @@ where
             ),
         }
     }
-
 
     pub fn process_order(&mut self, order: OrderRequest<Asset>) -> OrderProcessingResult {
         // processing result accumulator
@@ -208,14 +202,12 @@ where
         proc_result
     }
 
-
     /// Get current spread as a tuple: (bid, ask)
     pub fn current_spread(&mut self) -> Option<(BigDecimal, BigDecimal)> {
         let bid = self.bid_queue.peek()?.price.clone();
         let ask = self.ask_queue.peek()?.price.clone();
         Some((bid, ask))
     }
-
 
     /* Processing logic */
 
@@ -260,13 +252,11 @@ where
                     qty - opposite_order.qty,
                 );
             }
-
         } else {
             // no limit orders found
             results.push(Err(Failed::NoMatch(order_id)));
         }
     }
-
 
     fn process_limit_order(
         &mut self,
@@ -321,7 +311,6 @@ where
                         ts,
                     );
                 }
-
             } else {
                 // just insert new order in queue
                 self.store_new_limit_order(
@@ -335,7 +324,6 @@ where
                     ts,
                 );
             }
-
         } else {
             self.store_new_limit_order(
                 results,
@@ -349,7 +337,6 @@ where
             );
         }
     }
-
 
     fn process_order_amend(
         &mut self,
@@ -377,8 +364,7 @@ where
                 price: price.clone(),
                 qty: qty.clone(),
             },
-        )
-        {
+        ) {
             results.push(Ok(Success::Amended {
                 id: order_id,
                 price: price.to_f64().unwrap(),
@@ -389,7 +375,6 @@ where
             results.push(Err(Failed::OrderNotFound(order_id)));
         }
     }
-
 
     fn process_order_cancel(
         &mut self,
@@ -412,9 +397,7 @@ where
         }
     }
 
-
     /* Helpers */
-
 
     fn store_new_limit_order(
         &mut self,
@@ -443,12 +426,10 @@ where
                 price,
                 qty,
             },
-        )
-        {
+        ) {
             results.push(Err(Failed::DuplicateOrderID(order_id)))
         };
     }
-
 
     fn order_matching(
         &mut self,
@@ -461,7 +442,6 @@ where
         side: OrderSide,
         qty: BigDecimal,
     ) -> bool {
-
         // real processing time
         let deal_time = SystemTime::now();
 
@@ -504,7 +484,6 @@ where
                     qty: opposite_order.qty.clone() - qty,
                 });
             }
-
         } else if qty > opposite_order.qty {
             // partially fill new limit order, fill opposite limit and notify to process the rest
 
@@ -539,7 +518,6 @@ where
 
             // matching incomplete
             return false;
-
         } else {
             // orders exactly match -> fill both and remove old limit
 
@@ -577,17 +555,26 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
-    use super::*;
     use super::super::orders;
+    use bigdecimal::Zero;
+    use std::str::FromStr;
+
+    use super::*;
 
     #[derive(PartialEq, Eq, Debug, Copy, Clone)]
     pub enum Asset {
         USD,
         BTC,
+    }
+
+    fn bigdec(num: &str) -> BigDecimal {
+        match BigDecimal::from_str(num) {
+            Ok(dec) => dec,
+            Err(_) => BigDecimal::zero(),
+        }
     }
 
     #[test]
@@ -600,6 +587,82 @@ mod test {
         match result.pop().unwrap() {
             Err(_) => (),
             _ => panic!("unexpected events"),
+        }
+    }
+
+    #[test]
+    fn request_list() {
+        let btc_asset = Asset::BTC;
+        let usd_asset = Asset::USD;
+        let mut orderbook = Orderbook::new(btc_asset, usd_asset);
+        let request_list = vec![
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Bid,
+                bigdec("41711.760112"),
+                bigdec("0.15"),
+                SystemTime::now(),
+            ),
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Ask,
+                bigdec("41712.60777901"),
+                bigdec("1.0223"),
+                SystemTime::now(),
+            ),
+            orders::amend_order_request(1, OrderSide::Bid, bigdec("40000.00"), bigdec("0.16"), SystemTime::now()),
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Bid,
+                bigdec("1.01"),
+                bigdec("0.4"),
+                SystemTime::now(),
+            ),
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Ask,
+                bigdec("1.03"),
+                bigdec("0.5"),
+                SystemTime::now(),
+            ),
+            orders::new_market_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Bid,
+                bigdec("0.90"),
+                SystemTime::now(),
+            ),
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Ask,
+                bigdec("1.05"),
+                bigdec("0.5"),
+                SystemTime::now(),
+            ),
+            orders::limit_order_cancel_request(4, OrderSide::Ask),
+            orders::new_limit_order_request(
+                btc_asset,
+                usd_asset,
+                OrderSide::Bid,
+                bigdec("1.06"),
+                bigdec("0.6"),
+                SystemTime::now(),
+            ),
+        ];
+        for order in request_list {
+            let results = orderbook.process_order(order);
+            for result in results {
+                println!("\tResult => {:?}", result);
+            }
+
+            if let Some((bid, ask)) = orderbook.current_spread() {
+                println!("Spread => bid: {}, ask: {}\n", bid, ask);
+            }
         }
     }
 

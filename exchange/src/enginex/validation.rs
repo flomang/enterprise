@@ -1,8 +1,6 @@
 
 use std::fmt::Debug;
 use bigdecimal::{BigDecimal, Zero};
-use std::str::FromStr;
-
 
 use super::orders::OrderRequest;
 
@@ -44,14 +42,14 @@ where
 
 
     pub fn validate(&self, request: &OrderRequest<Asset>) -> Result<(), &str> {
-        match *request {
+        match request {
             OrderRequest::NewMarketOrder {
                 order_asset,
                 price_asset,
                 side: _side,
                 qty,
                 ts: _ts,
-            } => self.validate_market(order_asset, price_asset, qty.clone()),
+            } => self.validate_market(*order_asset, *price_asset, qty.clone()),
 
             OrderRequest::NewLimitOrder {
                 order_asset,
@@ -60,7 +58,7 @@ where
                 price,
                 qty,
                 ts: _ts,
-            } => self.validate_limit(order_asset, price_asset, price.clone(), qty.clone()),
+            } => self.validate_limit(*order_asset, *price_asset, price.clone(), qty.clone()),
 
             OrderRequest::AmendOrder {
                 id,
@@ -68,9 +66,9 @@ where
                 side: _side,
                 qty,
                 ts: _ts,
-            } => self.validate_amend(id, price.clone(), qty.clone()),
+            } => self.validate_amend(*id, price.clone(), qty.clone()),
 
-            OrderRequest::CancelOrder { id, side: _side } => self.validate_cancel(id),
+            OrderRequest::CancelOrder { id, side: _side } => self.validate_cancel(*id),
         }
     }
 
