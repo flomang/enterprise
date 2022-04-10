@@ -67,11 +67,11 @@ pub struct Orderbook<Asset>
 where
     Asset: Debug + Clone + Copy + Eq,
 {
-    order_asset: Asset,
-    price_asset: Asset,
-    bid_queue: OrderQueue<Order<Asset>>,
-    ask_queue: OrderQueue<Order<Asset>>,
-    seq: sequence::TradeSequence,
+    pub order_asset: Asset,
+    pub price_asset: Asset,
+    pub bid_queue: OrderQueue<Order<Asset>>,
+    pub ask_queue: OrderQueue<Order<Asset>>,
+    pub seq: sequence::TradeSequence,
     order_validator: OrderRequestValidator<Asset>,
 }
 
@@ -585,6 +585,39 @@ mod test {
     }
 
     #[test]
+    fn amend_order() {
+        let btc_asset = Asset::BTC;
+        let usd_asset = Asset::USD;
+        let mut orderbook = Orderbook::new(btc_asset, usd_asset);
+        let limit_order = orders::new_limit_order_request(
+            btc_asset,
+            usd_asset,
+            OrderSide::Bid,
+            bigdec("41711.760112"),
+            bigdec("0.15"),
+            SystemTime::now(),
+        );
+        let amend_order = orders::amend_order_request(
+            1,
+            OrderSide::Bid,
+            bigdec("40000.00"),
+            bigdec("0.16"),
+            SystemTime::now(),
+        );
+
+        let result = orderbook.process_order(limit_order);
+        assert_eq!(result.len(), 1);
+
+        let result = orderbook.process_order(amend_order);
+        assert_eq!(result.len(), 1);
+
+        let order = orderbook.bid_queue.peek().unwrap();
+        assert_eq!(order.order_id, 1);
+        assert_eq!(order.price, bigdec("40000.00"));
+        assert_eq!(order.qty, bigdec("0.16"));
+    }
+
+    #[test]
     fn request_list() {
         let btc_asset = Asset::BTC;
         let usd_asset = Asset::USD;
@@ -606,7 +639,13 @@ mod test {
                 bigdec("1.0223"),
                 SystemTime::now(),
             ),
-            orders::amend_order_request(1, OrderSide::Bid, bigdec("40000.00"), bigdec("0.16"), SystemTime::now()),
+            orders::amend_order_request(
+                1,
+                OrderSide::Bid,
+                bigdec("40000.00"),
+                bigdec("0.16"),
+                SystemTime::now(),
+            ),
             orders::new_limit_order_request(
                 btc_asset,
                 usd_asset,
@@ -659,25 +698,4 @@ mod test {
             }
         }
     }
-
-    //#[test]
-    //fn bigdecimal_test() {
-    //    use bigdecimal::BigDecimal;
-    //    use std::str::FromStr;
-
-    //    let qty1 = "0.01";
-    //    let qty2 = "0.10";
-    //    let fqty1 = 0.01;
-    //    let fqty2 = 0.10;
-
-    //    let big1 = BigDecimal::from_str(&qty1).unwrap();
-    //    let big2 = BigDecimal::from_str(&qty2).unwrap();
-
-    //    let big3 = big2 - big1;
-    //    let foo = fqty2 - fqty1;
-    //    println!("{}", big3);
-    //    println!("{}", foo);
-
-    //    assert_eq!(true, true);
-    //}
 }
