@@ -602,10 +602,11 @@ mod test {
             SystemTime::now(),
         );
 
-        let result = orderbook.process_order(limit_order);
+        let mut result = orderbook.process_order(limit_order);
         assert_eq!(result.len(), 1);
 
-        let accept = result[0].as_ref().unwrap();
+        let accept  = result.pop().expect("expected an accepted result here").expect("success?");
+        
         match accept {
             Success::Accepted {
                 id,
@@ -613,7 +614,7 @@ mod test {
                 ts: _,
             } => {
                 let amend_order = orders::amend_order_request(
-                    *id,
+                    id,
                     OrderSide::Bid,
                     bigdec("40000.00"),
                     bigdec("0.16"),
@@ -624,7 +625,7 @@ mod test {
                 assert_eq!(result.len(), 1);
 
                 let order = orderbook.bid_queue.peek().unwrap();
-                assert_eq!(order.order_id, *id);
+                assert_eq!(order.order_id, id);
                 assert_eq!(order.price, bigdec("40000.00"));
                 assert_eq!(order.qty, bigdec("0.16"));
             }
