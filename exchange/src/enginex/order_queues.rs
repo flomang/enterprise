@@ -1,15 +1,14 @@
-
+use bigdecimal::BigDecimal;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::time;
-use bigdecimal::BigDecimal;
+use uuid::Uuid;
 
 use super::domain::OrderSide;
 
-
 #[derive(Clone)]
 struct OrderIndex {
-    id: u64,
+    id: Uuid,
     price: BigDecimal,
     timestamp: time::SystemTime,
     order_side: OrderSide,
@@ -53,17 +52,15 @@ impl PartialEq for OrderIndex {
 
 impl Eq for OrderIndex {}
 
-
 /// Public methods
 pub struct OrderQueue<T> {
     // use Option in order to replace heap in mutable borrow
     idx_queue: Option<BinaryHeap<OrderIndex>>,
-    orders: HashMap<u64, T>,
+    orders: HashMap<Uuid, T>,
     op_counter: u64,
     max_stalled: u64,
     queue_side: OrderSide,
 }
-
 
 impl<T> OrderQueue<T> {
     /// Create new order queue
@@ -79,7 +76,6 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     pub fn peek(&mut self) -> Option<&T> {
         // get best order ID
         let order_id = self.get_current_order_id()?;
@@ -93,7 +89,6 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     pub fn pop(&mut self) -> Option<T> {
         // remove order index from queue in any case
         let order_id = self.idx_queue.as_mut()?.pop()?.id;
@@ -105,9 +100,8 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     // Add new limit order to the queue
-    pub fn insert(&mut self, id: u64, price: BigDecimal, ts: time::SystemTime, order: T) -> bool {
+    pub fn insert(&mut self, id: Uuid, price: BigDecimal, ts: time::SystemTime, order: T) -> bool {
         if self.orders.contains_key(&id) {
             // do not update existing order
             return false;
@@ -124,9 +118,8 @@ impl<T> OrderQueue<T> {
         true
     }
 
-
     // use it when price was changed
-    pub fn amend(&mut self, id: u64, price: BigDecimal, ts: time::SystemTime, order: T) -> bool {
+    pub fn amend(&mut self, id: Uuid, price: BigDecimal, ts: time::SystemTime, order: T) -> bool {
         if self.orders.contains_key(&id) {
             // store new order data
             self.orders.insert(id, order);
@@ -137,8 +130,7 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
-    pub fn cancel(&mut self, id: u64) -> bool {
+    pub fn cancel(&mut self, id: Uuid) -> bool {
         match self.orders.remove(&id) {
             Some(_) => {
                 self.clean_check();
@@ -148,9 +140,7 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     /* Internal methods */
-
 
     /// Used internally when current order is partially matched.
     ///
@@ -165,7 +155,6 @@ impl<T> OrderQueue<T> {
         false
     }
 
-
     /// Verify if queue should be cleaned
     fn clean_check(&mut self) {
         if self.op_counter > self.max_stalled {
@@ -176,7 +165,6 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     /// Remove dangling indices without orders from queue
     fn remove_stalled(&mut self) {
         if let Some(idx_queue) = self.idx_queue.take() {
@@ -186,9 +174,8 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     /// Recreate order-index queue with changed index info
-    fn rebuild_idx(&mut self, id: u64, price: BigDecimal, ts: time::SystemTime) {
+    fn rebuild_idx(&mut self, id: Uuid, price: BigDecimal, ts: time::SystemTime) {
         if let Some(idx_queue) = self.idx_queue.take() {
             // deconstruct queue
             let mut active_orders = idx_queue.into_vec();
@@ -207,14 +194,12 @@ impl<T> OrderQueue<T> {
         }
     }
 
-
     /// Return ID of current order in queue
-    fn get_current_order_id(&self) -> Option<u64> {
+    fn get_current_order_id(&self) -> Option<Uuid> {
         let order_id = self.idx_queue.as_ref()?.peek()?;
         Some(order_id.id)
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -227,65 +212,76 @@ mod test {
         pub name: &'static str,
     }
 
-
     fn get_queue_empty(side: OrderSide) -> OrderQueue<TestOrder> {
         OrderQueue::new(side, 5, 10)
     }
 
-
     fn get_queue_bids() -> OrderQueue<TestOrder> {
         let mut bid_queue = get_queue_empty(OrderSide::Bid);
+        let o1: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000000").unwrap();
+        let o2: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+        let o3: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
 
         assert!(bid_queue.insert(
-            1,
+            o1,
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "low bid" },
         ));
         assert!(bid_queue.insert(
-            2,
+            o2,
             BigDecimal::from_str("1.02").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "high bid first" },
+            TestOrder {
+                name: "high bid first"
+            },
         ));
         // same price but later
         assert!(bid_queue.insert(
-            3,
+            o3,
             BigDecimal::from_str("1.02").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "high bid second" },
+            TestOrder {
+                name: "high bid second"
+            },
         ));
         assert_eq!(bid_queue.peek().unwrap().name, "high bid first");
 
         bid_queue
     }
 
-
     fn get_queue_asks() -> OrderQueue<TestOrder> {
         let mut ask_queue = get_queue_empty(OrderSide::Ask);
+        let o4: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap();
+        let o5: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000004").unwrap();
+        let o6: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000005").unwrap();
+
         assert!(ask_queue.insert(
-            1,
+            o4,
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "low ask first" },
+            TestOrder {
+                name: "low ask first"
+            },
         ));
         assert!(ask_queue.insert(
-            2,
+            o5,
             BigDecimal::from_str("1.02").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "high ask" },
         ));
         assert!(ask_queue.insert(
-            3,
+            o6,
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "low ask second" },
+            TestOrder {
+                name: "low ask second"
+            },
         ));
         assert_eq!(ask_queue.peek().unwrap().name, "low ask first");
 
         ask_queue
     }
-
 
     #[test]
     fn queue_operations_insert_unique() {
@@ -294,7 +290,7 @@ mod test {
 
         // insert unique
         assert!(bid_queue.insert(
-            1,
+            Uuid::new_v4(),
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "first bid" },
@@ -302,13 +298,14 @@ mod test {
 
         // discard order with existing ID
         assert!(!bid_queue.insert(
-            1,
+            Uuid::new_v4(),
             BigDecimal::from_str("1.02").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "another first bid" },
+            TestOrder {
+                name: "another first bid"
+            },
         ));
     }
-
 
     #[test]
     fn queue_operations_ordering_bid() {
@@ -332,9 +329,9 @@ mod test {
     fn queue_operations_modify_order() {
         let mut bid_queue = get_queue_bids();
 
-        assert!(bid_queue.modify_current_order(
-            TestOrder { name: "current bid partially matched" },
-        ));
+        assert!(bid_queue.modify_current_order(TestOrder {
+            name: "current bid partially matched"
+        },));
 
         assert_eq!(
             bid_queue.pop().unwrap().name,
@@ -344,30 +341,31 @@ mod test {
         assert_eq!(bid_queue.pop().unwrap().name, "low bid");
     }
 
-
     #[test]
     fn queue_operations_amend() {
         let mut ask_queue = get_queue_asks();
 
         // amend two orders in the queue
         assert!(ask_queue.amend(
-            2,
+            Uuid::new_v4(),
             BigDecimal::from_str("0.99").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "new first" },
         ));
         assert!(ask_queue.amend(
-            1,
+            Uuid::new_v4(),
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "new last" },
         ));
         // non-exist order
         assert!(!ask_queue.amend(
-            4,
+            Uuid::new_v4(),
             BigDecimal::from_str("3.03").unwrap(),
             time::SystemTime::now(),
-            TestOrder { name: "nonexistent" },
+            TestOrder {
+                name: "nonexistent"
+            },
         ));
 
         assert_eq!(ask_queue.pop().unwrap().name, "new first");
@@ -375,23 +373,23 @@ mod test {
         assert_eq!(ask_queue.pop().unwrap().name, "new last");
     }
 
-
     #[test]
     fn queue_operations_cancel_order1() {
         let mut bid_queue = get_queue_bids();
 
-        bid_queue.cancel(2);
+        let o2: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+        bid_queue.cancel(o2);
 
         assert_eq!(bid_queue.pop().unwrap().name, "high bid second");
         assert_eq!(bid_queue.pop().unwrap().name, "low bid");
     }
 
-
     #[test]
     fn queue_operations_cancel_order2() {
         let mut ask_queue = get_queue_asks();
 
-        ask_queue.cancel(3);
+        let o6: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000005").unwrap();
+        ask_queue.cancel(o6);
 
         assert_eq!(ask_queue.pop().unwrap().name, "low ask first");
         assert_eq!(ask_queue.pop().unwrap().name, "high ask");

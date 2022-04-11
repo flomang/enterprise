@@ -2,6 +2,7 @@
 use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use bigdecimal::BigDecimal;
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum OrderSide {
@@ -24,7 +25,7 @@ pub struct Order<Asset>
 where
     Asset: Debug + Clone,
 {
-    pub order_id: u64,
+    pub order_id: Uuid,
     pub order_asset: Asset,
     pub price_asset: Asset,
     pub side: OrderSide,

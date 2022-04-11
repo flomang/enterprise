@@ -2,6 +2,7 @@ use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::time::SystemTime;
+use uuid::Uuid;
 
 use super::domain::{Order, OrderSide, OrderType};
 use super::order_queues::OrderQueue;
@@ -19,13 +20,13 @@ pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success {
     Accepted {
-        id: u64,
+        id: Uuid,
         order_type: OrderType,
         ts: SystemTime,
     },
 
     Filled {
-        order_id: u64,
+        order_id: Uuid,
         side: OrderSide,
         order_type: OrderType,
         price: BigDecimal,
@@ -34,7 +35,7 @@ pub enum Success {
     },
 
     PartiallyFilled {
-        order_id: u64,
+        order_id: Uuid,
         side: OrderSide,
         order_type: OrderType,
         price: BigDecimal,
@@ -43,14 +44,14 @@ pub enum Success {
     },
 
     Amended {
-        id: u64,
+        id: Uuid,
         price: BigDecimal,
         qty: BigDecimal,
         ts: SystemTime,
     },
 
     Cancelled {
-        id: u64,
+        id: Uuid,
         ts: SystemTime,
     },
 }
@@ -58,9 +59,9 @@ pub enum Success {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Failed {
     ValidationFailed(String),
-    DuplicateOrderID(u64),
-    NoMatch(u64),
-    OrderNotFound(u64),
+    DuplicateOrderID(Uuid),
+    NoMatch(Uuid),
+    OrderNotFound(Uuid),
 }
 
 pub struct Orderbook<Asset>
@@ -133,7 +134,8 @@ where
                 ts: _ts,
             } => {
                 // generate new ID for order
-                let order_id = self.seq.next_id();
+                //let order_id = self.seq.next_id();
+                let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     id: order_id,
                     order_type: OrderType::Market,
@@ -158,7 +160,8 @@ where
                 qty,
                 ts,
             } => {
-                let order_id = self.seq.next_id();
+                //let order_id = self.seq.next_id();
+                let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     id: order_id,
                     order_type: OrderType::Limit,
@@ -208,7 +211,7 @@ where
     fn process_market_order(
         &mut self,
         results: &mut OrderProcessingResult,
-        order_id: u64,
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         side: OrderSide,
@@ -255,7 +258,7 @@ where
     fn process_limit_order(
         &mut self,
         results: &mut OrderProcessingResult,
-        order_id: u64,
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         side: OrderSide,
@@ -335,7 +338,7 @@ where
     fn process_order_amend(
         &mut self,
         results: &mut OrderProcessingResult,
-        order_id: u64,
+        order_id: Uuid,
         side: OrderSide,
         price: BigDecimal,
         qty: BigDecimal,
@@ -373,7 +376,7 @@ where
     fn process_order_cancel(
         &mut self,
         results: &mut OrderProcessingResult,
-        order_id: u64,
+        order_id: Uuid,
         side: OrderSide,
     ) {
         let order_queue = match side {
@@ -396,7 +399,7 @@ where
     fn store_new_limit_order(
         &mut self,
         results: &mut OrderProcessingResult,
-        order_id: u64,
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         side: OrderSide,
@@ -429,7 +432,7 @@ where
         &mut self,
         results: &mut OrderProcessingResult,
         opposite_order: &Order<Asset>,
-        order_id: u64,
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         order_type: OrderType,
@@ -573,8 +576,9 @@ mod test {
 
     #[test]
     fn cancel_nonexisting() {
+        let id = Uuid::parse_str("00000000-0000-0000-0000-000000000000").unwrap();
         let mut orderbook = Orderbook::new(Asset::BTC, Asset::USD);
-        let request = orders::limit_order_cancel_request(1, OrderSide::Bid);
+        let request = orders::limit_order_cancel_request(id, OrderSide::Bid);
         let mut result = orderbook.process_order(request);
 
         assert_eq!(result.len(), 1);
@@ -597,24 +601,35 @@ mod test {
             bigdec("0.15"),
             SystemTime::now(),
         );
-        let amend_order = orders::amend_order_request(
-            1,
-            OrderSide::Bid,
-            bigdec("40000.00"),
-            bigdec("0.16"),
-            SystemTime::now(),
-        );
 
         let result = orderbook.process_order(limit_order);
         assert_eq!(result.len(), 1);
 
-        let result = orderbook.process_order(amend_order);
-        assert_eq!(result.len(), 1);
+        let accept = result[0].as_ref().unwrap();
+        match accept {
+            Success::Accepted {
+                id,
+                order_type: _,
+                ts: _,
+            } => {
+                let amend_order = orders::amend_order_request(
+                    *id,
+                    OrderSide::Bid,
+                    bigdec("40000.00"),
+                    bigdec("0.16"),
+                    SystemTime::now(),
+                );
 
-        let order = orderbook.bid_queue.peek().unwrap();
-        assert_eq!(order.order_id, 1);
-        assert_eq!(order.price, bigdec("40000.00"));
-        assert_eq!(order.qty, bigdec("0.16"));
+                let result = orderbook.process_order(amend_order);
+                assert_eq!(result.len(), 1);
+
+                let order = orderbook.bid_queue.peek().unwrap();
+                assert_eq!(order.order_id, *id);
+                assert_eq!(order.price, bigdec("40000.00"));
+                assert_eq!(order.qty, bigdec("0.16"));
+            }
+            _ => (),
+        }
     }
 
     #[test]
@@ -637,13 +652,6 @@ mod test {
                 OrderSide::Ask,
                 bigdec("41712.60777901"),
                 bigdec("1.0223"),
-                SystemTime::now(),
-            ),
-            orders::amend_order_request(
-                1,
-                OrderSide::Bid,
-                bigdec("40000.00"),
-                bigdec("0.16"),
                 SystemTime::now(),
             ),
             orders::new_limit_order_request(
@@ -677,7 +685,6 @@ mod test {
                 bigdec("0.5"),
                 SystemTime::now(),
             ),
-            orders::limit_order_cancel_request(4, OrderSide::Ask),
             orders::new_limit_order_request(
                 btc_asset,
                 usd_asset,

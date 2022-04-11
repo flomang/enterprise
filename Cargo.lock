@@ -2560,6 +2560,7 @@ dependencies = [
  "bigdecimal 0.3.0",
  "rand 0.8.4",
  "serde",
+ "uuid",
 ]
 
 [[package]]

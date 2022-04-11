@@ -1,6 +1,7 @@
 
 use std::fmt::Debug;
 use bigdecimal::{BigDecimal, Zero};
+use uuid::Uuid;
 
 use super::orders::OrderRequest;
 
@@ -125,8 +126,11 @@ where
     }
 
 
-    fn validate_amend(&self, id: u64, price: BigDecimal, qty: BigDecimal) -> Result<(), &str> {
-        if self.min_sequence_id > id || self.max_sequence_id < id {
+    fn validate_amend(&self, id: Uuid, price: BigDecimal, qty: BigDecimal) -> Result<(), &str> {
+        //if self.min_sequence_id > id || self.max_sequence_id < id {
+        //    return Err(ERR_BAD_SEQ_ID);
+        //}
+        if id == Uuid::nil() {
             return Err(ERR_BAD_SEQ_ID);
         }
 
@@ -142,8 +146,11 @@ where
     }
 
 
-    fn validate_cancel(&self, id: u64) -> Result<(), &str> {
-        if self.min_sequence_id > id || self.max_sequence_id < id {
+    fn validate_cancel(&self, id: Uuid) -> Result<(), &str> {
+        // if self.min_sequence_id > id || self.max_sequence_id < id {
+        //     return Err(ERR_BAD_SEQ_ID);
+        // }
+        if id == Uuid::nil() {
             return Err(ERR_BAD_SEQ_ID);
         }
 

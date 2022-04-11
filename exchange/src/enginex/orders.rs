@@ -2,6 +2,7 @@
 use std::time::SystemTime;
 use std::fmt::Debug;
 use bigdecimal::BigDecimal;
+use uuid::Uuid;
 
 use super::domain::OrderSide;
 
@@ -29,7 +30,7 @@ where
     },
 
     AmendOrder {
-        id: u64,
+        id: Uuid,
         side: OrderSide,
         price: BigDecimal,
         qty: BigDecimal,
@@ -37,7 +38,7 @@ where
     },
 
     CancelOrder {
-        id: u64,
+        id: Uuid,
         side: OrderSide,
         //ts: SystemTime,
     },
@@ -98,7 +99,7 @@ where
 /// Note: do not change order side!
 /// Instead cancel existing order and create a new one.
 pub fn amend_order_request<Asset>(
-    id: u64,
+    id: Uuid,
     side: OrderSide,
     price: BigDecimal,
     qty: BigDecimal,
@@ -119,7 +120,7 @@ where
 
 
 /// Create request for cancelling active limit order
-pub fn limit_order_cancel_request<Asset>(order_id: u64, side: OrderSide) -> OrderRequest<Asset>
+pub fn limit_order_cancel_request<Asset>(order_id: Uuid, side: OrderSide) -> OrderRequest<Asset>
 where
     Asset: Debug + Clone,
 {
