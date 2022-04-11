@@ -19,8 +19,8 @@ const ERR_BAD_SEQ_ID: &str = "order ID out of range";
 pub struct OrderRequestValidator<Asset> {
     orderbook_order_asset: Asset,
     orderbook_price_asset: Asset,
-    min_sequence_id: u64,
-    max_sequence_id: u64,
+    //min_sequence_id: u64,
+    //max_sequence_id: u64,
 }
 
 impl<Asset> OrderRequestValidator<Asset>
@@ -30,14 +30,14 @@ where
     pub fn new(
         orderbook_order_asset: Asset,
         orderbook_price_asset: Asset,
-        min_sequence_id: u64,
-        max_sequence_id: u64,
+        //min_sequence_id: u64,
+        //max_sequence_id: u64,
     ) -> Self {
         OrderRequestValidator {
             orderbook_order_asset,
             orderbook_price_asset,
-            min_sequence_id,
-            max_sequence_id,
+            //min_sequence_id,
+            //max_sequence_id,
         }
     }
 

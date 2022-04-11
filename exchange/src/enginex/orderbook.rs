@@ -109,8 +109,8 @@ where
             order_validator: OrderRequestValidator::new(
                 order_asset,
                 price_asset,
-                MIN_SEQUENCE_ID,
-                MAX_SEQUENCE_ID,
+                //MIN_SEQUENCE_ID,
+                //MAX_SEQUENCE_ID,
             ),
         }
     }
@@ -602,34 +602,47 @@ mod test {
             SystemTime::now(),
         );
 
-        let mut result = orderbook.process_order(limit_order);
-        assert_eq!(result.len(), 1);
+        let mut results = orderbook.process_order(limit_order);
+        assert_eq!(results.len(), 1);
 
-        let accept  = result.pop().expect("expected an accepted result here").expect("success?");
-        
-        match accept {
-            Success::Accepted {
+        if let Success::Accepted {
+            id,
+            order_type: _,
+            ts: _,
+        } = results
+            .pop()
+            .expect("expected a Result")
+            .expect("this should be Success")
+        {
+            let amend_order = orders::amend_order_request(
                 id,
-                order_type: _,
+                OrderSide::Bid,
+                bigdec("40000.00"),
+                bigdec("0.16"),
+                SystemTime::now(),
+            );
+
+            let mut results2 = orderbook.process_order(amend_order);
+            assert_eq!(results2.len(), 1);
+
+            let order = orderbook.bid_queue.peek().unwrap();
+            assert_eq!(order.order_id, id);
+            assert_eq!(order.price, bigdec("40000.00"));
+            assert_eq!(order.qty, bigdec("0.16"));
+
+            if let Success::Amended {
+                id: _,
+                price,
+                qty,
                 ts: _,
-            } => {
-                let amend_order = orders::amend_order_request(
-                    id,
-                    OrderSide::Bid,
-                    bigdec("40000.00"),
-                    bigdec("0.16"),
-                    SystemTime::now(),
-                );
-
-                let result = orderbook.process_order(amend_order);
-                assert_eq!(result.len(), 1);
-
-                let order = orderbook.bid_queue.peek().unwrap();
-                assert_eq!(order.order_id, id);
-                assert_eq!(order.price, bigdec("40000.00"));
-                assert_eq!(order.qty, bigdec("0.16"));
+            } = results2
+                .pop()
+                .expect("expected a Result")
+                .expect("this should be Success")
+            {
+                assert_eq!(price, bigdec("40000.00"));
+                assert_eq!(qty, bigdec("0.16"));
             }
-            _ => (),
         }
     }
 
