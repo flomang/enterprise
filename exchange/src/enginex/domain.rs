@@ -12,7 +12,8 @@ pub enum OrderSide {
 
 impl OrderSide {
     pub fn from_string(side: &str) -> Option<OrderSide> {
-        match side {
+        let lower = side.to_lowercase();
+        match lower.as_str() {
             "bid" => Some(OrderSide::Bid),
             "ask" => Some(OrderSide::Ask),
             _ => None,
