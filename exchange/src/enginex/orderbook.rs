@@ -7,11 +7,8 @@ use uuid::Uuid;
 use super::domain::{Order, OrderSide, OrderType};
 use super::order_queues::OrderQueue;
 use super::orders::OrderRequest;
-use super::sequence;
 use super::validation::OrderRequestValidator;
 
-const MIN_SEQUENCE_ID: u64 = 1;
-const MAX_SEQUENCE_ID: u64 = 1000;
 const MAX_STALLED_INDICES_IN_QUEUE: u64 = 10;
 const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
@@ -72,7 +69,6 @@ where
     pub price_asset: Asset,
     pub bid_queue: OrderQueue<Order<Asset>>,
     pub ask_queue: OrderQueue<Order<Asset>>,
-    pub seq: sequence::TradeSequence,
     order_validator: OrderRequestValidator<Asset>,
 }
 
@@ -105,12 +101,9 @@ where
                 MAX_STALLED_INDICES_IN_QUEUE,
                 ORDER_QUEUE_INIT_CAPACITY,
             ),
-            seq: sequence::new_sequence_gen(MIN_SEQUENCE_ID, MAX_SEQUENCE_ID),
             order_validator: OrderRequestValidator::new(
                 order_asset,
                 price_asset,
-                //MIN_SEQUENCE_ID,
-                //MAX_SEQUENCE_ID,
             ),
         }
     }
@@ -134,7 +127,6 @@ where
                 ts: _ts,
             } => {
                 // generate new ID for order
-                //let order_id = self.seq.next_id();
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     id: order_id,
@@ -160,7 +152,6 @@ where
                 qty,
                 ts,
             } => {
-                //let order_id = self.seq.next_id();
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     id: order_id,
