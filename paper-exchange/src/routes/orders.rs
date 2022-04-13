@@ -3,9 +3,7 @@ use actix_web::{delete, patch, post, web, Responder, Result, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::{AppState, BrokerAsset};
-use engine::domain::OrderSide;
-use engine::orders;
-use exchange::engine;
+use orderbook::sequential::{domain::OrderSide, orders};
 use kitchen::utils::errors::ServiceError;
 use std::time::SystemTime;
 
@@ -39,7 +37,7 @@ pub async fn post_order(
     req: web::Json<OrderRequest>,
 ) -> Result<HttpResponse, ServiceError> {
     // access request identity
-    if let Some(id) = id.identity() {
+    if let Some(_id) = id.identity() {
         // access request identity
         let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
         let price_asset_opt = BrokerAsset::from_string(&req.price_asset);

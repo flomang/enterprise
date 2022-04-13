@@ -4,8 +4,7 @@ use std::sync::Mutex;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::prelude::PgConnection;
 
-use engine::orderbook::Orderbook;
-use exchange::engine;
+use orderbook::sequential::orderbook::Orderbook;
 
 use paper_exchange::models;
 use paper_exchange::routes::orders as paper;
