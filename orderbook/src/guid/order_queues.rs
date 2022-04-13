@@ -287,10 +287,11 @@ mod test {
     fn queue_operations_insert_unique() {
         let mut bid_queue = get_queue_empty(OrderSide::Bid);
         assert_eq!(bid_queue.peek(), None);
+        let id: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
 
         // insert unique
         assert!(bid_queue.insert(
-            Uuid::new_v4(),
+            id,
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "first bid" },
@@ -298,7 +299,7 @@ mod test {
 
         // discard order with existing ID
         assert!(!bid_queue.insert(
-            Uuid::new_v4(),
+            id,
             BigDecimal::from_str("1.02").unwrap(),
             time::SystemTime::now(),
             TestOrder {
@@ -344,16 +345,18 @@ mod test {
     #[test]
     fn queue_operations_amend() {
         let mut ask_queue = get_queue_asks();
+        let o4: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap();
+        let o5: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000004").unwrap();
 
         // amend two orders in the queue
         assert!(ask_queue.amend(
-            Uuid::new_v4(),
+            o5,
             BigDecimal::from_str("0.99").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "new first" },
         ));
         assert!(ask_queue.amend(
-            Uuid::new_v4(),
+            o4,
             BigDecimal::from_str("1.01").unwrap(),
             time::SystemTime::now(),
             TestOrder { name: "new last" },
@@ -377,7 +380,7 @@ mod test {
     fn queue_operations_cancel_order1() {
         let mut bid_queue = get_queue_bids();
 
-        let o2: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+        let o2: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
         bid_queue.cancel(o2);
 
         assert_eq!(bid_queue.pop().unwrap().name, "high bid second");

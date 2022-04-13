@@ -8,7 +8,7 @@ name = "paper_exchange"
 path = "src/lib.rs"
 
 [dependencies]
-exchange = { path = "../exchange" }
+orderbook = { path = "../orderbook" }
 kitchen = { path = "../kitchen" }
 actix-identity = "0.4"
 actix-web = "4"
