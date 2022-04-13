@@ -3,7 +3,7 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 
-use orderbook::sequential::orderbook::Orderbook;
+use orderbook::guid::orderbook::Orderbook;
 use std::sync::Mutex;
 
 pub mod models;

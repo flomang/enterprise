@@ -1,11 +1,12 @@
 use actix_identity::Identity;
-use actix_web::{delete, patch, post, web, Responder, Result, HttpResponse};
+use actix_web::{delete, patch, post, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
+use bigdecimal::FromPrimitive;
 
 use crate::{AppState, BrokerAsset};
-use orderbook::sequential::{domain::OrderSide, orders};
 use kitchen::utils::errors::ServiceError;
-use std::time::SystemTime;
+use orderbook::guid::{domain::OrderSide, orders};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrderRequest {
@@ -61,8 +62,8 @@ pub async fn post_order(
                     order_asset,
                     price_asset,
                     side,
-                    price,
-                    req.qty,
+                    FromPrimitive::from_f64(price).unwrap(),
+                    FromPrimitive::from_f64(req.qty).unwrap(),
                     SystemTime::now(),
                 ))
             }
@@ -71,7 +72,7 @@ pub async fn post_order(
                     order_asset,
                     price_asset,
                     side,
-                    req.qty,
+                    FromPrimitive::from_f64(req.qty).unwrap(),
                     SystemTime::now(),
                 ))
             }
@@ -94,42 +95,52 @@ pub async fn post_order(
 
 #[patch("/orders/{id}")]
 pub async fn patch_order(
-    path: web::Path<u64>,
+    path: web::Path<String>,
     state: web::Data<AppState>,
     req: web::Json<AmendOrderRequest>,
-) -> Result<impl Responder> {
+) -> Result<HttpResponse, ServiceError> {
     let side_opt = OrderSide::from_string(&req.side);
-    let id = path.into_inner();
+    let order_id = path.into_inner();
 
-    match side_opt {
-        Some(side) => {
-            let order =
-                orders::amend_order_request(id, side, req.price, req.qty, SystemTime::now());
-            let mut book = state.order_book.lock().unwrap();
-            let res = book.process_order(order);
-            Ok(web::Json(format!("{:?}", res)))
+    if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
+        match side_opt {
+            Some(side) => {
+                let price = FromPrimitive::from_f64(req.price).unwrap();
+                let qty = FromPrimitive::from_f64(req.qty).unwrap();
+                let order = orders::amend_order_request(id, side, price, qty, SystemTime::now());
+                let mut book = state.order_book.lock().unwrap();
+                let res = book.process_order(order);
+                Ok(HttpResponse::Ok().json(format!("{:?}", res)))
+            }
+            None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
         }
-        None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
+    } else {
+        Err(ServiceError::BadRequest("invalid order id".to_string()))
     }
 }
 
 #[delete("/orders/{id}")]
 pub async fn delete_order(
-    path: web::Path<u64>,
+    path: web::Path<String>,
     state: web::Data<AppState>,
     req: web::Json<CancelOrderRequest>,
-) -> Result<impl Responder> {
+) -> Result<HttpResponse, ServiceError> {
     let side_opt = OrderSide::from_string(&req.side);
-    let id = path.into_inner();
 
-    match side_opt {
-        Some(side) => {
-            let order = orders::limit_order_cancel_request(id, side);
-            let mut book = state.order_book.lock().unwrap();
-            let res = book.process_order(order);
-            println!("{:?}", res);
-            Ok(web::Json("what now".to_string()))
+    let order_id = path.into_inner();
+
+    if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
+        match side_opt {
+            Some(side) => {
+                let order = orders::limit_order_cancel_request(id, side);
+                let mut book = state.order_book.lock().unwrap();
+                let res = book.process_order(order);
+                println!("{:?}", res);
+                Ok(HttpResponse::Ok().json(format!("{:?}", res)))
+            }
+            None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
         }
-        None => Ok(web::Json("side must be 'bid' or 'ask'".to_string())),
+    } else {
+        Err(ServiceError::BadRequest("invalid order id".to_string()))
     }
 }
