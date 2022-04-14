@@ -4348,6 +4348,7 @@ version = "0.1.0"
 dependencies = [
  "actix-identity",
  "actix-web 4.0.1",
+ "authentication",
  "bigdecimal 0.1.2",
  "chrono",
  "diesel",

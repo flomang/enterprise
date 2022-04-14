@@ -19,6 +19,13 @@ impl OrderSide {
             _ => None,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            OrderSide::Bid => "bid".to_string(),
+            OrderSide::Ask => "ask".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -39,4 +46,13 @@ where
 pub enum OrderType {
     Market,
     Limit,
+}
+
+impl OrderType {
+    pub fn to_string(&self) -> String {
+        match self {
+            OrderType::Market => "market".to_string(),
+            OrderType::Limit => "limit".to_string(),
+        }
+    }
 }

@@ -34,6 +34,17 @@ impl BrokerAsset {
             _ => None,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            BrokerAsset::ADA => "ADA".to_string(),
+            BrokerAsset::BTC => "BTC".to_string(),
+            BrokerAsset::DOT => "DOT".to_string(),
+            BrokerAsset::ETH => "ETH".to_string(),
+            BrokerAsset::GRIN => "GRIN".to_string(),
+            BrokerAsset::USD => "USD".to_string(),
+        }
+    }
 }
 
 pub struct AppState {

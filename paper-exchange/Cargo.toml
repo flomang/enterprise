@@ -10,6 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 orderbook = { path = "../orderbook" }
 kitchen = { path = "../kitchen" }
+authentication = { path = "../authentication" }
 actix-identity = "0.4"
 actix-web = "4"
 bigdecimal = "0.1.2"
