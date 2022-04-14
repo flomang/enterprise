@@ -1,16 +1,17 @@
 use actix_identity::Identity;
 use actix_web::{delete, patch, post, web, HttpResponse, Result};
 use bigdecimal::{BigDecimal, FromPrimitive};
+use diesel::pg::data_types::PgNumeric;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
-use diesel::pg::data_types::PgNumeric;
+use uuid::Uuid;
 
 use crate::models::*;
 use crate::{AppState, BrokerAsset};
 use authentication::models::SlimUser;
 use kitchen::utils::errors::ServiceError;
-use orderbook::guid::orderbook::Success;
+use orderbook::guid::orderbook::{OrderProcessingResult, Success};
 use orderbook::guid::{domain::OrderSide, orders};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,6 +35,79 @@ pub struct AmendOrderRequest {
 pub struct CancelOrderRequest {
     id: u64,
     side: String,
+}
+
+fn store_results(results: &OrderProcessingResult, pool: web::Data<Pool>, price: Option<f64>, user_id: Uuid, order_asset: BrokerAsset, price_asset: BrokerAsset, qty: BigDecimal, side: OrderSide) {
+    for result in results.iter() {
+        if let Ok(success) = result {
+            match success {
+                Success::Accepted { id, order_type, ts } => {
+                    let price = match price {
+                        Some(pr) => {
+                            let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
+                            let pgnum = PgNumeric::from(bigdec);
+                            Some(pgnum)
+                        }
+                        None => None,
+                    };
+
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let order = Order {
+                        id: *id,
+                        user_id,
+                        order_asset: order_asset.to_string(),
+                        price_asset: price_asset.to_string(),
+                        price,
+                        quantity: PgNumeric::from(qty.clone()),
+                        order_type: order_type.to_string(),
+                        side: side.to_string(),
+                        status: "accepted".to_string(),
+                        created_at: timestamp,
+                        updated_at: timestamp,
+                    };
+
+                    let conn: &PgConnection = &pool.get().unwrap();
+                    let result = diesel::insert_into(crate::schema::orders::dsl::orders)
+                        .values(order)
+                        .execute(conn);
+                    println!("{:?}", result);
+                }
+                Success::Filled {
+                    order_id: _,
+                    side: _,
+                    order_type: _,
+                    price: _,
+                    qty: _,
+                    ts: _,
+                } => {
+                    println!("todo");
+                }
+                Success::PartiallyFilled {
+                    order_id: _,
+                    side: _,
+                    order_type: _,
+                    price: _,
+                    qty: _,
+                    ts: _,
+                } => {
+                    println!("todo");
+                }
+                Success::Amended {
+                    id: _,
+                    price: _,
+                    qty: _,
+                    ts: _,
+                } => {
+                    println!("todo");
+                }
+                Success::Cancelled { id: _, ts: _ } => {
+                    println!("todo");
+                }
+            }
+        }
+    }
 }
 
 #[post("/orders")]
@@ -97,74 +171,7 @@ pub async fn post_order(
 
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
-
-        for result in results.iter() {
-            if let Ok(success) = result {
-                match success {
-                    Success::Accepted { id, order_type, ts } => {
-                        let price = match price_opt {
-                            Some(pr) => {
-                                let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
-                                let pgnum = PgNumeric::from(bigdec);
-                                Some(pgnum)
-                            }
-                            None => None,
-                        };
-
-                        let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                        let timestamp = chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
-                        let order = Order {
-                            id: *id,
-                            user_id: user.id,
-                            order_asset: order_asset.to_string(),
-                            price_asset: price_asset.to_string(),
-                            price,
-                            quantity: PgNumeric::from(qty.clone()),
-                            order_type: order_type.to_string(),
-                            side: side.to_string(),
-                            status: "accepted".to_string(),
-                            created_at: timestamp,
-                            updated_at: timestamp,
-                        };
-
-                        let conn: &PgConnection = &pool.get().unwrap();
-                        let result = diesel::insert_into(crate::schema::orders::dsl::orders).values(order).execute(conn);
-                        println!("{:?}", result);
-                    }
-                    Success::Filled {
-                        order_id: _,
-                        side: _,
-                        order_type: _,
-                        price: _,
-                        qty: _,
-                        ts: _,
-                    } => {
-                        println!("todo");
-                    }
-                    Success::PartiallyFilled {
-                        order_id: _,
-                        side: _,
-                        order_type: _,
-                        price: _,
-                        qty: _,
-                        ts: _,
-                    } => {
-                        println!("todo");
-                    }
-                    Success::Amended {
-                        id: _,
-                        price: _,
-                        qty: _,
-                        ts: _,
-                    } => {
-                        println!("todo");
-                    }
-                    Success::Cancelled { id: _, ts: _ } => {
-                        println!("todo");
-                    }
-                }
-            }
-        }
+        store_results(&results, pool, price_opt, user.id, order_asset, price_asset, qty, side);
 
         let value = serde_json::json!(results);
         Ok(HttpResponse::Ok().json(value))
