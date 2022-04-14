@@ -111,8 +111,8 @@ pub async fn post_order(
                             None => None,
                         };
 
-                        let timestamp = chrono::NaiveDateTime::from_timestamp(ts.elapsed().unwrap().as_secs() as i64, 0);
-                        //let now = chrono::Local::now().naive_local();
+                        let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                        let timestamp = chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
                         let order = Order {
                             id: *id,
                             user_id: user.id,
