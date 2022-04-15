@@ -17,7 +17,7 @@ pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success {
     Accepted {
-        id: Uuid,
+        order_id: Uuid,
         order_type: OrderType,
         ts: SystemTime,
     },
@@ -41,14 +41,14 @@ pub enum Success {
     },
 
     Amended {
-        id: Uuid,
+        order_id: Uuid,
         price: BigDecimal,
         qty: BigDecimal,
         ts: SystemTime,
     },
 
     Cancelled {
-        id: Uuid,
+        order_id: Uuid,
         ts: SystemTime,
     },
 }
@@ -129,7 +129,7 @@ where
                 // generate new ID for order
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
-                    id: order_id,
+                    order_id,
                     order_type: OrderType::Market,
                     ts: SystemTime::now(),
                 }));
@@ -154,7 +154,7 @@ where
             } => {
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
-                    id: order_id,
+                    order_id,
                     order_type: OrderType::Limit,
                     ts: SystemTime::now(),
                 }));
@@ -354,7 +354,7 @@ where
             },
         ) {
             results.push(Ok(Success::Amended {
-                id: order_id,
+                order_id,
                 price,
                 qty,
                 ts: SystemTime::now(),
@@ -377,7 +377,7 @@ where
 
         if order_queue.cancel(order_id) {
             results.push(Ok(Success::Cancelled {
-                id: order_id,
+                order_id,
                 ts: SystemTime::now(),
             }));
         } else {
@@ -597,7 +597,7 @@ mod test {
         assert_eq!(results.len(), 1);
 
         if let Success::Accepted {
-            id,
+            order_id,
             order_type: _,
             ts: _,
         } = results
@@ -606,7 +606,7 @@ mod test {
             .expect("this should be Success")
         {
             let amend_order = orders::amend_order_request(
-                id,
+                order_id,
                 OrderSide::Bid,
                 bigdec("40000.00"),
                 bigdec("0.16"),
@@ -617,12 +617,12 @@ mod test {
             assert_eq!(results2.len(), 1);
 
             let order = orderbook.bid_queue.peek().unwrap();
-            assert_eq!(order.order_id, id);
+            assert_eq!(order.order_id, order_id);
             assert_eq!(order.price, bigdec("40000.00"));
             assert_eq!(order.qty, bigdec("0.16"));
 
             if let Success::Amended {
-                id: _,
+                order_id: _,
                 price,
                 qty,
                 ts: _,
