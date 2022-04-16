@@ -33,7 +33,7 @@ pub struct AmendOrderRequest {
 
 #[derive(Serialize, Deserialize)]
 pub struct CancelOrderRequest {
-    id: u64,
+    order_id: Uuid,
     side: String,
 }
 
@@ -113,17 +113,17 @@ fn process_results(
                 } => {
                     println!("todo");
                 }
-                Success::Cancelled { order_id: _, ts: _ } => {
-                    //use crate::schema::orders::dsl::orders;
-                    //use crate::schema::orders::dsl::id as order_id;
-                    //use crate::schema::orders::dsl::status;
+                Success::Cancelled { order_id, ts: _ } => {
+                    use crate::schema::orders::dsl::id;
+                    use crate::schema::orders::dsl::orders;
+                    use crate::schema::orders::dsl::status;
 
-                    //let order = orders.filter(order_id.eq(id));
-                    //let result = diesel::update(order).set(status.eq("cancelled"))
-                    //    .execute(conn);
+                    let order = orders.filter(id.eq(order_id));
+                    let result = diesel::update(order)
+                        .set(status.eq("cancelled"))
+                        .execute(conn);
 
-                    //println!("cancelled result: {:?}", result);
-                    println!("todo");
+                    println!("cancelled result: {:?}", result);
                 }
             }
         }
@@ -227,26 +227,34 @@ pub async fn patch_order(
 
 #[delete("/orders/{id}")]
 pub async fn delete_order(
+    id: Identity,
     path: web::Path<String>,
     state: web::Data<AppState>,
     req: web::Json<CancelOrderRequest>,
+    pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let side_opt = OrderSide::from_string(&req.side);
+    if let Some(str) = id.identity() {
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        let side_opt = OrderSide::from_string(&req.side);
+        let order_id = path.into_inner();
 
-    let order_id = path.into_inner();
+        if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
+            match side_opt {
+                Some(side) => {
+                    let order = orders::limit_order_cancel_request(id, side);
+                    let mut book = state.order_book.lock().unwrap();
+                    let results = book.process_order(order);
+                    process_results(&results, pool, user.id);
 
-    if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
-        match side_opt {
-            Some(side) => {
-                let order = orders::limit_order_cancel_request(id, side);
-                let mut book = state.order_book.lock().unwrap();
-                let res = book.process_order(order);
-                println!("{:?}", res);
-                Ok(HttpResponse::Ok().json(format!("{:?}", res)))
+                    let value = serde_json::json!(results);
+                    Ok(HttpResponse::Ok().json(value))
+                }
+                None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
-            None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
+        } else {
+            Err(ServiceError::BadRequest("invalid order id".to_string()))
         }
     } else {
-        Err(ServiceError::BadRequest("invalid order id".to_string()))
+        Err(ServiceError::Unauthorized)
     }
 }
