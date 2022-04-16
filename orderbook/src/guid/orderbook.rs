@@ -12,13 +12,18 @@ use super::validation::OrderRequestValidator;
 const MAX_STALLED_INDICES_IN_QUEUE: u64 = 10;
 const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
-pub type OrderProcessingResult = Vec<Result<Success, Failed>>;
+pub type OrderProcessingResult<Asset> = Vec<Result<Success<Asset>, Failed>>;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Success {
+pub enum Success<Asset> {
     Accepted {
         order_id: Uuid,
+        order_asset: Asset,
         order_type: OrderType,
+        price_asset: Asset,
+        price: Option<BigDecimal>,
+        qty: BigDecimal,
+        side: OrderSide,
         ts: SystemTime,
     },
 
@@ -108,9 +113,9 @@ where
         }
     }
 
-    pub fn process_order(&mut self, order: OrderRequest<Asset>) -> OrderProcessingResult {
+    pub fn process_order(&mut self, order: OrderRequest<Asset>) -> OrderProcessingResult<Asset> {
         // processing result accumulator
-        let mut proc_result: OrderProcessingResult = vec![];
+        let mut proc_result: OrderProcessingResult<Asset> = vec![];
 
         // validate request
         if let Err(reason) = self.order_validator.validate(&order) {
@@ -130,7 +135,12 @@ where
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     order_id,
+                    order_asset,
+                    price_asset,
+                    price: None,
                     order_type: OrderType::Market,
+                    qty: qty.clone(),
+                    side,
                     ts: SystemTime::now(),
                 }));
 
@@ -155,7 +165,12 @@ where
                 let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     order_id,
+                    order_asset,
+                    price_asset,
+                    price: Some(price.clone()),
                     order_type: OrderType::Limit,
+                    side,
+                    qty: qty.clone(),
                     ts: SystemTime::now(),
                 }));
 
@@ -201,7 +216,7 @@ where
 
     fn process_market_order(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
@@ -248,7 +263,7 @@ where
 
     fn process_limit_order(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
@@ -328,7 +343,7 @@ where
 
     fn process_order_amend(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         order_id: Uuid,
         side: OrderSide,
         price: BigDecimal,
@@ -366,7 +381,7 @@ where
 
     fn process_order_cancel(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         order_id: Uuid,
         side: OrderSide,
     ) {
@@ -389,7 +404,7 @@ where
 
     fn store_new_limit_order(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
@@ -421,7 +436,7 @@ where
 
     fn order_matching(
         &mut self,
-        results: &mut OrderProcessingResult,
+        results: &mut OrderProcessingResult<Asset>,
         opposite_order: &Order<Asset>,
         order_id: Uuid,
         order_asset: Asset,
@@ -598,7 +613,12 @@ mod test {
 
         if let Success::Accepted {
             order_id,
+            order_asset: _,
+            price_asset: _,
+            price: _,
             order_type: _,
+            side: _,
+            qty: _,
             ts: _,
         } = results
             .pop()

@@ -4,6 +4,7 @@ extern crate chrono;
 extern crate dotenv;
 
 use orderbook::guid::orderbook::Orderbook;
+use serde::Serialize;
 use std::sync::Mutex;
 
 pub mod models;
@@ -11,7 +12,7 @@ pub mod routes;
 pub mod schema;
 
 // please keep these organized while editing
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize)]
 pub enum BrokerAsset {
     ADA,
     BTC,

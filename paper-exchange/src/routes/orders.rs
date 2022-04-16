@@ -3,7 +3,6 @@ use actix_web::{delete, patch, post, web, HttpResponse, Result};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use diesel::pg::data_types::PgNumeric;
 use diesel::prelude::*;
-use orderbook::guid::domain::OrderType;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -120,74 +119,84 @@ pub struct CancelOrderRequest {
 //     }
 // }
 
-fn process_results<
-    F: Fn(
-        Uuid,
-        SystemTime,
-        Option<OrderSide>,
-        Option<OrderType>,
-        Option<BigDecimal>,
-        Option<BigDecimal>,
-    ),
->(
-    results: &OrderProcessingResult,
-    callback: F,
+fn process_results(
+    results: &OrderProcessingResult<BrokerAsset>,
+    pool: web::Data<Pool>,
+    user_id: Uuid,
 ) {
+    let conn: &PgConnection = &pool.get().unwrap();
+
     for result in results.iter() {
         if let Ok(success) = result {
             match success {
                 Success::Accepted {
                     order_id,
+                    order_asset,
+                    price_asset,
+                    price,
+                    side,
+                    qty,
                     order_type,
                     ts,
                 } => {
-                    //callback(*order_id, *order_type, *ts);
-                    callback(*order_id, *ts, None, Some(*order_type), None, None);
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+
+                    let price = match price {
+                        Some(bigdec) => Some(PgNumeric::from(bigdec)),
+                        None => None,
+                    };
+
+                    let order = Order {
+                        id: *order_id,
+                        user_id,
+                        order_asset: order_asset.to_string(),
+                        price_asset: price_asset.to_string(),
+                        price,
+                        quantity: PgNumeric::from(qty.clone()),
+                        order_type: order_type.to_string(),
+                        side: side.to_string(),
+                        status: "open".to_string(),
+                        created_at: timestamp,
+                        updated_at: timestamp,
+                    };
+
+                    let result = diesel::insert_into(crate::schema::orders::dsl::orders)
+                        .values(order)
+                        .execute(conn);
+                    println!("create result: {:?}", result);
                 }
                 Success::Filled {
-                    order_id,
-                    side,
-                    order_type,
-                    price,
-                    qty,
-                    ts,
+                    order_id: _,
+                    side: _,
+                    order_type: _,
+                    price: _,
+                    qty: _,
+                    ts:_,
                 } => {
-                    callback(
-                        *order_id,
-                        *ts,
-                        Some(*side),
-                        Some(*order_type),
-                        Some(price.clone()),
-                        Some(qty.clone()),
-                    );
+                    println!("todo");
                 }
                 Success::PartiallyFilled {
-                    order_id,
-                    side,
-                    order_type,
-                    price,
-                    qty,
-                    ts,
+                    order_id: _,
+                    side: _,
+                    order_type: _,
+                    price: _,
+                    qty: _,
+                    ts:_,
                 } => {
-                    callback(
-                        *order_id,
-                        *ts,
-                        Some(*side),
-                        Some(*order_type),
-                        Some(price.clone()),
-                        Some(qty.clone()),
-                    );
+                    println!("todo");
                 }
                 Success::Amended {
-                    order_id,
-                    price,
-                    qty,
-                    ts,
+                    order_id: _,
+                    price: _,
+                    qty: _,
+                    ts: _,
                 } => {
-                    callback(*order_id, *ts, None, None, Some(price.clone()), Some(qty.clone()));
+                    println!("todo");
                 }
-                Success::Cancelled { order_id, ts } => {
-                    callback(*order_id, *ts, None, None, None, None);
+                Success::Cancelled { order_id: _, ts: _ } => {
+                    println!("todo");
                 }
             }
         }
@@ -233,7 +242,7 @@ pub async fn post_order(
         let order_asset = order_asset_opt.unwrap();
         let price_asset = price_asset_opt.unwrap();
         let side = side_opt.unwrap();
-        let qty = qty_opt.unwrap();
+        //let qty = qty_opt.unwrap();
 
         let order = match price_opt {
             Some(price) => orders::new_limit_order_request(
@@ -256,47 +265,46 @@ pub async fn post_order(
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
 
-        let callback = |id: Uuid,
-                        ts: SystemTime,
-                        _order_side: Option<OrderSide>,
-                        order_type: Option<OrderType>,
-                        _price: Option<BigDecimal>,
-                        _quantity: Option<BigDecimal>| {
+        // let callback = |id: Uuid,
+        //                 ts: SystemTime,
+        //                 _order_side: Option<OrderSide>,
+        //                 order_type: Option<OrderType>,
+        //                 _price: Option<BigDecimal>,
+        //                 _quantity: Option<BigDecimal>| {
+        //     let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        //     let timestamp = chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+        //     let conn: &PgConnection = &pool.get().unwrap();
 
-            let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-            let timestamp = chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
-            let conn: &PgConnection = &pool.get().unwrap();
+        //     let price = match price_opt {
+        //         Some(pr) => {
+        //             let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
+        //             let pgnum = PgNumeric::from(bigdec);
+        //             Some(pgnum)
+        //         }
+        //         None => None,
+        //     };
 
-            let price = match price_opt {
-                Some(pr) => {
-                    let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
-                    let pgnum = PgNumeric::from(bigdec);
-                    Some(pgnum)
-                }
-                None => None,
-            };
+        //     let order = Order {
+        //         id,
+        //         user_id: user.id,
+        //         order_asset: order_asset.to_string(),
+        //         price_asset: price_asset.to_string(),
+        //         price,
+        //         quantity: PgNumeric::from(qty.clone()),
+        //         order_type: order_type.unwrap().to_string(),
+        //         side: side.to_string(),
+        //         status: "open".to_string(),
+        //         created_at: timestamp,
+        //         updated_at: timestamp,
+        //     };
 
-            let order = Order {
-                id,
-                user_id: user.id,
-                order_asset: order_asset.to_string(),
-                price_asset: price_asset.to_string(),
-                price,
-                quantity: PgNumeric::from(qty.clone()),
-                order_type: order_type.unwrap().to_string(),
-                side: side.to_string(),
-                status: "open".to_string(),
-                created_at: timestamp,
-                updated_at: timestamp,
-            };
+        //     let result = diesel::insert_into(crate::schema::orders::dsl::orders)
+        //         .values(order)
+        //         .execute(conn);
+        //     println!("create result: {:?}", result);
+        // };
 
-            let result = diesel::insert_into(crate::schema::orders::dsl::orders)
-                .values(order)
-                .execute(conn);
-            println!("create result: {:?}", result);
-        };
-
-        process_results(&results, callback);
+        process_results(&results, pool, user.id);
 
         let value = serde_json::json!(results);
         Ok(HttpResponse::Ok().json(value))
