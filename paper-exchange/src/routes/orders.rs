@@ -25,7 +25,7 @@ pub struct OrderRequest {
 
 #[derive(Serialize, Deserialize)]
 pub struct AmendOrderRequest {
-    id: u64,
+    order_id: Uuid,
     side: String,
     price: f64,
     qty: f64,
@@ -106,21 +106,41 @@ fn process_results(
                     println!("todo");
                 }
                 Success::Amended {
-                    order_id: _,
-                    price: _,
-                    qty: _,
-                    ts: _,
+                    order_id,
+                    price,
+                    qty,
+                    ts,
                 } => {
-                    println!("todo");
-                }
-                Success::Cancelled { order_id, ts: _ } => {
                     use crate::schema::orders::dsl::id;
                     use crate::schema::orders::dsl::orders;
-                    use crate::schema::orders::dsl::status;
+                    use crate::schema::orders::dsl::price as pricee;
+                    use crate::schema::orders::dsl::quantity;
+                    use crate::schema::orders::dsl::updated_at;
+
+                    let pr = Some(PgNumeric::from(price));
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
 
                     let order = orders.filter(id.eq(order_id));
                     let result = diesel::update(order)
-                        .set(status.eq("cancelled"))
+                        .set((pricee.eq(pr), quantity.eq(qty), updated_at.eq(timestamp)))
+                        .execute(conn);
+
+                    println!("ameneded result: {:?}", result);
+                }
+                Success::Cancelled { order_id, ts } => {
+                    use crate::schema::orders::dsl::id;
+                    use crate::schema::orders::dsl::orders;
+                    use crate::schema::orders::dsl::status;
+                    use crate::schema::orders::dsl::updated_at;
+
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let order = orders.filter(id.eq(order_id));
+                    let result = diesel::update(order)
+                        .set((status.eq("cancelled"), updated_at.eq(timestamp)))
                         .execute(conn);
 
                     println!("cancelled result: {:?}", result);
@@ -201,27 +221,38 @@ pub async fn post_order(
 
 #[patch("/orders/{id}")]
 pub async fn patch_order(
+    id: Identity,
     path: web::Path<String>,
     state: web::Data<AppState>,
     req: web::Json<AmendOrderRequest>,
+    pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let side_opt = OrderSide::from_string(&req.side);
-    let order_id = path.into_inner();
+    if let Some(str) = id.identity() {
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        let side_opt = OrderSide::from_string(&req.side);
+        let order_id = path.into_inner();
 
-    if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
-        match side_opt {
-            Some(side) => {
-                let price = FromPrimitive::from_f64(req.price).unwrap();
-                let qty = FromPrimitive::from_f64(req.qty).unwrap();
-                let order = orders::amend_order_request(id, side, price, qty, SystemTime::now());
-                let mut book = state.order_book.lock().unwrap();
-                let res = book.process_order(order);
-                Ok(HttpResponse::Ok().json(format!("{:?}", res)))
+        if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
+            match side_opt {
+                Some(side) => {
+                    let price = FromPrimitive::from_f64(req.price).unwrap();
+                    let qty = FromPrimitive::from_f64(req.qty).unwrap();
+                    let order =
+                        orders::amend_order_request(id, side, price, qty, SystemTime::now());
+                    let mut book = state.order_book.lock().unwrap();
+                    let results = book.process_order(order);
+                    process_results(&results, pool, user.id);
+
+                    let value = serde_json::json!(results);
+                    Ok(HttpResponse::Ok().json(value))
+                }
+                None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
-            None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
+        } else {
+            Err(ServiceError::BadRequest("invalid order id".to_string()))
         }
     } else {
-        Err(ServiceError::BadRequest("invalid order id".to_string()))
+        Err(ServiceError::Unauthorized)
     }
 }
 
