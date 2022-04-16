@@ -37,88 +37,6 @@ pub struct CancelOrderRequest {
     side: String,
 }
 
-// fn store_results(results: &OrderProcessingResult, pool: web::Data<Pool>, price: Option<f64>, user_id: Uuid, order_asset: BrokerAsset, price_asset: BrokerAsset, qty: BigDecimal, side: OrderSide) {
-//     for result in results.iter() {
-//         if let Ok(success) = result {
-//             let conn: &PgConnection = &pool.get().unwrap();
-
-//             match success {
-//                 Success::Accepted { id, order_type, ts } => {
-//                     let price = match price {
-//                         Some(pr) => {
-//                             let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
-//                             let pgnum = PgNumeric::from(bigdec);
-//                             Some(pgnum)
-//                         }
-//                         None => None,
-//                     };
-
-//                     let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-//                     let timestamp =
-//                         chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
-//                     let order = Order {
-//                         id: *id,
-//                         user_id,
-//                         order_asset: order_asset.to_string(),
-//                         price_asset: price_asset.to_string(),
-//                         price,
-//                         quantity: PgNumeric::from(qty.clone()),
-//                         order_type: order_type.to_string(),
-//                         side: side.to_string(),
-//                         status: "open".to_string(),
-//                         created_at: timestamp,
-//                         updated_at: timestamp,
-//                     };
-
-//                     let result = diesel::insert_into(crate::schema::orders::dsl::orders)
-//                         .values(order)
-//                         .execute(conn);
-//                     println!("create result: {:?}", result);
-//                 }
-//                 Success::Filled {
-//                     order_id: _,
-//                     side: _,
-//                     order_type: _,
-//                     price: _,
-//                     qty: _,
-//                     ts: _,
-//                 } => {
-//                     println!("todo");
-//                 }
-//                 Success::PartiallyFilled {
-//                     order_id: _,
-//                     side: _,
-//                     order_type: _,
-//                     price: _,
-//                     qty: _,
-//                     ts: _,
-//                 } => {
-//                     println!("todo");
-//                 }
-//                 Success::Amended {
-//                     id: _,
-//                     price: _,
-//                     qty: _,
-//                     ts: _,
-//                 } => {
-//                     println!("todo");
-//                 }
-//                 Success::Cancelled { id,ts: _ } => {
-//                     use crate::schema::orders::dsl::orders;
-//                     use crate::schema::orders::dsl::id as order_id;
-//                     use crate::schema::orders::dsl::status;
-
-//                     let order = orders.filter(order_id.eq(id));
-//                     let result = diesel::update(order).set(status.eq("cancelled"))
-//                         .execute(conn);
-
-//                     println!("cancelled result: {:?}", result);
-//                 }
-//             }
-//         }
-//     }
-// }
-
 fn process_results(
     results: &OrderProcessingResult<BrokerAsset>,
     pool: web::Data<Pool>,
@@ -173,7 +91,7 @@ fn process_results(
                     order_type: _,
                     price: _,
                     qty: _,
-                    ts:_,
+                    ts: _,
                 } => {
                     println!("todo");
                 }
@@ -183,7 +101,7 @@ fn process_results(
                     order_type: _,
                     price: _,
                     qty: _,
-                    ts:_,
+                    ts: _,
                 } => {
                     println!("todo");
                 }
@@ -196,6 +114,15 @@ fn process_results(
                     println!("todo");
                 }
                 Success::Cancelled { order_id: _, ts: _ } => {
+                    //use crate::schema::orders::dsl::orders;
+                    //use crate::schema::orders::dsl::id as order_id;
+                    //use crate::schema::orders::dsl::status;
+
+                    //let order = orders.filter(order_id.eq(id));
+                    //let result = diesel::update(order).set(status.eq("cancelled"))
+                    //    .execute(conn);
+
+                    //println!("cancelled result: {:?}", result);
                     println!("todo");
                 }
             }
@@ -242,7 +169,6 @@ pub async fn post_order(
         let order_asset = order_asset_opt.unwrap();
         let price_asset = price_asset_opt.unwrap();
         let side = side_opt.unwrap();
-        //let qty = qty_opt.unwrap();
 
         let order = match price_opt {
             Some(price) => orders::new_limit_order_request(
@@ -264,46 +190,6 @@ pub async fn post_order(
 
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
-
-        // let callback = |id: Uuid,
-        //                 ts: SystemTime,
-        //                 _order_side: Option<OrderSide>,
-        //                 order_type: Option<OrderType>,
-        //                 _price: Option<BigDecimal>,
-        //                 _quantity: Option<BigDecimal>| {
-        //     let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-        //     let timestamp = chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
-        //     let conn: &PgConnection = &pool.get().unwrap();
-
-        //     let price = match price_opt {
-        //         Some(pr) => {
-        //             let bigdec: BigDecimal = FromPrimitive::from_f64(pr).unwrap();
-        //             let pgnum = PgNumeric::from(bigdec);
-        //             Some(pgnum)
-        //         }
-        //         None => None,
-        //     };
-
-        //     let order = Order {
-        //         id,
-        //         user_id: user.id,
-        //         order_asset: order_asset.to_string(),
-        //         price_asset: price_asset.to_string(),
-        //         price,
-        //         quantity: PgNumeric::from(qty.clone()),
-        //         order_type: order_type.unwrap().to_string(),
-        //         side: side.to_string(),
-        //         status: "open".to_string(),
-        //         created_at: timestamp,
-        //         updated_at: timestamp,
-        //     };
-
-        //     let result = diesel::insert_into(crate::schema::orders::dsl::orders)
-        //         .values(order)
-        //         .execute(conn);
-        //     println!("create result: {:?}", result);
-        // };
-
         process_results(&results, pool, user.id);
 
         let value = serde_json::json!(results);
