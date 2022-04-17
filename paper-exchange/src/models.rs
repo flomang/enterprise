@@ -32,3 +32,16 @@ pub struct UpdateOrder {
     pub status: String,
     pub updated_at: NaiveDateTime,
 }
+
+#[derive(Debug, Insertable, Queryable)]
+#[table_name = "fills"]
+pub struct Fill {
+    pub id: uuid::Uuid,
+    pub order_id: uuid::Uuid,
+    pub price: PgNumeric,
+    pub quantity: PgNumeric,
+    pub order_type: String,
+    pub side: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}

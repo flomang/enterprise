@@ -86,24 +86,60 @@ fn process_results(
                     println!("create result: {:?}", result);
                 }
                 Success::Filled {
-                    order_id: _,
-                    side: _,
-                    order_type: _,
-                    price: _,
-                    qty: _,
-                    ts: _,
+                    order_id,
+                    side,
+                    order_type,
+                    price,
+                    qty,
+                    ts,
                 } => {
-                    println!("todo");
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+
+                    let fill = Fill {
+                        id: uuid::Uuid::new_v4(), 
+                        order_id: *order_id,
+                        price: PgNumeric::from(price.clone()),
+                        quantity: PgNumeric::from(qty.clone()),
+                        order_type: order_type.to_string(),
+                        side: side.to_string(),
+                        created_at: timestamp,
+                        updated_at: timestamp,
+                    };
+
+                    let result = diesel::insert_into(crate::schema::fills::dsl::fills)
+                        .values(fill)
+                        .execute(conn);
+                    println!("fill result: {:?}", result);
                 }
                 Success::PartiallyFilled {
-                    order_id: _,
-                    side: _,
-                    order_type: _,
-                    price: _,
-                    qty: _,
-                    ts: _,
+                    order_id,
+                    side,
+                    order_type,
+                    price,
+                    qty,
+                    ts,
                 } => {
-                    println!("todo");
+                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+                    let timestamp =
+                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+
+                    let fill = Fill {
+                        id: uuid::Uuid::new_v4(), 
+                        order_id: *order_id,
+                        price: PgNumeric::from(price.clone()),
+                        quantity: PgNumeric::from(qty.clone()),
+                        order_type: order_type.to_string(),
+                        side: side.to_string(),
+                        created_at: timestamp,
+                        updated_at: timestamp,
+                    };
+
+                    let result = diesel::insert_into(crate::schema::fills::dsl::fills)
+                        .values(fill)
+                        .execute(conn);
+                    println!("partial fill result: {:?}", result);
                 }
                 Success::Amended {
                     order_id,
