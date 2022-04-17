@@ -8,6 +8,8 @@ use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::models::*;
+use crate::schema::fills::dsl as fill_schema;
+use crate::schema::orders::dsl as order_schema;
 use crate::{AppState, BrokerAsset};
 use authentication::models::SlimUser;
 use kitchen::utils::errors::ServiceError;
@@ -82,9 +84,7 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(crate::schema::orders::dsl::orders)
-                        .values(order)
-                        .execute(conn);
+                    let result = diesel::insert_into(order_schema::orders).values(order).execute(conn);
                     println!("create result: {:?}", result);
                 }
                 Success::Filled {
@@ -108,9 +108,7 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(crate::schema::fills::dsl::fills)
-                        .values(fill)
-                        .execute(conn);
+                    let result = diesel::insert_into(fill_schema::fills).values(fill).execute(conn);
                     println!("fill result: {:?}", result);
                 }
                 Success::PartiallyFilled {
@@ -134,43 +132,34 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(crate::schema::fills::dsl::fills)
-                        .values(fill)
-                        .execute(conn);
+                    let result = diesel::insert_into(fill_schema::fills).values(fill).execute(conn);
                     println!("partial fill result: {:?}", result);
                 }
                 Success::Amended {
                     order_id,
-                    price,
+                    price: pricee,
                     qty,
                     ts,
                 } => {
-                    use crate::schema::orders::dsl::id;
-                    use crate::schema::orders::dsl::orders;
-                    use crate::schema::orders::dsl::price as pricee;
-                    use crate::schema::orders::dsl::quantity;
-                    use crate::schema::orders::dsl::updated_at;
-
-                    let pr = Some(PgNumeric::from(price));
+                    let pr = Some(PgNumeric::from(pricee));
                     let timestamp = to_chrono(ts);
 
-                    let order = orders.filter(id.eq(order_id));
+                    let order = order_schema::orders.filter(order_schema::id.eq(order_id));
                     let result = diesel::update(order)
-                        .set((pricee.eq(pr), quantity.eq(qty), updated_at.eq(timestamp)))
+                        .set((
+                            order_schema::price.eq(pr),
+                            order_schema::quantity.eq(qty),
+                            order_schema::updated_at.eq(timestamp),
+                        ))
                         .execute(conn);
 
                     println!("ameneded result: {:?}", result);
                 }
                 Success::Cancelled { order_id, ts } => {
-                    use crate::schema::orders::dsl::id;
-                    use crate::schema::orders::dsl::orders;
-                    use crate::schema::orders::dsl::status;
-                    use crate::schema::orders::dsl::updated_at;
-
                     let timestamp = to_chrono(ts);
-                    let order = orders.filter(id.eq(order_id));
+                    let order = order_schema::orders.filter(order_schema::id.eq(order_id));
                     let result = diesel::update(order)
-                        .set((status.eq("cancelled"), updated_at.eq(timestamp)))
+                        .set((order_schema::status.eq("cancelled"), order_schema::updated_at.eq(timestamp)))
                         .execute(conn);
 
                     println!("cancelled result: {:?}", result);
