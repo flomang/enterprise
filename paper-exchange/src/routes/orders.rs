@@ -37,6 +37,11 @@ pub struct CancelOrderRequest {
     side: String,
 }
 
+fn to_chrono(ts: &SystemTime) -> chrono::NaiveDateTime {
+    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0)
+}
+
 fn process_results(
     results: &OrderProcessingResult<BrokerAsset>,
     pool: web::Data<Pool>,
@@ -57,10 +62,7 @@ fn process_results(
                     order_type,
                     ts,
                 } => {
-                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                    let timestamp =
-                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
-
+                    let timestamp = to_chrono(ts);
                     let price = match price {
                         Some(bigdec) => Some(PgNumeric::from(bigdec)),
                         None => None,
@@ -93,12 +95,10 @@ fn process_results(
                     qty,
                     ts,
                 } => {
-                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                    let timestamp =
-                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let timestamp = to_chrono(ts);
 
                     let fill = Fill {
-                        id: uuid::Uuid::new_v4(), 
+                        id: uuid::Uuid::new_v4(),
                         order_id: *order_id,
                         price: PgNumeric::from(price.clone()),
                         quantity: PgNumeric::from(qty.clone()),
@@ -121,12 +121,10 @@ fn process_results(
                     qty,
                     ts,
                 } => {
-                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                    let timestamp =
-                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let timestamp = to_chrono(ts);
 
                     let fill = Fill {
-                        id: uuid::Uuid::new_v4(), 
+                        id: uuid::Uuid::new_v4(),
                         order_id: *order_id,
                         price: PgNumeric::from(price.clone()),
                         quantity: PgNumeric::from(qty.clone()),
@@ -154,9 +152,7 @@ fn process_results(
                     use crate::schema::orders::dsl::updated_at;
 
                     let pr = Some(PgNumeric::from(price));
-                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                    let timestamp =
-                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let timestamp = to_chrono(ts);
 
                     let order = orders.filter(id.eq(order_id));
                     let result = diesel::update(order)
@@ -171,9 +167,7 @@ fn process_results(
                     use crate::schema::orders::dsl::status;
                     use crate::schema::orders::dsl::updated_at;
 
-                    let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-                    let timestamp =
-                        chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0);
+                    let timestamp = to_chrono(ts);
                     let order = orders.filter(id.eq(order_id));
                     let result = diesel::update(order)
                         .set((status.eq("cancelled"), updated_at.eq(timestamp)))
