@@ -3457,6 +3457,7 @@ dependencies = [
  "actix-identity",
  "actix-web 4.0.1",
  "argonautica",
+ "bigdecimal",
  "derive_more",
  "diesel",
  "lazy_static",
@@ -4306,6 +4307,7 @@ name = "orderbook"
 version = "0.1.0"
 dependencies = [
  "bigdecimal",
+ "kitchen",
  "rand 0.8.4",
  "serde",
  "uuid",

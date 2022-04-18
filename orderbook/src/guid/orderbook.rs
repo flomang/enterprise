@@ -1,8 +1,6 @@
-use bigdecimal::{ BigDecimal, ToPrimitive };
-use serde::{
-    ser::{Serializer},
-    Deserialize, Serialize,
-};
+use bigdecimal::BigDecimal;
+use kitchen::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -16,23 +14,6 @@ const MAX_STALLED_INDICES_IN_QUEUE: u64 = 10;
 const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
 pub type OrderProcessingResult<Asset> = Vec<Result<Success<Asset>, Failed>>;
-
-fn serialize_bigdecimal_opt<S>(bg: &Option<BigDecimal>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    match bg {
-     Some(b) => serializer.serialize_f64(b.to_f64().unwrap()),
-     None => serializer.serialize_none(),
-    }
-}
-
-fn serialize_bigdecimal<S>(bg: &BigDecimal, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_f64(bg.to_f64().unwrap())
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success<Asset> {
