@@ -1,12 +1,12 @@
 use super::chrono::NaiveDateTime;
 use super::schema::*;
+use bigdecimal::{BigDecimal, ToPrimitive};
 use diesel::pg::data_types::PgNumeric;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
-// https://stackoverflow.com/questions/38175300/how-to-insert-a-decimal-number-with-diesels-pgnumeric-type
 #[derive(Debug, Insertable, Queryable)]
 #[table_name = "orders"]
 pub struct Order {
@@ -14,8 +14,8 @@ pub struct Order {
     pub user_id: uuid::Uuid,
     pub order_asset: String,
     pub price_asset: String,
-    pub price: Option<PgNumeric>,
-    pub quantity: PgNumeric,
+    pub price: Option<BigDecimal>,
+    pub quantity: BigDecimal,
     pub order_type: String,
     pub side: String,
     pub status: String,
@@ -35,10 +35,10 @@ impl Serialize for Order {
         s.serialize_field("price_asset", &self.price_asset)?;
 
         if let Some(p) = &self.price {
-            s.serialize_field("price",  &format!("{:?}", p))?;
+            s.serialize_field("price",  &p.to_f64().unwrap())?;
         }
 
-        s.serialize_field("qty",  &format!("{:?}", self.quantity))?;
+        s.serialize_field("qty",  &self.quantity.to_f64())?;
         s.serialize_field("order_type", &self.order_type)?;
         s.serialize_field("side", &self.side)?;
         s.serialize_field("status", &self.status)?;

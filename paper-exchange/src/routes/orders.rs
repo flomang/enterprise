@@ -66,18 +66,14 @@ fn process_results(
                     ts,
                 } => {
                     let timestamp = to_chrono(ts);
-                    let price = match price {
-                        Some(bigdec) => Some(PgNumeric::from(bigdec)),
-                        None => None,
-                    };
 
                     let order = Order {
                         id: *order_id,
                         user_id,
                         order_asset: order_asset.to_string(),
                         price_asset: price_asset.to_string(),
-                        price,
-                        quantity: PgNumeric::from(qty.clone()),
+                        price: price.clone(),
+                        quantity: qty.clone(),
                         order_type: order_type.to_string(),
                         side: side.to_string(),
                         status: "open".to_string(),
