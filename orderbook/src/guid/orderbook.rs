@@ -1,5 +1,8 @@
-use bigdecimal::BigDecimal;
-use serde::{Deserialize, Serialize};
+use bigdecimal::{ BigDecimal, ToPrimitive };
+use serde::{
+    ser::{Serializer},
+    Deserialize, Serialize,
+};
 use std::fmt::Debug;
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -14,6 +17,23 @@ const ORDER_QUEUE_INIT_CAPACITY: usize = 500;
 
 pub type OrderProcessingResult<Asset> = Vec<Result<Success<Asset>, Failed>>;
 
+fn serialize_bigdecimal_opt<S>(bg: &Option<BigDecimal>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match bg {
+     Some(b) => serializer.serialize_f64(b.to_f64().unwrap()),
+     None => serializer.serialize_none(),
+    }
+}
+
+fn serialize_bigdecimal<S>(bg: &BigDecimal, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_f64(bg.to_f64().unwrap())
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Success<Asset> {
     Accepted {
@@ -21,7 +41,9 @@ pub enum Success<Asset> {
         order_asset: Asset,
         order_type: OrderType,
         price_asset: Asset,
+        #[serde(serialize_with = "serialize_bigdecimal_opt")]
         price: Option<BigDecimal>,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         qty: BigDecimal,
         side: OrderSide,
         ts: SystemTime,
@@ -31,7 +53,9 @@ pub enum Success<Asset> {
         order_id: Uuid,
         side: OrderSide,
         order_type: OrderType,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         price: BigDecimal,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         qty: BigDecimal,
         ts: SystemTime,
     },
@@ -40,14 +64,18 @@ pub enum Success<Asset> {
         order_id: Uuid,
         side: OrderSide,
         order_type: OrderType,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         price: BigDecimal,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         qty: BigDecimal,
         ts: SystemTime,
     },
 
     Amended {
         order_id: Uuid,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         price: BigDecimal,
+        #[serde(serialize_with = "serialize_bigdecimal")]
         qty: BigDecimal,
         ts: SystemTime,
     },
@@ -106,10 +134,7 @@ where
                 MAX_STALLED_INDICES_IN_QUEUE,
                 ORDER_QUEUE_INIT_CAPACITY,
             ),
-            order_validator: OrderRequestValidator::new(
-                order_asset,
-                price_asset,
-            ),
+            order_validator: OrderRequestValidator::new(order_asset, price_asset),
         }
     }
 
