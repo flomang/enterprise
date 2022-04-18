@@ -1,7 +1,6 @@
 use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, web, HttpResponse, Result};
 use bigdecimal::{BigDecimal, FromPrimitive};
-use diesel::pg::data_types::PgNumeric;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
@@ -97,8 +96,8 @@ fn process_results(
                     let fill = Fill {
                         id: uuid::Uuid::new_v4(),
                         order_id: *order_id,
-                        price: PgNumeric::from(price.clone()),
-                        quantity: PgNumeric::from(qty.clone()),
+                        price: price.clone(),
+                        quantity: qty.clone(),
                         order_type: order_type.to_string(),
                         side: side.to_string(),
                         created_at: timestamp,
@@ -121,8 +120,8 @@ fn process_results(
                     let fill = Fill {
                         id: uuid::Uuid::new_v4(),
                         order_id: *order_id,
-                        price: PgNumeric::from(price.clone()),
-                        quantity: PgNumeric::from(qty.clone()),
+                        price: price.clone(),
+                        quantity: qty.clone(),
                         order_type: order_type.to_string(),
                         side: side.to_string(),
                         created_at: timestamp,
@@ -138,13 +137,13 @@ fn process_results(
                     qty,
                     ts,
                 } => {
-                    let pr = Some(PgNumeric::from(pricee));
+                    //let pr = Some(PgNumeric::from(pricee));
                     let timestamp = to_chrono(ts);
 
                     let order = order_schema::orders.filter(order_schema::id.eq(order_id));
                     let result = diesel::update(order)
                         .set((
-                            order_schema::price.eq(pr),
+                            order_schema::price.eq(pricee),
                             order_schema::quantity.eq(qty),
                             order_schema::updated_at.eq(timestamp),
                         ))

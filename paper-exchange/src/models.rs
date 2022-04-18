@@ -1,7 +1,6 @@
 use super::chrono::NaiveDateTime;
 use super::schema::*;
 use bigdecimal::BigDecimal;
-use diesel::pg::data_types::PgNumeric;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use serde::Serialize;
 use kitchen::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
@@ -30,8 +29,8 @@ pub struct Order {
 #[table_name = "orders"]
 pub struct UpdateOrder {
     pub id: uuid::Uuid,
-    pub price: Option<PgNumeric>,
-    pub quantity: PgNumeric,
+    pub price: Option<BigDecimal>,
+    pub quantity: BigDecimal,
     pub status: String,
     pub updated_at: NaiveDateTime,
 }
@@ -41,8 +40,8 @@ pub struct UpdateOrder {
 pub struct Fill {
     pub id: uuid::Uuid,
     pub order_id: uuid::Uuid,
-    pub price: PgNumeric,
-    pub quantity: PgNumeric,
+    pub price: BigDecimal,
+    pub quantity: BigDecimal,
     pub order_type: String,
     pub side: String,
     pub created_at: NaiveDateTime,
