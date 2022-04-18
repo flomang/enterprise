@@ -1,5 +1,5 @@
 use actix_identity::Identity;
-use actix_web::{delete, patch, post, web, HttpResponse, Result};
+use actix_web::{delete, get, patch, post, web, HttpResponse, Result};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use diesel::pg::data_types::PgNumeric;
 use diesel::prelude::*;
@@ -13,6 +13,7 @@ use crate::schema::orders::dsl as order_schema;
 use crate::{AppState, BrokerAsset};
 use authentication::models::SlimUser;
 use kitchen::utils::errors::ServiceError;
+use kitchen::utils::pagination::PageInfo;
 use orderbook::guid::orderbook::{OrderProcessingResult, Success};
 use orderbook::guid::{domain::OrderSide, orders};
 
@@ -166,6 +167,54 @@ fn process_results(
                 }
             }
         }
+    }
+}
+
+#[derive(Serialize)]
+struct OrderPage {
+    page: i64,
+    page_size: i64,
+    orders: Vec<Order>,
+    total_pages: i64,
+}
+
+
+#[get("/orders")]
+pub async fn get_orders(
+    params: web::Query<PageInfo>,
+    id: Identity,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    use kitchen::utils::pagination::*;
+
+    if let Some(str) = id.identity() {
+        use crate::schema::orders::dsl::*;
+
+        let user: SlimUser = serde_json::from_str(&str).unwrap();
+        let mut conn = pool.get().unwrap();
+
+        let result =orders 
+            .filter(user_id.eq(&user.id))
+            .order_by(created_at)
+            .paginate(params.page)
+            .per_page(params.page_size)
+            .load_and_count_pages::<Order>(&mut conn);
+
+        match result {
+            Ok((results, total_pages)) => {
+                let page = OrderPage {
+                    page: params.page,
+                    page_size: params.page_size,
+                    orders: results,
+                    total_pages: total_pages,
+                };
+
+                Ok(HttpResponse::Ok().json(page))
+            }
+            Err(error) => Err(ServiceError::BadRequest(error.to_string())),
+        }
+    } else {
+        Err(ServiceError::Unauthorized)
     }
 }
 

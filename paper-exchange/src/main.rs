@@ -46,6 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .service(paper::post_order)
+                    .service(paper::get_orders)
                     .service(paper::patch_order)
                     .service(paper::delete_order),
             )
