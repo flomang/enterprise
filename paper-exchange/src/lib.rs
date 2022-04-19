@@ -3,9 +3,18 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 
-use orderbook::guid::orderbook::Orderbook;
+use orderbook::guid::{
+    orderbook::Orderbook,
+    orders::{new_market_order_request, new_limit_order_request, OrderRequest},
+    domain::OrderSide,
+};
+use diesel::prelude::*;
 use serde::Serialize;
 use std::sync::Mutex;
+use std::time::SystemTime;
+
+use crate::models::Order;
+use crate::models::Pool;
 
 pub mod models;
 pub mod routes;
@@ -50,6 +59,58 @@ impl BrokerAsset {
 
 pub struct AppState {
     pub order_book: Mutex<Orderbook<BrokerAsset>>,
+}
+
+pub fn load_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
+    use crate::schema::orders::dsl::*;
+    use kitchen::utils::pagination::*;
+
+    let mut order_requests = vec![];
+    let mut page = 1;
+    let mut total_pages = 1;
+    let page_size = 1000;
+    let mut conn = pool.get().unwrap();
+
+    loop {
+        let results = orders
+            .filter(status.ne("cancelled".to_string()))
+            .order_by(created_at)
+            .paginate(page)
+            .per_page(page_size)
+            .load_and_count_pages::<Order>(&mut conn);
+
+        if let Ok((ords, total)) = results {
+            total_pages = total;
+
+            for o in ords.iter() {
+                let request = match o.order_type.as_str() {
+                    "limit" => new_limit_order_request(
+                        BrokerAsset::from_string(&o.order_asset).unwrap(),
+                        BrokerAsset::from_string(&o.price_asset).unwrap(),
+                        OrderSide::from_string(&o.side).unwrap(),
+                        o.price.clone().unwrap(),
+                        o.quantity.clone(),
+                        SystemTime::now(),
+                    ),
+                    _ => new_market_order_request(
+                        BrokerAsset::from_string(&o.order_asset).unwrap(),
+                        BrokerAsset::from_string(&o.price_asset).unwrap(),
+                        OrderSide::from_string(&o.side).unwrap(),
+                        o.quantity.clone(),
+                        SystemTime::now(),
+                    ),
+                };
+                order_requests.push(request);
+            }
+        }
+
+        if page == total_pages {
+            break;
+        }
+        page += 1;
+    } 
+
+    order_requests
 }
 
 #[cfg(test)]

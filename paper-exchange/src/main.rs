@@ -6,7 +6,7 @@ use diesel::prelude::PgConnection;
 
 use orderbook::guid::orderbook::Orderbook;
 
-use paper_exchange::models;
+use paper_exchange::{models, load_orders};
 use paper_exchange::routes::orders as paper;
 use paper_exchange::AppState;
 use paper_exchange::BrokerAsset;
@@ -35,6 +35,11 @@ async fn main() -> std::io::Result<()> {
     let data = web::Data::new(AppState {
         order_book: Mutex::new(order_book),
     });
+
+    let orders = load_orders(pool.clone());
+    for order in orders {
+        println!("{:?}", order);
+    }
 
     HttpServer::new(move || {
         App::new()
