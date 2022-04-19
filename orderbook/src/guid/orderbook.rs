@@ -131,14 +131,13 @@ where
 
         match order {
             OrderRequest::NewMarketOrder {
+                order_id,
                 order_asset,
                 price_asset,
                 side,
                 qty,
                 ts: _ts,
             } => {
-                // generate new ID for order
-                let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     order_id,
                     order_asset,
@@ -161,6 +160,7 @@ where
             }
 
             OrderRequest::NewLimitOrder {
+                order_id,
                 order_asset,
                 price_asset,
                 side,
@@ -168,7 +168,6 @@ where
                 qty,
                 ts,
             } => {
-                let order_id = Uuid::new_v4();
                 proc_result.push(Ok(Success::Accepted {
                     order_id,
                     order_asset,

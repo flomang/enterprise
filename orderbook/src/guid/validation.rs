@@ -35,6 +35,7 @@ where
     pub fn validate(&self, request: &OrderRequest<Asset>) -> Result<(), &str> {
         match request {
             OrderRequest::NewMarketOrder {
+                order_id: _,
                 order_asset,
                 price_asset,
                 side: _side,
@@ -43,6 +44,7 @@ where
             } => self.validate_market(*order_asset, *price_asset, qty.clone()),
 
             OrderRequest::NewLimitOrder {
+                order_id: _,
                 order_asset,
                 price_asset,
                 side: _side,

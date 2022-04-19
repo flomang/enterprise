@@ -13,6 +13,7 @@ where
     Asset: Debug + Clone,
 {
     NewMarketOrder {
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         side: OrderSide,
@@ -21,6 +22,7 @@ where
     },
 
     NewLimitOrder {
+        order_id: Uuid,
         order_asset: Asset,
         price_asset: Asset,
         side: OrderSide,
@@ -59,8 +61,9 @@ pub fn new_market_order_request<Asset>(
 where
     Asset: Debug + Clone,
 {
-
+    let order_id = Uuid::new_v4();
     OrderRequest::NewMarketOrder {
+        order_id,
         order_asset,
         price_asset,
         qty,
@@ -82,8 +85,9 @@ pub fn new_limit_order_request<Asset>(
 where
     Asset: Debug + Clone,
 {
-
+    let order_id = Uuid::new_v4();
     OrderRequest::NewLimitOrder {
+        order_id,
         order_asset,
         price_asset,
         side,
