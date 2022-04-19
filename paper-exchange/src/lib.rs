@@ -61,7 +61,7 @@ pub struct AppState {
     pub order_book: Mutex<Orderbook<BrokerAsset>>,
 }
 
-pub fn load_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
+pub fn database_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
     use crate::schema::orders::dsl::*;
     use kitchen::utils::pagination::*;
 

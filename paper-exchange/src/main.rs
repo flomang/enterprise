@@ -6,7 +6,7 @@ use diesel::prelude::PgConnection;
 
 use orderbook::guid::orderbook::Orderbook;
 
-use paper_exchange::{models, load_orders};
+use paper_exchange::{models, database_orders};
 use paper_exchange::routes::orders as paper;
 use paper_exchange::AppState;
 use paper_exchange::BrokerAsset;
@@ -31,15 +31,15 @@ async fn main() -> std::io::Result<()> {
 
     let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
 
-    let order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
+    let mut order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
+    for order in database_orders(pool.clone()) {
+        let results = order_book.process_order(order);
+        println!("{:?}", results);
+    }
+
     let data = web::Data::new(AppState {
         order_book: Mutex::new(order_book),
     });
-
-    let orders = load_orders(pool.clone());
-    for order in orders {
-        println!("{:?}", order);
-    }
 
     HttpServer::new(move || {
         App::new()
