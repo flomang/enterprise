@@ -46,10 +46,9 @@ fn to_chrono(ts: &SystemTime) -> chrono::NaiveDateTime {
 
 fn process_results(
     results: &OrderProcessingResult<BrokerAsset>,
-    pool: web::Data<Pool>,
-    user_id: Uuid,
+    conn: &PgConnection,
+    user_id: &Uuid,
 ) {
-    let conn: &PgConnection = &pool.get().unwrap();
 
     for result in results.iter() {
         if let Ok(success) = result {
@@ -68,7 +67,7 @@ fn process_results(
 
                     let order = Order {
                         id: *order_id,
-                        user_id,
+                        user_id: *user_id,
                         order_asset: order_asset.to_string(),
                         price_asset: price_asset.to_string(),
                         price: price.clone(),
@@ -273,7 +272,9 @@ pub async fn post_order(
 
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
-        process_results(&results, pool, user.id);
+        let conn = pool.get().expect("couldn't get db connection from pool");
+
+        process_results(&results, &conn, &user.id);
 
         let value = serde_json::json!(results);
         Ok(HttpResponse::Ok().json(value))
@@ -304,7 +305,8 @@ pub async fn patch_order(
                         orders::amend_order_request(id, side, price, qty, SystemTime::now());
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    process_results(&results, pool, user.id);
+                    let conn  = pool.get().expect("couldn't get db connection from pool");
+                    process_results(&results,&conn, &user.id);
 
                     let value = serde_json::json!(results);
                     Ok(HttpResponse::Ok().json(value))
@@ -338,7 +340,8 @@ pub async fn delete_order(
                     let order = orders::limit_order_cancel_request(id, side);
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    process_results(&results, pool, user.id);
+                    let conn = pool.get().expect("couldn't get db connection from pool");
+                    process_results(&results, &conn, &user.id);
 
                     let value = serde_json::json!(results);
                     Ok(HttpResponse::Ok().json(value))
