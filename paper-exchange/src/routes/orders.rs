@@ -49,7 +49,6 @@ fn process_results(
     conn: &PgConnection,
     user_id: &Uuid,
 ) {
-
     for result in results.iter() {
         if let Ok(success) = result {
             match success {
@@ -79,7 +78,10 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(order_schema::orders).values(order).execute(conn);
+                    let result = diesel::insert_into(order_schema::orders)
+                        .values(order)
+                        .execute(conn);
+
                     println!("create result: {:?}", result);
                 }
                 Success::Filled {
@@ -103,7 +105,9 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(fill_schema::fills).values(fill).execute(conn);
+                    let result = diesel::insert_into(fill_schema::fills)
+                        .values(fill)
+                        .execute(conn);
                     println!("fill result: {:?}", result);
                 }
                 Success::PartiallyFilled {
@@ -127,7 +131,9 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(fill_schema::fills).values(fill).execute(conn);
+                    let result = diesel::insert_into(fill_schema::fills)
+                        .values(fill)
+                        .execute(conn);
                     println!("partial fill result: {:?}", result);
                 }
                 Success::Amended {
@@ -154,7 +160,10 @@ fn process_results(
                     let timestamp = to_chrono(ts);
                     let order = order_schema::orders.filter(order_schema::id.eq(order_id));
                     let result = diesel::update(order)
-                        .set((order_schema::status.eq("cancelled"), order_schema::updated_at.eq(timestamp)))
+                        .set((
+                            order_schema::status.eq("cancelled"),
+                            order_schema::updated_at.eq(timestamp),
+                        ))
                         .execute(conn);
 
                     println!("cancelled result: {:?}", result);
@@ -172,7 +181,6 @@ struct OrderPage {
     total_pages: i64,
 }
 
-
 #[get("/orders")]
 pub async fn get_orders(
     params: web::Query<PageInfo>,
@@ -187,7 +195,7 @@ pub async fn get_orders(
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let mut conn = pool.get().unwrap();
 
-        let result =orders 
+        let result = orders
             .filter(user_id.eq(&user.id))
             .order_by(created_at)
             .paginate(params.page)
@@ -273,7 +281,6 @@ pub async fn post_order(
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
         let conn = pool.get().expect("couldn't get db connection from pool");
-
         process_results(&results, &conn, &user.id);
 
         let value = serde_json::json!(results);
@@ -305,8 +312,8 @@ pub async fn patch_order(
                         orders::amend_order_request(id, side, price, qty, SystemTime::now());
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    let conn  = pool.get().expect("couldn't get db connection from pool");
-                    process_results(&results,&conn, &user.id);
+                    let conn = pool.get().expect("couldn't get db connection from pool");
+                    process_results(&results, &conn, &user.id);
 
                     let value = serde_json::json!(results);
                     Ok(HttpResponse::Ok().json(value))
