@@ -48,10 +48,10 @@ fn to_chrono(ts: &SystemTime) -> chrono::NaiveDateTime {
 
 async fn process_results(
     results: OrderProcessingResult<BrokerAsset>,
-    json: serde_json::Value,
     pool: web::Data<Pool>,
     user: SlimUser,
 ) -> Result<HttpResponse, ServiceError> {
+    let json = serde_json::json!(results);
     let db_results = web::block(move || {
         let conn = pool.get().expect("couldn't get db connection from pool");
         store_results(&results, &conn, &user.id)
@@ -295,9 +295,8 @@ pub async fn post_order(
 
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
-        let json = serde_json::json!(results);
 
-        process_results(results, json, pool, user).await
+        process_results(results, pool, user).await
     } else {
         Err(ServiceError::Unauthorized)
     }
@@ -326,8 +325,7 @@ pub async fn patch_order(
                         orders::amend_order_request(id, side, price, qty, SystemTime::now());
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    let json = serde_json::json!(results);
-                    process_results(results, json, pool, user).await
+                    process_results(results, pool, user).await
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
@@ -358,8 +356,7 @@ pub async fn delete_order(
                     let order = orders::limit_order_cancel_request(id, side);
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    let json = serde_json::json!(results);
-                    process_results(results, json, pool, user).await
+                    process_results(results, pool, user).await
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
