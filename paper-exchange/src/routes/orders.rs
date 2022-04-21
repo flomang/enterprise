@@ -39,12 +39,30 @@ pub struct CancelOrderRequest {
     side: String,
 }
 
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
 fn to_chrono(ts: &SystemTime) -> chrono::NaiveDateTime {
     let duration = ts.duration_since(SystemTime::UNIX_EPOCH).unwrap();
     chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0)
 }
 
-type DbError = Box<dyn std::error::Error + Send + Sync>;
+async fn process_results(
+    results: OrderProcessingResult<BrokerAsset>,
+    json: serde_json::Value,
+    pool: web::Data<Pool>,
+    user: SlimUser,
+) -> Result<HttpResponse, ServiceError> {
+    let db_results = web::block(move || {
+        let conn = pool.get().expect("couldn't get db connection from pool");
+        store_results(&results, &conn, &user.id)
+    })
+    .await?;
+
+    match db_results {
+        Ok(_) => Ok(HttpResponse::Ok().json(json)),
+        Err(_err) => Err(ServiceError::InternalServerError),
+    }
+}
 
 fn store_results(
     results: &OrderProcessingResult<BrokerAsset>,
@@ -167,6 +185,7 @@ fn store_results(
     Ok(())
 }
 
+
 #[derive(Serialize)]
 struct OrderPage {
     page: i64,
@@ -174,6 +193,7 @@ struct OrderPage {
     orders: Vec<Order>,
     total_pages: i64,
 }
+
 
 #[get("/orders")]
 pub async fn get_orders(
@@ -213,6 +233,7 @@ pub async fn get_orders(
         Err(ServiceError::Unauthorized)
     }
 }
+
 
 #[post("/orders")]
 pub async fn post_order(
@@ -276,20 +297,12 @@ pub async fn post_order(
         let results = book.process_order(order);
         let json = serde_json::json!(results);
 
-        let db_results = web::block(move || {
-            let conn = pool.get().expect("couldn't get db connection from pool");
-            store_results(&results, &conn, &user.id)
-        })
-        .await?;
-
-        match db_results {
-            Ok(_) => Ok(HttpResponse::Ok().json(json)),
-            Err(_err) => Err(ServiceError::InternalServerError),
-        }
+        process_results(results, json, pool, user).await
     } else {
         Err(ServiceError::Unauthorized)
     }
 }
+
 
 #[patch("/orders/{id}")]
 pub async fn patch_order(
@@ -314,17 +327,7 @@ pub async fn patch_order(
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
                     let json = serde_json::json!(results);
-
-                    let db_results = web::block(move || {
-                        let conn = pool.get().expect("couldn't get db connection from pool");
-                        store_results(&results, &conn, &user.id)
-                    })
-                    .await?;
-
-                    match db_results {
-                        Ok(_) => Ok(HttpResponse::Ok().json(json)),
-                        Err(_err) => Err(ServiceError::InternalServerError),
-                    }
+                    process_results(results, json, pool, user).await
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
@@ -356,17 +359,7 @@ pub async fn delete_order(
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
                     let json = serde_json::json!(results);
-
-                    let db_results = web::block(move || {
-                        let conn = pool.get().expect("couldn't get db connection from pool");
-                        store_results(&results, &conn, &user.id)
-                    })
-                    .await?;
-
-                    match db_results {
-                        Ok(_) => Ok(HttpResponse::Ok().json(json)),
-                        Err(_err) => Err(ServiceError::InternalServerError),
-                    }
+                    process_results(results, json, pool, user).await
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
