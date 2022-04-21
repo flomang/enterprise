@@ -44,11 +44,13 @@ fn to_chrono(ts: &SystemTime) -> chrono::NaiveDateTime {
     chrono::NaiveDateTime::from_timestamp(duration.as_secs() as i64, 0)
 }
 
-fn process_results(
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
+fn store_results(
     results: &OrderProcessingResult<BrokerAsset>,
     conn: &PgConnection,
     user_id: &Uuid,
-) {
+) -> Result<(), DbError> {
     for result in results.iter() {
         if let Ok(success) = result {
             match success {
@@ -63,7 +65,6 @@ fn process_results(
                     ts,
                 } => {
                     let timestamp = to_chrono(ts);
-
                     let order = Order {
                         id: *order_id,
                         user_id: *user_id,
@@ -78,11 +79,9 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(order_schema::orders)
+                    diesel::insert_into(order_schema::orders)
                         .values(order)
-                        .execute(conn);
-
-                    println!("create result: {:?}", result);
+                        .execute(conn)?;
                 }
                 Success::Filled {
                     order_id,
@@ -105,10 +104,9 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(fill_schema::fills)
+                    diesel::insert_into(fill_schema::fills)
                         .values(fill)
-                        .execute(conn);
-                    println!("fill result: {:?}", result);
+                        .execute(conn)?;
                 }
                 Success::PartiallyFilled {
                     order_id,
@@ -119,7 +117,6 @@ fn process_results(
                     ts,
                 } => {
                     let timestamp = to_chrono(ts);
-
                     let fill = Fill {
                         id: uuid::Uuid::new_v4(),
                         order_id: *order_id,
@@ -131,10 +128,9 @@ fn process_results(
                         updated_at: timestamp,
                     };
 
-                    let result = diesel::insert_into(fill_schema::fills)
+                    diesel::insert_into(fill_schema::fills)
                         .values(fill)
-                        .execute(conn);
-                    println!("partial fill result: {:?}", result);
+                        .execute(conn)?;
                 }
                 Success::Amended {
                     order_id,
@@ -142,35 +138,33 @@ fn process_results(
                     qty,
                     ts,
                 } => {
-                    //let pr = Some(PgNumeric::from(pricee));
                     let timestamp = to_chrono(ts);
-
                     let order = order_schema::orders.filter(order_schema::id.eq(order_id));
-                    let result = diesel::update(order)
+
+                    diesel::update(order)
                         .set((
                             order_schema::price.eq(pricee),
                             order_schema::quantity.eq(qty),
                             order_schema::updated_at.eq(timestamp),
                         ))
-                        .execute(conn);
-
-                    println!("ameneded result: {:?}", result);
+                        .execute(conn)?;
                 }
                 Success::Cancelled { order_id, ts } => {
                     let timestamp = to_chrono(ts);
                     let order = order_schema::orders.filter(order_schema::id.eq(order_id));
-                    let result = diesel::update(order)
+
+                    diesel::update(order)
                         .set((
                             order_schema::status.eq("cancelled"),
                             order_schema::updated_at.eq(timestamp),
                         ))
-                        .execute(conn);
-
-                    println!("cancelled result: {:?}", result);
+                        .execute(conn)?;
                 }
             }
         }
     }
+
+    Ok(())
 }
 
 #[derive(Serialize)]
@@ -280,11 +274,18 @@ pub async fn post_order(
 
         let mut book = state.order_book.lock().unwrap();
         let results = book.process_order(order);
-        let conn = pool.get().expect("couldn't get db connection from pool");
-        process_results(&results, &conn, &user.id);
+        let json = serde_json::json!(results);
 
-        let value = serde_json::json!(results);
-        Ok(HttpResponse::Ok().json(value))
+        let db_results = web::block(move || {
+            let conn = pool.get().expect("couldn't get db connection from pool");
+            store_results(&results, &conn, &user.id)
+        })
+        .await?;
+
+        match db_results {
+            Ok(_) => Ok(HttpResponse::Ok().json(json)),
+            Err(_err) => Err(ServiceError::InternalServerError),
+        }
     } else {
         Err(ServiceError::Unauthorized)
     }
@@ -312,11 +313,18 @@ pub async fn patch_order(
                         orders::amend_order_request(id, side, price, qty, SystemTime::now());
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    let conn = pool.get().expect("couldn't get db connection from pool");
-                    process_results(&results, &conn, &user.id);
+                    let json = serde_json::json!(results);
 
-                    let value = serde_json::json!(results);
-                    Ok(HttpResponse::Ok().json(value))
+                    let db_results = web::block(move || {
+                        let conn = pool.get().expect("couldn't get db connection from pool");
+                        store_results(&results, &conn, &user.id)
+                    })
+                    .await?;
+
+                    match db_results {
+                        Ok(_) => Ok(HttpResponse::Ok().json(json)),
+                        Err(_err) => Err(ServiceError::InternalServerError),
+                    }
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
@@ -347,11 +355,18 @@ pub async fn delete_order(
                     let order = orders::limit_order_cancel_request(id, side);
                     let mut book = state.order_book.lock().unwrap();
                     let results = book.process_order(order);
-                    let conn = pool.get().expect("couldn't get db connection from pool");
-                    process_results(&results, &conn, &user.id);
+                    let json = serde_json::json!(results);
 
-                    let value = serde_json::json!(results);
-                    Ok(HttpResponse::Ok().json(value))
+                    let db_results = web::block(move || {
+                        let conn = pool.get().expect("couldn't get db connection from pool");
+                        store_results(&results, &conn, &user.id)
+                    })
+                    .await?;
+
+                    match db_results {
+                        Ok(_) => Ok(HttpResponse::Ok().json(json)),
+                        Err(_err) => Err(ServiceError::InternalServerError),
+                    }
                 }
                 None => Ok(HttpResponse::Ok().json("side must be 'bid' or 'ask'".to_string())),
             }
