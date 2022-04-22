@@ -60,7 +60,10 @@ async fn process_results(
 
     match db_results {
         Ok(_) => Ok(HttpResponse::Ok().json(json)),
-        Err(_err) => Err(ServiceError::InternalServerError),
+        Err(err) => {
+            log::error!("DbError: {}", err);
+            Err(ServiceError::InternalServerError)
+        }
     }
 }
 
