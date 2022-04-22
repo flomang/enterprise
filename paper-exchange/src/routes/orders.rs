@@ -196,40 +196,67 @@ struct OrderPage {
     total_pages: i64,
 }
 
+fn db_orders(
+    conn: &mut PgConnection,
+    uid: Uuid,
+    params: web::Query<PageInfo>,
+) -> Result<OrderPage, DbError> {
+    use crate::schema::orders::dsl::*;
+    use kitchen::utils::pagination::*;
+
+    let result = orders
+        .filter(user_id.eq(uid))
+        .filter(status.ne("cancelled".to_string()))
+        .order_by(created_at)
+        .paginate(params.page)
+        .per_page(params.page_size)
+        .load_and_count_pages::<Order>(conn)?;
+
+    let (results, total_pages) = result;
+
+    let page = OrderPage {
+        page: params.page,
+        page_size: params.page_size,
+        orders: results,
+        total_pages: total_pages,
+    };
+    Ok(page)
+}
+
 #[get("/orders")]
 pub async fn get_orders(
     params: web::Query<PageInfo>,
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use kitchen::utils::pagination::*;
+    //use kitchen::utils::pagination::*;
 
     if let Some(str) = id.identity() {
-        use crate::schema::orders::dsl::*;
+        //use crate::schema::orders::dsl::*;
 
         let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let mut conn = pool.get().unwrap();
+        //let mut conn = pool.get().unwrap();
 
-        let result = orders
-            .filter(user_id.eq(&user.id))
-            .filter(status.ne("cancelled".to_string()))
-            .order_by(created_at)
-            .paginate(params.page)
-            .per_page(params.page_size)
-            .load_and_count_pages::<Order>(&mut conn);
+        let result = web::block(move || {
+            let mut conn = pool.get().expect("couldn't get db connection from pool");
+            db_orders(&mut conn, user.id, params)
+        })
+        .await?;
+
+        //let result = orders
+        //    .filter(user_id.eq(&user.id))
+        //    .filter(status.ne("cancelled".to_string()))
+        //    .order_by(created_at)
+        //    .paginate(params.page)
+        //    .per_page(params.page_size)
+        //    .load_and_count_pages::<Order>(&mut conn);
 
         match result {
-            Ok((results, total_pages)) => {
-                let page = OrderPage {
-                    page: params.page,
-                    page_size: params.page_size,
-                    orders: results,
-                    total_pages: total_pages,
-                };
-
-                Ok(HttpResponse::Ok().json(page))
+            Ok(page) => Ok(HttpResponse::Ok().json(page)),
+            Err(err) => {
+                log::error!("DbError: {}", err);
+                Err(ServiceError::InternalServerError)
             }
-            Err(error) => Err(ServiceError::BadRequest(error.to_string())),
         }
     } else {
         Err(ServiceError::Unauthorized)
