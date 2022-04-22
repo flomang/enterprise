@@ -188,7 +188,6 @@ fn store_results(
     Ok(())
 }
 
-
 #[derive(Serialize)]
 struct OrderPage {
     page: i64,
@@ -196,7 +195,6 @@ struct OrderPage {
     orders: Vec<Order>,
     total_pages: i64,
 }
-
 
 #[get("/orders")]
 pub async fn get_orders(
@@ -214,6 +212,7 @@ pub async fn get_orders(
 
         let result = orders
             .filter(user_id.eq(&user.id))
+            .filter(status.ne("cancelled".to_string()))
             .order_by(created_at)
             .paginate(params.page)
             .per_page(params.page_size)
@@ -236,7 +235,6 @@ pub async fn get_orders(
         Err(ServiceError::Unauthorized)
     }
 }
-
 
 #[post("/orders")]
 pub async fn post_order(
@@ -306,7 +304,7 @@ pub async fn post_order(
 }
 
 /**
- * Leaving this here for now. In production, users should never be able to change the qty of their original order. 
+ * Leaving this here for now. In production, users should never be able to change the qty of their original order.
  */
 #[patch("/orders/{id}")]
 pub async fn patch_order(
