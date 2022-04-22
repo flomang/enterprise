@@ -104,7 +104,7 @@ pub fn database_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
             }
         }
 
-        if page == total_pages {
+        if page >= total_pages {
             break;
         }
         page += 1;
