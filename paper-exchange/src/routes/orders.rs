@@ -305,7 +305,9 @@ pub async fn post_order(
     }
 }
 
-
+/**
+ * Leaving this here for now. In production, users should never be able to change the qty of their original order. 
+ */
 #[patch("/orders/{id}")]
 pub async fn patch_order(
     id: Identity,
