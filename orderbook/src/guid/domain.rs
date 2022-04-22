@@ -5,6 +5,7 @@ use bigdecimal::BigDecimal;
 use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum OrderSide {
     Bid,
     Ask,
@@ -43,6 +44,7 @@ where
 
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum OrderType {
     Market,
     Limit,

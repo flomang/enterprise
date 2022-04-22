@@ -2,10 +2,19 @@ use super::chrono::NaiveDateTime;
 use super::schema::*;
 use bigdecimal::BigDecimal;
 use diesel::{r2d2::ConnectionManager, PgConnection};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use kitchen::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
+
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderStatus {
+    Cancelled,
+    Filled,
+    PartiallyFilled,
+    Opened,
+}
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
 #[table_name = "orders"]
