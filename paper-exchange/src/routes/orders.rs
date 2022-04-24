@@ -2,7 +2,6 @@ use actix_identity::Identity;
 use actix_web::{delete, get, patch, post, web, HttpResponse, Result};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use diesel::prelude::*;
-use orderbook::guid::domain::InvalidSideError;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -249,40 +248,30 @@ pub async fn post_order(
     req: web::Json<OrderRequest>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    // access request identity
+
     if let Some(str) = id.identity() {
-        // access request identity
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let order_asset = BrokerAsset::from_string(&req.order_asset)?;
         let price_asset = BrokerAsset::from_string(&req.price_asset)?;
         let side = OrderSide::from_string(&req.side)?;
-        let price_opt = req.price;
-        let qty_opt: Option<BigDecimal> = FromPrimitive::from_f64(req.qty);
+        let qty: BigDecimal = FromPrimitive::from_f64(req.qty).ok_or(
+            ServiceError::BadRequest("qty cannot be converted to BigDecimal".to_string()),
+        )?;
 
-        let mut errors: Vec<String> = vec![];
-        if qty_opt.is_none() {
-            errors.push("qty must be a decimal".to_string());
-        }
-
-        if errors.len() > 0 {
-            let value = serde_json::json!(errors);
-            return Ok(HttpResponse::Ok().json(value));
-        }
-
-        let order = match price_opt {
+        let order = match req.price {
             Some(price) => orders::new_limit_order_request(
                 order_asset,
                 price_asset,
                 side,
                 FromPrimitive::from_f64(price).unwrap(),
-                FromPrimitive::from_f64(req.qty).unwrap(),
+                qty,
                 SystemTime::now(),
             ),
             None => orders::new_market_order_request(
                 order_asset,
                 price_asset,
                 side,
-                FromPrimitive::from_f64(req.qty).unwrap(),
+                qty,
                 SystemTime::now(),
             ),
         };

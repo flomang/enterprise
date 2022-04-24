@@ -32,6 +32,12 @@ impl fmt::Display for AssetError {
     }
 }
 
+impl From<AssetError> for ServiceError {
+    fn from(asset: AssetError) -> ServiceError {
+        ServiceError::BadRequest(asset.msg)
+    }
+}
+
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize)]
 pub enum BrokerAsset {
@@ -44,19 +50,6 @@ pub enum BrokerAsset {
 }
 
 impl BrokerAsset {
-    // pub fn from_string(asset: &str) -> Option<BrokerAsset> {
-    //     let upper = asset.to_uppercase();
-    //     match upper.as_str() {
-    //         "ADA" => Some(BrokerAsset::ADA),
-    //         "BTC" => Some(BrokerAsset::BTC),
-    //         "DOT" => Some(BrokerAsset::DOT),
-    //         "ETH" => Some(BrokerAsset::ETH),
-    //         "GRIN" => Some(BrokerAsset::GRIN),
-    //         "USD" => Some(BrokerAsset::USD),
-    //         _ => None,
-    //     }
-    // }
-
     pub fn from_string(asset: &str) -> Result<BrokerAsset, AssetError> {
         let upper = asset.to_uppercase();
         match upper.as_str() {
@@ -83,13 +76,6 @@ impl BrokerAsset {
         }
     }
 }
-
-impl From<AssetError> for ServiceError {
-    fn from(asset: AssetError) -> ServiceError {
-        ServiceError::BadRequest(asset.msg)
-    }
-}
-
 
 pub struct AppState {
     pub order_book: Mutex<Orderbook<BrokerAsset>>,
