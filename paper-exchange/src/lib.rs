@@ -3,13 +3,15 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 
-use orderbook::guid::{
-    orderbook::Orderbook,
-    orders::{new_market_order_request, new_limit_order_request, OrderRequest},
-    domain::OrderSide,
-};
 use diesel::prelude::*;
+use kitchen::utils::errors::ServiceError;
+use orderbook::guid::{
+    domain::OrderSide,
+    orderbook::Orderbook,
+    orders::{new_limit_order_request, new_market_order_request, OrderRequest},
+};
 use serde::Serialize;
+use std::fmt;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
@@ -19,6 +21,15 @@ use crate::models::Pool;
 pub mod models;
 pub mod routes;
 pub mod schema;
+
+pub struct AssetError {
+    msg: String,
+}
+impl fmt::Display for AssetError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
 
 // please keep these organized while editing
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize)]
@@ -45,6 +56,21 @@ impl BrokerAsset {
         }
     }
 
+    pub fn from_string2(asset: &str) -> Result<BrokerAsset, AssetError> {
+        let upper = asset.to_uppercase();
+        match upper.as_str() {
+            "ADA" => Ok(BrokerAsset::ADA),
+            "BTC" => Ok(BrokerAsset::BTC),
+            "DOT" => Ok(BrokerAsset::DOT),
+            "ETH" => Ok(BrokerAsset::ETH),
+            "GRIN" => Ok(BrokerAsset::GRIN),
+            "USD" => Ok(BrokerAsset::USD),
+            _ => Err(AssetError {
+                msg: format!("invalid asset: {}", asset),
+            }),
+        }
+    }
+
     pub fn to_string(&self) -> String {
         match self {
             BrokerAsset::ADA => "ADA".to_string(),
@@ -56,6 +82,13 @@ impl BrokerAsset {
         }
     }
 }
+
+impl From<AssetError> for ServiceError {
+    fn from(asset: AssetError) -> ServiceError {
+        ServiceError::BadRequest(asset.msg)
+    }
+}
+
 
 pub struct AppState {
     pub order_book: Mutex<Orderbook<BrokerAsset>>,
@@ -87,7 +120,7 @@ pub fn database_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
                     "limit" => new_limit_order_request(
                         BrokerAsset::from_string(&o.order_asset).unwrap(),
                         BrokerAsset::from_string(&o.price_asset).unwrap(),
-                        OrderSide::from_string(&o.side).unwrap(),
+                        OrderSide::from_string(&o.side).expect("this should be a valid side"),
                         o.price.clone().unwrap(),
                         o.quantity.clone(),
                         SystemTime::now(),
@@ -108,7 +141,7 @@ pub fn database_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
             break;
         }
         page += 1;
-    } 
+    }
 
     order_requests
 }

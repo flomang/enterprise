@@ -1,5 +1,6 @@
 
 use std::fmt::Debug;
+use kitchen::utils::errors::ServiceError;
 use serde::{Deserialize, Serialize};
 use bigdecimal::BigDecimal;
 use uuid::Uuid;
@@ -11,13 +12,21 @@ pub enum OrderSide {
     Ask,
 }
 
+#[derive(Debug)]
+pub struct InvalidSideError;
+impl From<InvalidSideError> for ServiceError {
+    fn from(_: InvalidSideError) -> ServiceError {
+        ServiceError::BadRequest("side must be 'ask' or 'bid'".to_string())
+    }
+}
+
 impl OrderSide {
-    pub fn from_string(side: &str) -> Option<OrderSide> {
+    pub fn from_string(side: &str) -> Result<OrderSide, InvalidSideError> {
         let lower = side.to_lowercase();
         match lower.as_str() {
-            "bid" => Some(OrderSide::Bid),
-            "ask" => Some(OrderSide::Ask),
-            _ => None,
+            "bid" => Ok(OrderSide::Bid),
+            "ask" => Ok(OrderSide::Ask),
+            _ => Err(InvalidSideError),
         }
     }
 
