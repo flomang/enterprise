@@ -22,6 +22,7 @@ pub mod models;
 pub mod routes;
 pub mod schema;
 
+#[derive(Debug)]
 pub struct AssetError {
     msg: String,
 }
@@ -43,20 +44,20 @@ pub enum BrokerAsset {
 }
 
 impl BrokerAsset {
-    pub fn from_string(asset: &str) -> Option<BrokerAsset> {
-        let upper = asset.to_uppercase();
-        match upper.as_str() {
-            "ADA" => Some(BrokerAsset::ADA),
-            "BTC" => Some(BrokerAsset::BTC),
-            "DOT" => Some(BrokerAsset::DOT),
-            "ETH" => Some(BrokerAsset::ETH),
-            "GRIN" => Some(BrokerAsset::GRIN),
-            "USD" => Some(BrokerAsset::USD),
-            _ => None,
-        }
-    }
+    // pub fn from_string(asset: &str) -> Option<BrokerAsset> {
+    //     let upper = asset.to_uppercase();
+    //     match upper.as_str() {
+    //         "ADA" => Some(BrokerAsset::ADA),
+    //         "BTC" => Some(BrokerAsset::BTC),
+    //         "DOT" => Some(BrokerAsset::DOT),
+    //         "ETH" => Some(BrokerAsset::ETH),
+    //         "GRIN" => Some(BrokerAsset::GRIN),
+    //         "USD" => Some(BrokerAsset::USD),
+    //         _ => None,
+    //     }
+    // }
 
-    pub fn from_string2(asset: &str) -> Result<BrokerAsset, AssetError> {
+    pub fn from_string(asset: &str) -> Result<BrokerAsset, AssetError> {
         let upper = asset.to_uppercase();
         match upper.as_str() {
             "ADA" => Ok(BrokerAsset::ADA),
@@ -118,16 +119,16 @@ pub fn database_orders(pool: Pool) -> Vec<OrderRequest<BrokerAsset>> {
             for o in ords.iter() {
                 let request = match o.order_type.as_str() {
                     "limit" => new_limit_order_request(
-                        BrokerAsset::from_string(&o.order_asset).unwrap(),
-                        BrokerAsset::from_string(&o.price_asset).unwrap(),
+                        BrokerAsset::from_string(&o.order_asset).expect("invalid order asset"),
+                        BrokerAsset::from_string(&o.price_asset).expect("invalid price asset"),
                         OrderSide::from_string(&o.side).expect("this should be a valid side"),
                         o.price.clone().unwrap(),
                         o.quantity.clone(),
                         SystemTime::now(),
                     ),
                     _ => new_market_order_request(
-                        BrokerAsset::from_string(&o.order_asset).unwrap(),
-                        BrokerAsset::from_string(&o.price_asset).unwrap(),
+                        BrokerAsset::from_string(&o.order_asset).expect("invalid order asset"),
+                        BrokerAsset::from_string(&o.price_asset).expect("invalid price asset"),
                         OrderSide::from_string(&o.side).unwrap(),
                         o.quantity.clone(),
                         SystemTime::now(),

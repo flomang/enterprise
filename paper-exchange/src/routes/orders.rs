@@ -253,25 +253,13 @@ pub async fn post_order(
     if let Some(str) = id.identity() {
         // access request identity
         let user: SlimUser = serde_json::from_str(&str).unwrap();
-        let order_asset = BrokerAsset::from_string2(&req.order_asset)?;
-        let price_asset = BrokerAsset::from_string2(&req.price_asset)?;
-
-        //let order_asset_opt = BrokerAsset::from_string(&req.order_asset);
-        //let price_asset_opt = BrokerAsset::from_string(&req.price_asset);
+        let order_asset = BrokerAsset::from_string(&req.order_asset)?;
+        let price_asset = BrokerAsset::from_string(&req.price_asset)?;
         let side = OrderSide::from_string(&req.side)?;
         let price_opt = req.price;
         let qty_opt: Option<BigDecimal> = FromPrimitive::from_f64(req.qty);
 
         let mut errors: Vec<String> = vec![];
-        //if order_asset_opt.is_none() {
-        //    errors.push("bad order asset".to_string());
-        //}
-        //if price_asset_opt.is_none() {
-        //    errors.push("bad price asset".to_string());
-        //}
-        //if side_opt.is_none() {
-        //    errors.push("side must be bid or ask".to_string());
-        //}
         if qty_opt.is_none() {
             errors.push("qty must be a decimal".to_string());
         }
@@ -280,10 +268,6 @@ pub async fn post_order(
             let value = serde_json::json!(errors);
             return Ok(HttpResponse::Ok().json(value));
         }
-
-        //let order_asset = order_asset_opt.unwrap();
-        //let price_asset = price_asset_opt.unwrap();
-        //let side = side_opt.unwrap();
 
         let order = match price_opt {
             Some(price) => orders::new_limit_order_request(
