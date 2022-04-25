@@ -202,13 +202,17 @@ pub async fn get_orders(
     id: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
+        log::debug!("slim user deserialization: {}", err);
+        ServiceError::Unauthorized
+    })?;
+
     let result: Result<OrderPage, DbError> = web::block(move || {
         use crate::schema::orders::dsl::*;
         use kitchen::utils::pagination::*;
 
         let page: u32 = if params.page > 0 { params.page } else { 1 };
-        let user: SlimUser = serde_json::from_str(&str).unwrap();
         let mut conn = pool.get().expect("couldn't get db connection from pool");
         let result = orders
             .filter(user_id.eq(user.id))
@@ -246,8 +250,11 @@ pub async fn post_order(
     req: web::Json<OrderRequest>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let str = id.identity().ok_or(ServiceError::Unauthorized)?;
-    let user: SlimUser = serde_json::from_str(&str).unwrap();
+    let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
+        log::debug!("slim user deserialization: {}", err);
+        ServiceError::Unauthorized
+    })?;
     let order_asset = BrokerAsset::from_string(&req.order_asset)?;
     let price_asset = BrokerAsset::from_string(&req.price_asset)?;
     let side = OrderSide::from_string(&req.side)?;
@@ -286,8 +293,12 @@ pub async fn patch_order(
     req: web::Json<AmendOrderRequest>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let str = id.identity().ok_or(ServiceError::Unauthorized)?;
-    let user: SlimUser = serde_json::from_str(&str).unwrap();
+    let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
+        log::debug!("slim user deserialization: {}", err);
+        ServiceError::Unauthorized
+    })?;
+
     let side = OrderSide::from_string(&req.side)?;
     let order_id = path.into_inner();
     let id = uuid::Uuid::parse_str(&order_id).or(Err(ServiceError::BadRequest(
@@ -310,8 +321,12 @@ pub async fn delete_order(
     req: web::Json<CancelOrderRequest>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let str = id.identity().ok_or(ServiceError::Unauthorized)?;
-    let user: SlimUser = serde_json::from_str(&str).unwrap();
+    let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
+        log::debug!("slim user deserialization: {}", err);
+        ServiceError::Unauthorized
+    })?;
+
     let side = OrderSide::from_string(&req.side)?;
     let order_id = path.into_inner();
     let id = uuid::Uuid::parse_str(&order_id).or(Err(ServiceError::BadRequest(
