@@ -213,24 +213,27 @@ pub async fn get_orders(
         use kitchen::utils::pagination::*;
 
         let page: u32 = if params.page > 0 { params.page } else { 1 };
+        let page_size: u32 = if params.page_size > 0 {
+            params.page_size
+        } else {
+            1
+        };
+
         let mut conn = pool.get().expect("couldn't get db connection from pool");
-        let result = orders
+        let (results, total_pages) = orders
             .filter(user_id.eq(user.id))
             .filter(status.ne("cancelled".to_string()))
             .order_by(created_at)
             .paginate(page as i64)
-            .per_page(params.page_size as i64)
+            .per_page(page_size as i64)
             .load_and_count_pages::<Order>(&mut conn)?;
 
-        let (results, total_pages) = result;
-
-        let page = OrderPage {
+        Ok(OrderPage {
             page,
-            page_size: params.page_size,
+            page_size,
+            total_pages,
             orders: results,
-            total_pages: total_pages,
-        };
-        Ok(page)
+        })
     })
     .await?;
 
