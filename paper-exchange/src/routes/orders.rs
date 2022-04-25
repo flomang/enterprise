@@ -248,15 +248,14 @@ pub async fn post_order(
     req: web::Json<OrderRequest>,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-
     if let Some(str) = id.identity() {
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let order_asset = BrokerAsset::from_string(&req.order_asset)?;
         let price_asset = BrokerAsset::from_string(&req.price_asset)?;
         let side = OrderSide::from_string(&req.side)?;
-        let qty: BigDecimal = FromPrimitive::from_f64(req.qty).ok_or(
-            ServiceError::BadRequest("qty cannot be converted to BigDecimal".to_string()),
-        )?;
+        let qty: BigDecimal = FromPrimitive::from_f64(req.qty).ok_or(ServiceError::BadRequest(
+            "qty cannot be converted to BigDecimal".to_string(),
+        ))?;
 
         let order = match req.price {
             Some(price) => orders::new_limit_order_request(
@@ -300,17 +299,16 @@ pub async fn patch_order(
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let side = OrderSide::from_string(&req.side)?;
         let order_id = path.into_inner();
+        let id = uuid::Uuid::parse_str(&order_id).or(Err(ServiceError::BadRequest(
+            "expected uuid for order id".to_string(),
+        )))?;
 
-        if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
-            let price = FromPrimitive::from_f64(req.price).unwrap();
-            let qty = FromPrimitive::from_f64(req.qty).unwrap();
-            let order = orders::amend_order_request(id, side, price, qty, SystemTime::now());
-            let mut book = state.order_book.lock().unwrap();
-            let results = book.process_order(order);
-            process_results(results, pool, user).await
-        } else {
-            Err(ServiceError::BadRequest("invalid order id".to_string()))
-        }
+        let price = FromPrimitive::from_f64(req.price).unwrap();
+        let qty = FromPrimitive::from_f64(req.qty).unwrap();
+        let order = orders::amend_order_request(id, side, price, qty, SystemTime::now());
+        let mut book = state.order_book.lock().unwrap();
+        let results = book.process_order(order);
+        process_results(results, pool, user).await
     } else {
         Err(ServiceError::Unauthorized)
     }
@@ -328,15 +326,14 @@ pub async fn delete_order(
         let user: SlimUser = serde_json::from_str(&str).unwrap();
         let side = OrderSide::from_string(&req.side)?;
         let order_id = path.into_inner();
+        let id = uuid::Uuid::parse_str(&order_id).or(Err(ServiceError::BadRequest(
+            "expected uuid for order id".to_string(),
+        )))?;
 
-        if let Ok(id) = uuid::Uuid::parse_str(&order_id) {
-            let order = orders::limit_order_cancel_request(id, side);
-            let mut book = state.order_book.lock().unwrap();
-            let results = book.process_order(order);
-            process_results(results, pool, user).await
-        } else {
-            Err(ServiceError::BadRequest("invalid order id".to_string()))
-        }
+        let order = orders::limit_order_cancel_request(id, side);
+        let mut book = state.order_book.lock().unwrap();
+        let results = book.process_order(order);
+        process_results(results, pool, user).await
     } else {
         Err(ServiceError::Unauthorized)
     }
