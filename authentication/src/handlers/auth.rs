@@ -66,8 +66,9 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
         .load::<User>(conn)?;
 
     if let Some(user) = people.pop() {
-        // set auth password if not set for master splinter
-        if user.email == "master@splinter.com" && user.hash == "" {
+        let master = std::env::var("MASTER_EMAIL").expect("MASTER_EMAIL must be set");
+        // set auth password if not set for master
+        if user.email == master && user.hash == "" {
             let now = Utc::now().naive_utc();
             let password = hash_password(&auth_data.password)?;
             let set_pwd = UpdateUserPassword {
