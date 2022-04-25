@@ -76,6 +76,6 @@ where
 
 #[derive(Deserialize)]
 pub struct PageInfo {
-    pub page: i64,
-    pub page_size: i64,
+    pub page: u32,
+    pub page_size: u32,
 }
