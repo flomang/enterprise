@@ -17,36 +17,30 @@ async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    // create db connection pool
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    let pool: models::Pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
-
-    let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
-
-    let mut order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
-    for order in database_orders(pool.clone()) {
-        let results = order_book.process_order(order);
-        log::debug!("{:?}", results);
-    }
-
-    let data = web::Data::new(AppState {
-        order_book: Mutex::new(order_book),
-    });
-
     HttpServer::new(move || {
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
+
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
+        let pool: models::Pool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+
+        let mut order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
+        // load open orders
+        for order in database_orders(pool.clone()) {
+            let results = order_book.process_order(order);
+            log::debug!("{:?}", results);
+        }
+
         App::new()
             .wrap(middleware::Logger::default())
-            .wrap(utils::auth::cookie_policy(
-                domain.clone(),
-                Duration::new(86400, 0),
-            ))
-            .app_data(data.clone())
+            .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
+            .app_data(web::Data::new(AppState {
+                order_book: Mutex::new(order_book),
+            }))
             .app_data(web::JsonConfig::default().limit(4096))
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pool))
             .service(
                 web::scope("/api")
                     .service(paper::post_order)
