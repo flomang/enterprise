@@ -28,17 +28,18 @@ async fn main() -> std::io::Result<()> {
 
         let mut order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
         // load open orders
-        for order in database_orders(pool.clone()) {
+        for order in database_orders(&pool) {
             let results = order_book.process_order(order);
             log::debug!("{:?}", results);
         }
+        let app_state = AppState {
+            order_book: Mutex::new(order_book),
+        };
 
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
-            .app_data(web::Data::new(AppState {
-                order_book: Mutex::new(order_book),
-            }))
+            .app_data(web::Data::new(app_state))
             .app_data(web::JsonConfig::default().limit(4096))
             .app_data(web::Data::new(pool))
             .service(
