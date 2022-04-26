@@ -14,21 +14,21 @@ async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    // create db connection pool
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    let pool: models::Pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
-    let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
-
     // Start http server
     HttpServer::new(move || {
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
+
+        // create db connection pool
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
+        let pool: models::Pool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+
         App::new()
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pool))
             .wrap(middleware::Logger::default())
-            .wrap(utils::auth::cookie_policy(domain.clone(), Duration::new(86400, 0)))
+            .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
             .app_data(web::JsonConfig::default().limit(4096))
             // everything under '/api/' route
             .service(
