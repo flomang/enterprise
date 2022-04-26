@@ -53,8 +53,7 @@ async fn process_results(
 ) -> Result<HttpResponse, ServiceError> {
     let json = serde_json::json!(results);
     let db_results = web::block(move || {
-        let conn = pool.get().expect("couldn't get db connection from pool");
-        store_results(&results, &conn, &user.id)
+        store_results(results, pool, user.id)
     })
     .await?;
 
@@ -68,10 +67,12 @@ async fn process_results(
 }
 
 fn store_results(
-    results: &OrderProcessingResult<BrokerAsset>,
-    conn: &PgConnection,
-    user_id: &Uuid,
+    results: OrderProcessingResult<BrokerAsset>,
+    pool: web::Data<Pool>,
+    user_id: Uuid,
 ) -> Result<(), DbError> {
+    let conn = pool.get().expect("couldn't get db connection from pool");
+
     for result in results.iter() {
         if let Ok(success) = result {
             match success {
@@ -88,7 +89,7 @@ fn store_results(
                     let timestamp = to_chrono(ts);
                     let order = Order {
                         id: *order_id,
-                        user_id: *user_id,
+                        user_id,
                         order_asset: order_asset.to_string(),
                         price_asset: price_asset.to_string(),
                         price: price.clone(),
@@ -102,7 +103,7 @@ fn store_results(
 
                     diesel::insert_into(order_schema::orders)
                         .values(order)
-                        .execute(conn)?;
+                        .execute(&conn)?;
                 }
                 Success::Filled {
                     order_id,
@@ -127,7 +128,7 @@ fn store_results(
 
                     diesel::insert_into(fill_schema::fills)
                         .values(fill)
-                        .execute(conn)?;
+                        .execute(&conn)?;
                 }
                 Success::PartiallyFilled {
                     order_id,
@@ -151,7 +152,7 @@ fn store_results(
 
                     diesel::insert_into(fill_schema::fills)
                         .values(fill)
-                        .execute(conn)?;
+                        .execute(&conn)?;
                 }
                 Success::Amended {
                     order_id,
@@ -168,7 +169,7 @@ fn store_results(
                             order_schema::quantity.eq(qty),
                             order_schema::updated_at.eq(timestamp),
                         ))
-                        .execute(conn)?;
+                        .execute(&conn)?;
                 }
                 Success::Cancelled { order_id, ts } => {
                     let timestamp = to_chrono(ts);
@@ -179,7 +180,7 @@ fn store_results(
                             order_schema::status.eq("cancelled"),
                             order_schema::updated_at.eq(timestamp),
                         ))
-                        .execute(conn)?;
+                        .execute(&conn)?;
                 }
             }
         }
