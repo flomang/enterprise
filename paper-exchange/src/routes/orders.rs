@@ -52,10 +52,7 @@ async fn process_results(
     user: SlimUser,
 ) -> Result<HttpResponse, ServiceError> {
     let json = serde_json::json!(results);
-    let db_results = web::block(move || {
-        store_results(results, pool, user.id)
-    })
-    .await?;
+    let db_results = web::block(move || store_results(results, pool, user.id)).await?;
 
     match db_results {
         Ok(_) => Ok(HttpResponse::Ok().json(json)),
@@ -267,14 +264,20 @@ pub async fn post_order(
     ))?;
 
     let order = match req.price {
-        Some(price) => orders::new_limit_order_request(
-            order_asset,
-            price_asset,
-            side,
-            FromPrimitive::from_f64(price).unwrap(),
-            qty,
-            SystemTime::now(),
-        ),
+        Some(price) => {
+            let price: BigDecimal = FromPrimitive::from_f64(price).ok_or(
+                ServiceError::BadRequest("price cannot be converted to BigDecimal".to_string()),
+            )?;
+
+            orders::new_limit_order_request(
+                order_asset,
+                price_asset,
+                side,
+                price,
+                qty,
+                SystemTime::now(),
+            )
+        }
         None => {
             orders::new_market_order_request(order_asset, price_asset, side, qty, SystemTime::now())
         }
