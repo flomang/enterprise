@@ -4,6 +4,7 @@ resolver="2"
 members = [
     "authentication",
     "chat",
+    "coinbase",
     "orderbook",
     "iot-one",
     "kitchen",
