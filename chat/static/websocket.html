@@ -1,112 +1,198 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
     <title>Chat!</title>
 
-    <meta charset="utf-8" />
-
-    <script>
-      'use strict'
-
-      window.onload = () => {
-        let conn = null
-
-        const log = (msg) => {
-          div_log.innerHTML += msg + '<br>'
-          div_log.scroll(0, div_log.scrollTop + 1000)
-        }
-
-        const connect = () => {
-          disconnect()
-
-          const wsUri =
-            (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
-            window.location.host +
-            '/ws/'
-
-          conn = new WebSocket(wsUri)
-          log('Connecting...')
-
-          conn.onopen = function () {
-            log('Connected.')
-            update_ui()
-          }
-
-          conn.onmessage = function (e) {
-            log('Received: ' + e.data)
-          }
-
-          conn.onclose = function () {
-            log('Disconnected.')
-            conn = null
-
-            update_ui()
-          }
-        }
-
-        const disconnect = () => {
-          if (conn) {
-            log('Disconnecting...')
-            conn.close()
-            conn = null
-
-            update_ui()
-          }
-        }
-
-        const update_ui = () => {
-          if (!conn) {
-            span_status.textContent = 'disconnected'
-            btn_connect.textContent = 'Connect'
-          } else {
-            span_status.textContent = `connected (${conn.protocol})`
-            btn_connect.textContent = 'Disconnect'
-          }
-        }
-
-        btn_connect.onclick = () => {
-          if (!conn) {
-            connect()
-          } else {
-            disconnect()
-          }
-
-          update_ui()
-        }
-
-        btn_send.onclick = () => {
-          if (!conn) return
-
-          const text = input_text.value
-          log('Sending: ' + text)
-          conn.send(text)
-
-          input_text.value = ''
-          input_text.focus()
-        }
-
-        input_text.onkeyup = (e) => {
-          if (e.key === 'Enter') {
-            btn_send.click()
-          }
-        }
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
       }
-    </script>
+
+      input[type='text'] {
+        font-size: inherit;
+      }
+
+      #log {
+        width: 30em;
+        height: 20em;
+        overflow: auto;
+        margin: 0.5em 0;
+
+        border: 1px solid black;
+      }
+
+      #status {
+        padding: 0 0.2em;
+      }
+
+      #text {
+        width: 17em;
+        padding: 0.5em;
+      }
+
+      .msg {
+        margin: 0;
+        padding: 0.25em 0.5em;
+      }
+
+      .msg--status {
+        /* a light yellow */
+        background-color: #ffffc9;
+      }
+
+      .msg--message {
+        /* a light blue */
+        background-color: #d2f4ff;
+      }
+
+      .msg--error {
+        background-color: pink;
+      }
+    </style>
   </head>
 
   <body>
-    <h3>Chat!</h3>
+    <h1>Chat!</h1>
+
     <div>
-      <button id="btn_connect">Connect</button>
-      Status: <span id="span_status">disconnected</span>
+      <button id="connect">Connect</button>
+      <span>Status:</span>
+      <span id="status">disconnected</span>
     </div>
 
-    <div
-      id="div_log"
-      style="width: 20em; height: 15em; overflow: auto; border: 1px solid black"
-    ></div>
+    <div id="log"></div>
 
-    <input id="input_text" type="text" />
-    <input id="btn_send" type="button" value="Send" />
+    <form id="chatform">
+      <input type="text" id="text" />
+      <input type="submit" id="send" />
+    </form>
+
+    <hr />
+
+    <section>
+      <h2>Commands</h2>
+      <table style="border-spacing: 0.5em">
+        <tr>
+          <td>
+            <code>/list</code>
+          </td>
+          <td>list all available rooms</td>
+        </tr>
+        <tr>
+          <td>
+            <code>/join name</code>
+          </td>
+          <td>join room, if room does not exist, create new one</td>
+        </tr>
+        <tr>
+          <td>
+            <code>/name name</code>
+          </td>
+          <td>set session name</td>
+        </tr>
+        <tr>
+          <td>
+            <code>some message</code>
+          </td>
+          <td>just string, send message to all peers in same room</td>
+        </tr>
+      </table>
+    </section>
+
+    <script>
+      const $status = document.querySelector('#status')
+      const $connectButton = document.querySelector('#connect')
+      const $log = document.querySelector('#log')
+      const $form = document.querySelector('#chatform')
+      const $input = document.querySelector('#text')
+
+      /** @type {WebSocket | null} */
+      var socket = null
+
+      function log(msg, type = 'status') {
+        $log.innerHTML += `<p class="msg msg--${type}">${msg}</p>`
+        $log.scrollTop += 1000
+      }
+
+      function connect() {
+        disconnect()
+
+        const { location } = window
+
+        const proto = location.protocol.startsWith('https') ? 'wss' : 'ws'
+        const wsUri = `${proto}://${location.host}/ws`
+
+        log('Connecting...')
+        socket = new WebSocket(wsUri)
+
+        socket.onopen = () => {
+          log('Connected')
+          updateConnectionStatus()
+        }
+
+        socket.onmessage = (ev) => {
+          log('Received: ' + ev.data, 'message')
+        }
+
+        socket.onclose = () => {
+          log('Disconnected')
+          socket = null
+          updateConnectionStatus()
+        }
+      }
+
+      function disconnect() {
+        if (socket) {
+          log('Disconnecting...')
+          socket.close()
+          socket = null
+
+          updateConnectionStatus()
+        }
+      }
+
+      function updateConnectionStatus() {
+        if (socket) {
+          $status.style.backgroundColor = 'transparent'
+          $status.style.color = 'green'
+          $status.textContent = `connected`
+          $connectButton.innerHTML = 'Disconnect'
+          $input.focus()
+        } else {
+          $status.style.backgroundColor = 'red'
+          $status.style.color = 'white'
+          $status.textContent = 'disconnected'
+          $connectButton.textContent = 'Connect'
+        }
+      }
+
+      $connectButton.addEventListener('click', () => {
+        if (socket) {
+          disconnect()
+        } else {
+          connect()
+        }
+
+        updateConnectionStatus()
+      })
+
+      $form.addEventListener('submit', (ev) => {
+        ev.preventDefault()
+
+        const text = $input.value
+
+        log('Sending: ' + text)
+        socket.send(text)
+
+        $input.value = ''
+        $input.focus()
+      })
+
+      updateConnectionStatus()
+
+    </script>
   </body>
 </html>
