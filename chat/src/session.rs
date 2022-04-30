@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_web_actors::ws;
+use authentication::models::SlimUser;
 
 use crate::server;
 
@@ -16,6 +17,7 @@ pub struct WsChatSession {
     /// unique session id
     pub id: usize,
 
+    pub user: SlimUser,
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
     /// otherwise we drop connection.
     pub hb: Instant,

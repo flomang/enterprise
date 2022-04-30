@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+authentication = { path = "../authentication" }
+kitchen = { path = "../kitchen" }
 actix = "0.13"
 actix-cors = "0.5.4"
+actix-identity = "0.4"
 actix-web = "4"
 actix-web-actors = "4.1"
 actix-files = "0.6"
