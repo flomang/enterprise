@@ -73,7 +73,7 @@ impl Invitation {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SlimUser {
     pub id: uuid::Uuid,
     pub email: String,

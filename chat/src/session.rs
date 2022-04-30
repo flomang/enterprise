@@ -75,6 +75,7 @@ impl Actor for WsChatSession {
         let addr = ctx.address();
         self.addr
             .send(server::Connect {
+                user: self.user.clone(),
                 addr: addr.recipient(),
             })
             .into_actor(self)

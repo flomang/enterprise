@@ -11,6 +11,7 @@ use std::{
 };
 
 use actix::prelude::*;
+use authentication::models::SlimUser;
 use rand::{self, rngs::ThreadRng, Rng};
 
 /// Chat server sends this messages to session
@@ -24,6 +25,7 @@ pub struct Message(pub String);
 #[derive(Message)]
 #[rtype(usize)]
 pub struct Connect {
+    pub user: SlimUser,
     pub addr: Recipient<Message>,
 }
 
@@ -119,10 +121,11 @@ impl Handler<Connect> for ChatServer {
     type Result = usize;
 
     fn handle(&mut self, msg: Connect, _: &mut Context<Self>) -> Self::Result {
-        println!("Someone joined");
+        let mes = format!("{} joined", msg.user.email);
+        log::info!("{} joined", msg.user.email);
 
         // notify all users in same room
-        self.send_message("Main", "Someone joined", 0);
+        self.send_message("Main", &mes, 0);
 
         // register session with random id
         let id = self.rng.gen::<usize>();
