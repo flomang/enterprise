@@ -47,21 +47,18 @@ async fn get_count(count: web::Data<AtomicUsize>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    dotenv::dotenv().ok();
+    env_logger::init();
 
-    // set up applications state
-    // keep a count of the number of visitors
-    let app_state = Arc::new(AtomicUsize::new(0));
-
-    // start chat server actor
-    let server = server::ChatServer::new(app_state.clone()).start();
-
+    //env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     log::info!("starting HTTP server at http://localhost:8080");
-
     HttpServer::new(move || {
+        let app_state = Arc::new(AtomicUsize::new(0));
+        let server = server::ChatServer::new(app_state.clone()).start();
+
         App::new()
-            .app_data(web::Data::from(app_state.clone()))
-            .app_data(web::Data::new(server.clone()))
+            .app_data(web::Data::from(app_state))
+            .app_data(web::Data::new(server))
             .service(web::resource("/").to(index))
             .route("/count", web::get().to(get_count))
             .route("/ws", web::get().to(chat_route))
