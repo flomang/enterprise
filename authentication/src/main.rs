@@ -1,6 +1,7 @@
 extern crate diesel;
 
-use actix_web::{middleware, web, App, HttpServer};
+use actix_cors::Cors;
+use actix_web::{http, middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use time::Duration;
@@ -18,6 +19,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
+        let allowed_origin: String =
+            std::env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "localhost:3001".to_string());
 
         // create db connection pool
         let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -25,8 +28,20 @@ async fn main() -> std::io::Result<()> {
             .build(manager)
             .expect("Failed to create pool.");
 
+        let cors = Cors::default()
+            .allowed_origin_fn(move |origin, _req_head| {
+                origin.as_bytes().ends_with(allowed_origin.as_bytes())
+            })
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![
+                http::header::ACCEPT,
+                http::header::CONTENT_TYPE,
+            ])
+            .max_age(3600);
+
         App::new()
             .app_data(web::Data::new(pool))
+            .wrap(cors)
             .wrap(middleware::Logger::default())
             .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
             .app_data(web::JsonConfig::default().limit(4096))

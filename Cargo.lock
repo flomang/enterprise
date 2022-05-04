@@ -109,6 +109,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cors"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "414360eed71ba2d5435b185ba43ecbe281dfab5df3898286d6b7be8074372c92"
+dependencies = [
+ "actix-utils 3.0.0",
+ "actix-web 4.0.1",
+ "derive_more",
+ "futures-util",
+ "log 0.4.16",
+ "once_cell",
+ "smallvec",
+]
+
+[[package]]
 name = "actix-files"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -837,6 +852,7 @@ dependencies = [
 name = "authentication"
 version = "0.1.0"
 dependencies = [
+ "actix-cors 0.6.1",
  "actix-identity",
  "actix-web 4.0.1",
  "argonautica",
@@ -848,6 +864,7 @@ dependencies = [
  "futures 0.3.21",
  "kitchen",
  "lazy_static",
+ "log 0.4.16",
  "r2d2",
  "rust-argon2",
  "serde",
@@ -2363,7 +2380,7 @@ name = "chat"
 version = "0.1.0"
 dependencies = [
  "actix",
- "actix-cors",
+ "actix-cors 0.5.4",
  "actix-files",
  "actix-identity",
  "actix-web 4.0.1",

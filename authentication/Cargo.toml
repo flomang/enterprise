@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 kitchen = { path = "../kitchen" }
+actix-cors = "0.6.1"
 actix-web = "4"
 actix-identity = "0.4"
 argonautica = "0.2.0"
@@ -22,5 +23,6 @@ serde_json = "1.0"
 sparkpost = "0.5"
 uuid = { version = "0.8", features = ["serde", "v4"] }
 time = "0.3"
+log = "0.4.16"
 
 
