@@ -11,6 +11,8 @@ pub struct User {
     pub id: uuid::Uuid,
     pub email: String,
     pub email_verified: bool,
+    pub username: String,
+    pub avatar_url: Option<String>,
     pub hash: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -27,11 +29,16 @@ pub struct UpdateUserPassword {
 impl User {
     pub fn from_details<S: Into<String>, T: Into<String>>(email: S, pwd: T) -> Self {
         let now = chrono::Local::now().naive_local();
+        let email = email.into();
+        let username = email.clone();
+
         User {
             id: uuid::Uuid::new_v4(),
             email_verified: false,
-            email: email.into(),
+            email,
+            username,
             hash: pwd.into(),
+            avatar_url: None,
             created_at: now,
             updated_at: now,
         }
@@ -77,6 +84,8 @@ impl Invitation {
 pub struct SlimUser {
     pub id: uuid::Uuid,
     pub email: String,
+    pub username: String,
+    pub avatar_url: Option<String>,
 }
 
 impl From<User> for SlimUser {
@@ -84,6 +93,8 @@ impl From<User> for SlimUser {
         SlimUser {
             id: user.id,
             email: user.email,
+            username: user.username,
+            avatar_url: user.avatar_url,
         }
     }
 }
