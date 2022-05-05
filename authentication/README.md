@@ -6,9 +6,12 @@ A basic auth api. Features:
 * register
 * invite
 
-### migrations
+### stack
+* actix-web
+* actix-identity
+* diesel
 
-This project uses diesel to manage the DB.
+### diesel migrations
 
 To create migrations:
 ```
@@ -18,11 +21,12 @@ diesel migration generate create_tables
 To run migrations:
 ```
 diesel setup
+```
+or
+```
 diesel migration run 
+```
+or
+```
 diesel migration revert
-```
-
-To create migrations:
-```
-diesel migration generate create_tables
 ```
