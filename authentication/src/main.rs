@@ -1,14 +1,50 @@
 extern crate diesel;
 
 use actix_cors::Cors;
-use actix_web::{http, middleware, web, App, HttpServer};
+use actix_web::{dev::ServiceRequest, http, middleware, web, App, Error, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use time::Duration;
 
+use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
+use actix_web_httpauth::extractors::AuthenticationError;
+use actix_web_httpauth::middleware::HttpAuthentication;
+
 use authentication::handlers::{auth, invitation, register};
 use authentication::models;
 use kitchen::utils;
+
+async fn bearer_auth_validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, Error> {
+    println!("{}", req.path());
+
+    let config = req
+        .app_data::<Config>()
+        .map(|data| data.clone())
+        .unwrap_or_else(Default::default);
+    match validate_token(credentials.token()) {
+        Ok(res) => {
+            if res == true {
+                Ok(req)
+            } else {
+                Err(AuthenticationError::from(config).into())
+            }
+        }
+        Err(_) => Err(AuthenticationError::from(config).into()),
+    }
+}
+
+fn validate_token(str: &str) -> Result<bool, std::io::Error> {
+    if str.eq("a-secure-token") {
+        return Ok(true);
+    }
+    return Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "Authentication failed!",
+    ));
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,24 +69,29 @@ async fn main() -> std::io::Result<()> {
                 origin.as_bytes().ends_with(allowed_origin.as_bytes())
             })
             .allowed_methods(vec!["GET", "POST"])
-            .allowed_headers(vec![
-                http::header::ACCEPT,
-                http::header::CONTENT_TYPE,
-            ])
+            .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE])
             .max_age(3600);
+
+        let auth = HttpAuthentication::bearer(bearer_auth_validator);
 
         App::new()
             .app_data(web::Data::new(pool))
             .wrap(cors)
             .wrap(middleware::Logger::default())
-            .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
-            .app_data(web::JsonConfig::default().limit(4096))
-            // everything under '/api/' route
+             // routes here do not need auth 
             .service(
+                // everything under '/api/' route
                 web::scope("/api")
                     .service(web::scope("/invitations").service(invitation::create_invitation))
                     .service(web::scope("/register").service(register::register_user))
-                    .service(web::scope("/login").service(auth::login))
+                    .service(web::scope("/login").service(auth::login)),
+            )
+            //.wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
+            .app_data(web::JsonConfig::default().limit(4096))
+             // routes here need auth 
+            .service(
+                web::scope("/api")
+                    .wrap(auth)
                     .service(web::scope("/logout").service(auth::logout)),
             )
     })

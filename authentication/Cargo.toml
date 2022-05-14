@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 kitchen = { path = "../kitchen" }
 actix-cors = "0.6.1"
+actix-web-httpauth = "0.6.0"
 actix-web = "4"
 actix-identity = "0.4"
 argonautica = "0.2.0"
