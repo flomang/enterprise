@@ -46,7 +46,11 @@ fn validate_token(str: &str) -> Result<bool, std::io::Error> {
     ));
 }
 
-#[actix_web::main]
+// Tokio-based single-threaded async runtime for the Actix ecosystem.
+// To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes. 
+// This approach has good performance characteristics for workloads where the majority of tasks have similar runtime expense.
+// https://docs.rs/actix-rt/latest/actix_rt/index.html
+#[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
