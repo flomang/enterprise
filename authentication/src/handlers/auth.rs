@@ -1,5 +1,7 @@
 use actix_identity::Identity;
-use actix_web::{dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse};
+use actix_web::{
+    dev::Payload, dev::ServiceRequest, post, web, Error, FromRequest, HttpRequest, HttpResponse,
+};
 use diesel::prelude::*;
 use diesel::PgConnection;
 use std::future::{ready, Ready};
@@ -13,12 +15,46 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
+use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
+use actix_web_httpauth::extractors::AuthenticationError;
+use actix_web_httpauth::middleware::HttpAuthentication;
+
 #[derive(Deserialize, Serialize, Debug)]
 struct Claims {
     sub: String,
     iat: usize,
     exp: usize,
     username: String,
+}
+
+pub async fn bearer_auth_validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, Error> {
+    let config = req
+        .app_data::<Config>()
+        .map(|data| data.clone())
+        .unwrap_or_else(Default::default);
+    if validate_token(credentials.token()) {
+        Ok(req)
+    } else {
+        Err(AuthenticationError::from(config).into())
+    }
+}
+
+fn validate_token(token: &str) -> bool {
+    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+    match decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(key.as_bytes()),
+        &Validation::default(),
+    ) {
+        Ok(c) => true,
+        Err(err) => {
+            log::info!("err: {:?}", err.kind());
+            false
+        }
+    }
 }
 
 fn create_jwt(username: String) -> Result<String, ServiceError> {
@@ -51,7 +87,7 @@ fn create_jwt(username: String) -> Result<String, ServiceError> {
         Err(err) => {
             log::error!("create_jwt: {}", err);
             Err(ServiceError::InternalServerError)
-        },
+        }
     }
 }
 
