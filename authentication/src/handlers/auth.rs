@@ -44,10 +44,15 @@ pub async fn bearer_auth_validator(
 
 fn validate_token(token: &str) -> bool {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+    let sub = std::env::var("SUBDOMAIN").unwrap_or_else(|_| "h@d.com".to_string());
+
+    let mut validator = Validation::default();
+    validator.sub = Some(sub);
+
     match decode::<Claims>(
         token,
         &DecodingKey::from_secret(key.as_bytes()),
-        &Validation::default(),
+        &validator,
     ) {
         Ok(c) => true,
         Err(err) => {
@@ -192,16 +197,3 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
     Err(ServiceError::Unauthorized)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let token = create_jwt("master splinter".to_string());
-
-        println!("{:?}", token);
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
