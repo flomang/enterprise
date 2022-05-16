@@ -1,15 +1,68 @@
 use actix_identity::Identity;
 use actix_web::{dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse};
-use chrono::prelude::Utc;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use std::future::{ready, Ready};
-use serde::Deserialize;
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
 use kitchen::utils::errors::ServiceError;
-use kitchen::utils::verify;
 use kitchen::utils::hash_password;
+use kitchen::utils::verify;
+
+use chrono::{Duration, Utc};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug)]
+struct Claims {
+    sub: String,
+    iat: usize,
+    exp: usize,
+    username: String,
+}
+
+fn create_jwt(username: String) -> Result<String, ServiceError> {
+    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+    let sub = std::env::var("SUBDOMAIN").unwrap_or_else(|_| "h@d.com".to_string());
+    let hours: i64 = std::env::var("JWT_HOURS")
+        .unwrap_or_else(|_| "24".to_string())
+        .parse()
+        .unwrap();
+
+    let my_iat = Utc::now().timestamp();
+    let my_exp = Utc::now()
+        .checked_add_signed(Duration::hours(hours))
+        .expect("invalid timestamp")
+        .timestamp();
+
+    let my_claims = Claims {
+        sub,
+        iat: my_iat as usize,
+        exp: my_exp as usize,
+        username,
+    };
+
+    match encode(
+        &Header::default(),
+        &my_claims,
+        &EncodingKey::from_secret(key.as_bytes()),
+    ) {
+        Ok(t) => Ok(t),
+        Err(err) => {
+            log::error!("create_jwt: {}", err);
+            Err(ServiceError::InternalServerError)
+        },
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Session {
+    pub user_id: uuid::Uuid,
+    pub email: String,
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub token: String,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct AuthData {
@@ -53,7 +106,18 @@ pub async fn login(
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
     let user_string = serde_json::to_string(&user).unwrap();
     identity.remember(user_string);
-    Ok(HttpResponse::Ok().json(user))
+
+    let token = create_jwt(user.username.clone())?;
+
+    let session = Session {
+        user_id: user.id,
+        email: user.email,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        token,
+    };
+
+    Ok(HttpResponse::Ok().json(session))
 }
 
 /// Diesel query
@@ -90,4 +154,18 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
         }
     }
     Err(ServiceError::Unauthorized)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let token = create_jwt("master splinter".to_string());
+
+        println!("{:?}", token);
+        let result = 2 + 2;
+        assert_eq!(result, 4);
+    }
 }

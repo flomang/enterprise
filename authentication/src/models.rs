@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
+// TODO remove insertable here
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
 pub struct User {
@@ -16,6 +17,17 @@ pub struct User {
     pub hash: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Insertable, Debug)]
+#[table_name = "users"]
+pub struct NewUser<'a> {
+    pub id: uuid::Uuid,
+    pub email: &'a str,
+    pub email_verified: bool,
+    pub username: &'a str,
+    pub hash: &'a str,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 #[derive(AsChangeset)]
