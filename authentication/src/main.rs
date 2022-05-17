@@ -1,18 +1,13 @@
 extern crate diesel;
 
 use actix_cors::Cors;
-use actix_web::{dev::ServiceRequest, http, middleware, web, App, Error, HttpServer};
+use actix_web::{http, middleware, web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use time::Duration;
-
-use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
-use actix_web_httpauth::extractors::AuthenticationError;
-use actix_web_httpauth::middleware::HttpAuthentication;
 
 use authentication::handlers::{auth, invitation, register};
 use authentication::models;
-use kitchen::utils;
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.

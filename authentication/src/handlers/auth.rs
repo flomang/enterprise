@@ -12,15 +12,15 @@ use kitchen::utils::hash_password;
 use kitchen::utils::verify;
 
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web_httpauth::extractors::AuthenticationError;
-use actix_web_httpauth::middleware::HttpAuthentication;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Claims {
+    // the subject will be the user-id
     sub: String,
     iat: usize,
     exp: usize,
@@ -44,17 +44,14 @@ pub async fn bearer_auth_validator(
 
 fn validate_token(token: &str) -> bool {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    let sub = std::env::var("SUBDOMAIN").unwrap_or_else(|_| "h@d.com".to_string());
-
-    let mut validator = Validation::default();
-    validator.sub = Some(sub);
+    let validation = Validation::new(Algorithm::HS256);
 
     match decode::<Claims>(
         token,
         &DecodingKey::from_secret(key.as_bytes()),
-        &validator,
+        &validation,
     ) {
-        Ok(c) => true,
+        Ok(_c) => true,
         Err(err) => {
             log::info!("err: {:?}", err.kind());
             false
@@ -62,9 +59,8 @@ fn validate_token(token: &str) -> bool {
     }
 }
 
-fn create_jwt(username: String) -> Result<String, ServiceError> {
+fn create_jwt(user: SlimUser) -> Result<String, ServiceError> {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    let sub = std::env::var("SUBDOMAIN").unwrap_or_else(|_| "h@d.com".to_string());
     let hours: i64 = std::env::var("JWT_HOURS")
         .unwrap_or_else(|_| "24".to_string())
         .parse()
@@ -77,23 +73,21 @@ fn create_jwt(username: String) -> Result<String, ServiceError> {
         .timestamp();
 
     let my_claims = Claims {
-        sub,
+        sub: user.id.to_string(),
         iat: my_iat as usize,
         exp: my_exp as usize,
-        username,
+        username: user.username,
     };
 
-    match encode(
+    encode(
         &Header::default(),
         &my_claims,
         &EncodingKey::from_secret(key.as_bytes()),
-    ) {
-        Ok(t) => Ok(t),
-        Err(err) => {
-            log::error!("create_jwt: {}", err);
-            Err(ServiceError::InternalServerError)
-        }
-    }
+    )
+    .map_err(|err| {
+        dbg!(err);
+        ServiceError::InternalServerError
+    })
 }
 
 #[derive(Serialize, Deserialize)]
@@ -141,14 +135,12 @@ pub async fn logout(identity: Identity) -> HttpResponse {
 #[post("")]
 pub async fn login(
     auth_data: web::Json<AuthData>,
-    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
-    let user_string = serde_json::to_string(&user).unwrap();
-    identity.remember(user_string);
+    //let user_string = serde_json::to_string(&user).unwrap();
 
-    let token = create_jwt(user.username.clone())?;
+    let token = create_jwt(user.clone())?;
 
     let session = Session {
         user_id: user.id,
@@ -196,4 +188,3 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
     }
     Err(ServiceError::Unauthorized)
 }
-
