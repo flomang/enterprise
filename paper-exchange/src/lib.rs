@@ -4,7 +4,7 @@ extern crate chrono;
 extern crate dotenv;
 
 use diesel::prelude::*;
-use kitchen::utils::errors::ServiceError;
+use library::utils::errors::ServiceError;
 use orderbook::guid::{
     domain::OrderSide,
     orderbook::Orderbook,
@@ -83,7 +83,7 @@ pub struct AppState {
 
 pub fn database_orders(pool: &Pool) -> Vec<OrderRequest<BrokerAsset>> {
     use crate::schema::orders::dsl::*;
-    use kitchen::utils::pagination::*;
+    use library::utils::pagination::*;
 
     let mut order_requests = vec![];
     let mut page = 1;

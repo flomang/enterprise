@@ -7,9 +7,9 @@ use std::future::{ready, Ready};
 use serde::Deserialize;
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
-use kitchen::utils::errors::ServiceError;
-use kitchen::utils::verify;
-use kitchen::utils::hash_password;
+use library::utils::errors::ServiceError;
+use library::utils::verify;
+use library::utils::hash_password;
 
 #[derive(Debug, Deserialize)]
 pub struct AuthData {

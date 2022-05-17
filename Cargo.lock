@@ -895,8 +895,8 @@ dependencies = [
  "env_logger 0.9.0",
  "futures 0.3.21",
  "jsonwebtoken",
- "kitchen",
  "lazy_static",
+ "library",
  "log 0.4.16",
  "r2d2",
  "rust-argon2",
@@ -2424,7 +2424,7 @@ dependencies = [
  "dotenv 0.14.1",
  "env_logger 0.9.0",
  "futures 0.3.21",
- "kitchen",
+ "library",
  "log 0.4.16",
  "rand 0.8.5",
  "serde",
@@ -4183,22 +4183,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kitchen"
-version = "0.1.0"
-dependencies = [
- "actix-identity",
- "actix-web 4.0.1",
- "argonautica",
- "bigdecimal",
- "derive_more",
- "diesel",
- "lazy_static",
- "serde",
- "time 0.3.9",
- "uuid",
-]
-
-[[package]]
 name = "kqueue"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4289,6 +4273,22 @@ name = "libm"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
+
+[[package]]
+name = "library"
+version = "0.1.0"
+dependencies = [
+ "actix-identity",
+ "actix-web 4.0.1",
+ "argonautica",
+ "bigdecimal",
+ "derive_more",
+ "diesel",
+ "lazy_static",
+ "serde",
+ "time 0.3.9",
+ "uuid",
+]
 
 [[package]]
 name = "libudev-sys"
@@ -5022,7 +5022,7 @@ name = "orderbook"
 version = "0.1.0"
 dependencies = [
  "bigdecimal",
- "kitchen",
+ "library",
  "rand 0.8.5",
  "serde",
  "uuid",
@@ -5050,7 +5050,7 @@ dependencies = [
  "dotenv 0.15.0",
  "env_logger 0.8.4",
  "futures 0.3.21",
- "kitchen",
+ "library",
  "log 0.4.16",
  "orderbook",
  "r2d2",
@@ -5740,8 +5740,8 @@ dependencies = [
  "dotenv 0.15.0",
  "env_logger 0.9.0",
  "futures 0.3.21",
- "kitchen",
  "lazy_static",
+ "library",
  "r2d2",
  "rust-argon2",
  "serde",

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 authentication = { path = "../authentication" }
-kitchen = { path = "../kitchen" }
+library = { path = "../library" }
 actix = "0.13"
 actix-cors = "0.5.4"
 actix-identity = "0.4"

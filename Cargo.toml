@@ -7,7 +7,7 @@ members = [
     "coinbase",
     "orderbook",
     "iot-one",
-    "kitchen",
+    "library",
     "ritual",
     "minigrep",
     "sandbox-bevy",

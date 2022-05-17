@@ -11,8 +11,8 @@ use crate::schema::fills::dsl as fill_schema;
 use crate::schema::orders::dsl as order_schema;
 use crate::{AppState, BrokerAsset};
 use authentication::models::SlimUser;
-use kitchen::utils::errors::ServiceError;
-use kitchen::utils::pagination::PageInfo;
+use library::utils::errors::ServiceError;
+use library::utils::pagination::PageInfo;
 use orderbook::guid::orderbook::{OrderProcessingResult, Success};
 use orderbook::guid::{domain::OrderSide, orders};
 
@@ -208,7 +208,7 @@ pub async fn get_orders(
 
     let result: Result<OrderPage, DbError> = web::block(move || {
         use crate::schema::orders::dsl::*;
-        use kitchen::utils::pagination::*;
+        use library::utils::pagination::*;
 
         let page: u32 = if params.page > 0 { params.page } else { 1 };
         let page_size: u32 = if params.page_size > 0 {

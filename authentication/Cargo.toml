@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-kitchen = { path = "../kitchen" }
+library = { path = "../library" }
 actix-cors = "0.6.1"
 actix-web-httpauth = "0.6.0"
 actix-web = "4"

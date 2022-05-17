@@ -3,7 +3,7 @@ use super::schema::*;
 use bigdecimal::BigDecimal;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use serde::{Deserialize, Serialize};
-use kitchen::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
+use library::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

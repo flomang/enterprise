@@ -15,8 +15,8 @@ use actix_web::{
 };
 use actix_web_actors::ws;
 use authentication::models::SlimUser;
-use kitchen::utils;
-use kitchen::utils::errors::ServiceError;
+use library::utils;
+use library::utils::errors::ServiceError;
 
 mod server;
 mod session;

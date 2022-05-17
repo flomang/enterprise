@@ -7,9 +7,9 @@ use diesel::PgConnection;
 use std::future::{ready, Ready};
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
-use kitchen::utils::errors::ServiceError;
-use kitchen::utils::hash_password;
-use kitchen::utils::verify;
+use library::utils::errors::ServiceError;
+use library::utils::hash_password;
+use library::utils::verify;
 
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};

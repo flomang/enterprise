@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use kitchen::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
+use library::utils::{serialize_bigdecimal, serialize_bigdecimal_opt};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::time::SystemTime;

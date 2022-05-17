@@ -3,7 +3,7 @@ extern crate diesel;
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use kitchen::utils;
+use library::utils;
 use ritual::handlers::{auth, invitation, moment, register, ritual as rite};
 use ritual::models;
 use time::Duration;

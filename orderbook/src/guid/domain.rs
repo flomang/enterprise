@@ -1,6 +1,6 @@
 
 use std::fmt::Debug;
-use kitchen::utils::errors::ServiceError;
+use library::utils::errors::ServiceError;
 use serde::{Deserialize, Serialize};
 use bigdecimal::BigDecimal;
 use uuid::Uuid;

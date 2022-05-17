@@ -4,8 +4,8 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Pool, RitualMoment, SlimUser, UpdateRitualMoment};
-use kitchen::utils::errors::ServiceError;
-use kitchen::utils::pagination::PageInfo;
+use library::utils::errors::ServiceError;
+use library::utils::pagination::PageInfo;
 
 #[derive(Deserialize)]
 pub struct RitualTimestamp {
@@ -74,7 +74,7 @@ pub async fn list_ritual_moments(
     identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
-    use kitchen::utils::pagination::*;
+    use library::utils::pagination::*;
 
     if let Some(json_str) = identity.identity() {
         let ritual_id = path.into_inner();
