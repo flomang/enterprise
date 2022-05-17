@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 //use crate::email_service::send_invitation;
 use crate::models::{Invitation, Pool, SlimUser};
-use library::utils::errors::ServiceError;
+use library::errors::ServiceError;
 
 #[derive(Deserialize)]
 pub struct InvitationData {
