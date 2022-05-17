@@ -1,94 +1,18 @@
 use actix_identity::Identity;
 use actix_web::{
-    dev::Payload, dev::ServiceRequest, post, web, Error, FromRequest, HttpRequest, HttpResponse,
+    dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse,
 };
 use diesel::prelude::*;
 use diesel::PgConnection;
 use std::future::{ready, Ready};
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
-use library::utils::errors::ServiceError;
-use library::utils::hash_password;
-use library::utils::verify;
+use library::errors::ServiceError;
+use library::auth::{create_jwt, hash_password, verify};
 
-use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
-use actix_web_httpauth::extractors::AuthenticationError;
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Claims {
-    // the subject will be the user-id
-    sub: String,
-    iat: usize,
-    exp: usize,
-    username: String,
-}
-
-pub async fn bearer_auth_validator(
-    req: ServiceRequest,
-    credentials: BearerAuth,
-) -> Result<ServiceRequest, Error> {
-    let config = req
-        .app_data::<Config>()
-        .map(|data| data.clone())
-        .unwrap_or_else(Default::default);
-    if validate_token(credentials.token()) {
-        Ok(req)
-    } else {
-        Err(AuthenticationError::from(config).into())
-    }
-}
-
-fn validate_token(token: &str) -> bool {
-    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    let validation = Validation::new(Algorithm::HS256);
-
-    match decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(key.as_bytes()),
-        &validation,
-    ) {
-        Ok(_c) => true,
-        Err(err) => {
-            log::info!("err: {:?}", err.kind());
-            false
-        }
-    }
-}
-
-fn create_jwt(user: SlimUser) -> Result<String, ServiceError> {
-    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    let hours: i64 = std::env::var("JWT_HOURS")
-        .unwrap_or_else(|_| "24".to_string())
-        .parse()
-        .unwrap();
-
-    let my_iat = Utc::now().timestamp();
-    let my_exp = Utc::now()
-        .checked_add_signed(Duration::hours(hours))
-        .expect("invalid timestamp")
-        .timestamp();
-
-    let my_claims = Claims {
-        sub: user.id.to_string(),
-        iat: my_iat as usize,
-        exp: my_exp as usize,
-        username: user.username,
-    };
-
-    encode(
-        &Header::default(),
-        &my_claims,
-        &EncodingKey::from_secret(key.as_bytes()),
-    )
-    .map_err(|err| {
-        dbg!(err);
-        ServiceError::InternalServerError
-    })
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -140,7 +64,7 @@ pub async fn login(
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
     //let user_string = serde_json::to_string(&user).unwrap();
 
-    let token = create_jwt(user.clone())?;
+    let token = create_jwt(user.id, user.username.clone())?;
 
     let session = Session {
         user_id: user.id,

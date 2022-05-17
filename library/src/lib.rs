@@ -1,4 +1,6 @@
 pub mod utils;
+pub mod auth;
+pub mod errors;
 
 #[cfg(test)]
 mod tests {

@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE])
             .max_age(3600);
 
-        let auth = HttpAuthentication::bearer(auth::bearer_auth_validator);
+        let auth = HttpAuthentication::bearer(library::auth::bearer_auth_validator);
 
         App::new()
             .app_data(web::Data::new(pool))
