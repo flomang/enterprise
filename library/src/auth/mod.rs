@@ -14,10 +14,10 @@ use uuid::Uuid;
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
     // the subject will be the user-id
-    sub: String,
-    iat: usize,
-    exp: usize,
-    username: String,
+    pub sub: String,
+    pub iat: usize,
+    pub exp: usize,
+    pub username: String,
 }
 
 pub async fn bearer_auth_validator(
@@ -36,7 +36,7 @@ pub async fn bearer_auth_validator(
     }
 }
 
-fn validate_token(token: &str) -> Result<Claims, ServiceError> {
+pub fn validate_token(token: &str) -> Result<Claims, ServiceError> {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
     let validation = Validation::new(Algorithm::HS256);
 
