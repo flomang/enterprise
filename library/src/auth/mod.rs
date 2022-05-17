@@ -28,28 +28,28 @@ pub async fn bearer_auth_validator(
         .app_data::<Config>()
         .map(|data| data.clone())
         .unwrap_or_else(Default::default);
-    if validate_token(credentials.token()) {
-        Ok(req)
+
+    if let Ok(_) = validate_token(credentials.token()) {
+       Ok(req)
     } else {
         Err(AuthenticationError::from(config).into())
     }
 }
 
-fn validate_token(token: &str) -> bool {
+fn validate_token(token: &str) -> Result<Claims, ServiceError> {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
     let validation = Validation::new(Algorithm::HS256);
 
-    match decode::<Claims>(
+    let data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(key.as_bytes()),
         &validation,
-    ) {
-        Ok(_c) => true,
-        Err(err) => {
-            log::info!("err: {:?}", err.kind());
-            false
-        }
-    }
+    ).map_err(|err| {
+        dbg!(err);
+        ServiceError::Unauthorized
+    })?;
+
+    Ok(data.claims)
 }
 
 pub fn create_jwt(user_id: Uuid, username: String) -> Result<String, ServiceError> {

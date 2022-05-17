@@ -1,18 +1,14 @@
 use actix_identity::Identity;
-use actix_web::{
-    dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse,
-};
+use actix_web::{dev::Payload, post, web, Error, FromRequest, HttpRequest, HttpResponse};
 use diesel::prelude::*;
 use diesel::PgConnection;
 use std::future::{ready, Ready};
 
 use crate::models::{Pool, SlimUser, UpdateUserPassword, User};
 use library::errors::ServiceError;
-use library::auth::{create_jwt, hash_password, verify};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -59,12 +55,12 @@ pub async fn logout(identity: Identity) -> HttpResponse {
 #[post("")]
 pub async fn login(
     auth_data: web::Json<AuthData>,
+    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
-    //let user_string = serde_json::to_string(&user).unwrap();
-
-    let token = create_jwt(user.id, user.username.clone())?;
+    let token = library::auth::create_jwt(user.id, user.username.clone())?;
+    identity.remember(token.clone());
 
     let session = Session {
         user_id: user.id,
@@ -91,7 +87,7 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
         // set auth password if not set for master
         if user.email == master && user.hash == "" {
             let now = Utc::now().naive_utc();
-            let password = hash_password(&auth_data.password)?;
+            let password = library::auth::hash_password(&auth_data.password)?;
             let set_pwd = UpdateUserPassword {
                 id: user.id,
                 hash: password,
@@ -104,7 +100,7 @@ fn query(auth_data: AuthData, pool: web::Data<Pool>) -> Result<SlimUser, Service
                 Ok(u) => return Ok(u.into()),
                 Err(e) => return Err(ServiceError::BadRequest(e.to_string())),
             }
-        } else if let Ok(matching) = verify(&user.hash, &auth_data.password) {
+        } else if let Ok(matching) = library::auth::verify(&user.hash, &auth_data.password) {
             if matching {
                 return Ok(user.into());
             }
