@@ -4,19 +4,20 @@ use actix_web::{
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web_httpauth::extractors::AuthenticationError;
 use argonautica::{Hasher, Verifier};
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use crate::errors::ServiceError;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
     // the subject will be the user-id
     pub sub: String,
-    pub iat: usize,
-    pub exp: usize,
+    pub iat: i64,
+    pub exp: i64,
     pub username: String,
 }
 
@@ -42,7 +43,7 @@ pub fn validate_token(token: &str) -> Result<Claims, ServiceError> {
     let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
     let validation = Validation::new(Algorithm::HS256);
 
-    let data = decode::<Claims>(
+    let data = jsonwebtoken::decode::<Claims>(
         token,
         &DecodingKey::from_secret(key.as_bytes()),
         &validation,
@@ -54,30 +55,38 @@ pub fn validate_token(token: &str) -> Result<Claims, ServiceError> {
     Ok(data.claims)
 }
 
-pub fn create_jwt(user_id: Uuid, username: String) -> Result<String, ServiceError> {
-    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    let hours: i64 = std::env::var("JWT_HOURS")
-        .unwrap_or_else(|_| "24".to_string())
-        .parse()
-        .unwrap();
+pub fn create_jwt(user_id: Uuid, username: String, secret: &[u8]) -> Result<String, ServiceError> {
+    //let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+    //let hours: i64 = std::env::var("JWT_HOURS")
+        //.unwrap_or_else(|_| "24".to_string())
+        //.parse()
+        //.unwrap();
 
-    let my_iat = Utc::now().timestamp();
-    let my_exp = Utc::now()
-        .checked_add_signed(Duration::hours(hours))
-        .expect("invalid timestamp")
-        .timestamp();
+    let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nanosecond -> second
+    let payload = Claims {
+            sub: user_id.to_string(),
+            iat: now,
+            exp: now + ONE_WEEK,
+            username,
+        };
 
-    let my_claims = Claims {
-        sub: user_id.to_string(),
-        iat: my_iat as usize,
-        exp: my_exp as usize,
-        username: username,
-    };
+    //let my_iat = Utc::now().timestamp();
+    //let my_exp = Utc::now()
+    //    .checked_add_signed(Duration::hours(hours))
+    //    .expect("invalid timestamp")
+    //    .timestamp();
 
-    encode(
+    //let my_claims = Claims {
+    //    sub: user_id.to_string(),
+    //    iat: my_iat as usize,
+    //    exp: my_exp as usize,
+    //    username: username,
+    //};
+
+    jsonwebtoken::encode(
         &Header::default(),
-        &my_claims,
-        &EncodingKey::from_secret(key.as_bytes()),
+        &payload,
+        &EncodingKey::from_secret(&secret),
     )
     .map_err(|err| {
         dbg!(err);
