@@ -3,10 +3,14 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 
-pub mod handlers;
 pub mod email_service;
 pub mod models;
 pub mod schema;
+pub mod middleware;
+pub mod config;
+pub mod api;
+pub mod constants;
+pub mod utils;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

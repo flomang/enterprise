@@ -4,8 +4,10 @@ use diesel::{prelude::*, PgConnection};
 use serde::Deserialize;
 
 //use crate::email_service::send_invitation;
-use crate::models::{Invitation, Pool, SlimUser};
+use crate::models::{Invitation, Pool};
 use library::errors::ServiceError;
+use library::auth::validate_token;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct InvitationData {
@@ -20,15 +22,21 @@ pub async fn create_invitation(
 ) -> Result<HttpResponse, ServiceError> {
     // must be logged in
     match identity.identity() {
-        Some(str) => {
-            let user: SlimUser = serde_json::from_str(&str).unwrap();
-            let result = web::block(move || {
-                insert_invitation_and_send(user.id, invitation_data.into_inner().email, pool)
-            })
-            .await??;
-            Ok(HttpResponse::Ok().json(result))
+        Some(token) => {
+            if let Ok(claims) = validate_token(&token) {
+                //let user: SlimUser = serde_json::from_str(&str).unwrap();
+                let result = web::block(move || {
+                    let sender_id = Uuid::parse_str(&claims.sub).unwrap();
+                    insert_invitation_and_send(sender_id, invitation_data.into_inner().email, pool)
+                })
+                .await??;
+
+                Ok(HttpResponse::Ok().json(result))
+            } else {
+                Err(ServiceError::Unauthorized)
+            }
         }
-        None => Err(ServiceError::Unauthorized),
+        None => Ok(HttpResponse::Ok().json("what")),
     }
 }
 

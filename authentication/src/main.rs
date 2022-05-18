@@ -2,12 +2,11 @@ extern crate diesel;
 
 use actix_cors::Cors;
 use actix_web::{http, middleware, web, App, HttpServer};
-use actix_web_httpauth::middleware::HttpAuthentication;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-use authentication::handlers::{auth, invitation, register};
 use authentication::models;
+use authentication::config;
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
@@ -39,20 +38,16 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE])
             .max_age(3600);
 
-        let auth = HttpAuthentication::bearer(library::auth::bearer_auth_validator);
+        //let auth = HttpAuthentication::bearer(library::auth::bearer_auth_validator);
 
         App::new()
             .app_data(web::Data::new(pool))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             // routes here need auth
-            .service(
-                web::scope("/api")
-                    .service(web::scope("/invitations").service(invitation::create_invitation))
-                    .service(web::scope("/register").service(register::register_user))
-                    .service(web::scope("/login").service(auth::login))
-                    .service(web::scope("/logout").wrap(auth).service(auth::logout)),
-            )
+            .wrap(authentication::middleware::auth_middleware::Authentication) // Comment this line of code if you want to integrate with yew-address-book-frontend
+            .configure(config::app::config_services)
+            //.wrap(auth)
             //.wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
             .app_data(web::JsonConfig::default().limit(4096))
     })

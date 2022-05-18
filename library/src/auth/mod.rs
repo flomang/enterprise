@@ -20,6 +20,8 @@ pub struct Claims {
     pub username: String,
 }
 
+// Note: bearer_auth_validator returns Error instead of ServiceError
+// this is intentional to conform to HttpAuthentication::bearer sig.
 pub async fn bearer_auth_validator(
     req: ServiceRequest,
     credentials: BearerAuth,

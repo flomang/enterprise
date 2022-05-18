@@ -884,6 +884,7 @@ dependencies = [
  "actix-cors 0.6.1",
  "actix-identity",
  "actix-rt 2.7.0",
+ "actix-service 2.0.2",
  "actix-web 4.0.1",
  "actix-web-httpauth",
  "alcoholic_jwt",
@@ -2962,6 +2963,7 @@ dependencies = [
  "byteorder",
  "chrono",
  "diesel_derives",
+ "libsqlite3-sys",
  "num-bigint 0.2.6",
  "num-integer",
  "num-traits",
@@ -4292,6 +4294,16 @@ dependencies = [
  "serde",
  "time 0.3.9",
  "uuid",
+]
+
+[[package]]
+name = "libsqlite3-sys"
+version = "0.22.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "290b64917f8b0cb885d9de0f9959fe1f775d7fa12f1da2db9001c1c8ab60f89d"
+dependencies = [
+ "pkg-config",
+ "vcpkg",
 ]
 
 [[package]]
