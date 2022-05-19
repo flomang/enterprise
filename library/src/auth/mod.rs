@@ -1,5 +1,5 @@
 use actix_web::{
-    dev::ServiceRequest, Error,
+    dev::ServiceRequest, Error, HttpRequest,
 };
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web_httpauth::extractors::AuthenticationError;
@@ -19,6 +19,33 @@ pub struct Claims {
     pub iat: i64,
     pub exp: i64,
     pub username: String,
+}
+
+pub fn unlock_request(request: &HttpRequest, secret: &[u8]) -> Result<Claims, ServiceError> {
+    let authen_header = match request.headers().get("Authorization") {
+        Some(authen_header) => authen_header,
+        None => {
+            return Err(ServiceError::BadRequest(
+                "no Authorization header".to_string(),
+            ));
+        }
+    };
+
+    match authen_header.to_str() {
+        Ok(authen_str) => {
+            if !authen_str.starts_with("bearer") && !authen_str.starts_with("Bearer") {
+                return Err(ServiceError::Unauthorized);
+            }
+
+            let raw_token = authen_str[6..authen_str.len()].trim();
+            let claims = validate_token(&raw_token.to_string(), secret)?;
+            Ok(claims)
+        }
+        Err(err) => {
+            log::error!("{}", err);
+            return Err(ServiceError::InternalServerError);
+        }
+    }
 }
 
 // Note: bearer_auth_validator returns Error instead of ServiceError
