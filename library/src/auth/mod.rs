@@ -32,20 +32,20 @@ pub async fn bearer_auth_validator(
         .map(|data| data.clone())
         .unwrap_or_else(Default::default);
 
-    if let Ok(_) = validate_token(credentials.token()) {
+    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+    if let Ok(_) = validate_token(credentials.token(), &key.as_bytes()) {
        Ok(req)
     } else {
         Err(AuthenticationError::from(config).into())
     }
 }
 
-pub fn validate_token(token: &str) -> Result<Claims, ServiceError> {
-    let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
+pub fn validate_token(token: &str, secret: &[u8]) -> Result<Claims, ServiceError> {
     let validation = Validation::new(Algorithm::HS256);
 
     let data = jsonwebtoken::decode::<Claims>(
         token,
-        &DecodingKey::from_secret(key.as_bytes()),
+        &DecodingKey::from_secret(secret),
         &validation,
     ).map_err(|err| {
         dbg!(err);
@@ -56,12 +56,6 @@ pub fn validate_token(token: &str) -> Result<Claims, ServiceError> {
 }
 
 pub fn create_jwt(user_id: Uuid, username: String, secret: &[u8]) -> Result<String, ServiceError> {
-    //let key = std::env::var("JWT_KEY").unwrap_or_else(|_| "0123".repeat(8));
-    //let hours: i64 = std::env::var("JWT_HOURS")
-        //.unwrap_or_else(|_| "24".to_string())
-        //.parse()
-        //.unwrap();
-
     let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nanosecond -> second
     let payload = Claims {
             sub: user_id.to_string(),
@@ -69,19 +63,6 @@ pub fn create_jwt(user_id: Uuid, username: String, secret: &[u8]) -> Result<Stri
             exp: now + ONE_WEEK,
             username,
         };
-
-    //let my_iat = Utc::now().timestamp();
-    //let my_exp = Utc::now()
-    //    .checked_add_signed(Duration::hours(hours))
-    //    .expect("invalid timestamp")
-    //    .timestamp();
-
-    //let my_claims = Claims {
-    //    sub: user_id.to_string(),
-    //    iat: my_iat as usize,
-    //    exp: my_exp as usize,
-    //    username: username,
-    //};
 
     jsonwebtoken::encode(
         &Header::default(),

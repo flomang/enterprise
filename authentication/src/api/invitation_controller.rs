@@ -1,43 +1,64 @@
-use actix_identity::Identity;
-use actix_web::{post, web, HttpResponse};
+use actix_web::{post, web, HttpRequest, HttpResponse};
 use diesel::{prelude::*, PgConnection};
 use serde::Deserialize;
 
 //use crate::email_service::send_invitation;
 use crate::models::{Invitation, Pool};
-use library::errors::ServiceError;
 use library::auth::validate_token;
+use library::errors::ServiceError;
 use uuid::Uuid;
+
+pub static KEY: [u8; 16] = *include_bytes!("../secret.key");
 
 #[derive(Deserialize)]
 pub struct InvitationData {
     pub email: String,
 }
 
+pub fn get_uid_from_request(request: &HttpRequest) -> Result<Uuid, ServiceError> {
+    let authen_header = match request.headers().get("Authorization") {
+        Some(authen_header) => authen_header,
+        None => {
+            return Err(ServiceError::BadRequest(
+                "no Authorization header".to_string(),
+            ));
+        }
+    };
+
+    match authen_header.to_str() {
+        Ok(authen_str) => {
+            if !authen_str.starts_with("bearer") && !authen_str.starts_with("Bearer") {
+                return Err(ServiceError::Unauthorized);
+            }
+
+            let raw_token = authen_str[6..authen_str.len()].trim();
+            let token = validate_token(&raw_token.to_string(), &KEY)?;
+            let uid = Uuid::parse_str(&token.sub).unwrap();
+            Ok(uid)
+        }
+        Err(err) => {
+            log::error!("{}", err);
+            return Err(ServiceError::InternalServerError);
+        }
+    }
+}
+
 #[post("")]
 pub async fn create_invitation(
+    request: HttpRequest,
     invitation_data: web::Json<InvitationData>,
-    identity: Identity,
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     // must be logged in
-    match identity.identity() {
-        Some(token) => {
-            if let Ok(claims) = validate_token(&token) {
-                //let user: SlimUser = serde_json::from_str(&str).unwrap();
-                let result = web::block(move || {
-                    let sender_id = Uuid::parse_str(&claims.sub).unwrap();
-                    insert_invitation_and_send(sender_id, invitation_data.into_inner().email, pool)
-                })
-                .await??;
+    let uid = get_uid_from_request(&request)?;
 
-                Ok(HttpResponse::Ok().json(result))
-            } else {
-                Err(ServiceError::Unauthorized)
-            }
-        }
-        None => Ok(HttpResponse::Ok().json("what")),
-    }
+    //let user: SlimUser = serde_json::from_str(&str).unwrap();
+    let result = web::block(move || {
+        insert_invitation_and_send(uid, invitation_data.into_inner().email, pool)
+    })
+    .await??;
+
+    Ok(HttpResponse::Ok().json(result))
 }
 
 fn insert_invitation_and_send(
