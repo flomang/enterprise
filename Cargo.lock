@@ -4281,6 +4281,7 @@ name = "library"
 version = "0.1.0"
 dependencies = [
  "actix-identity",
+ "actix-service 2.0.2",
  "actix-web 4.0.1",
  "actix-web-httpauth",
  "argonautica",
@@ -4288,6 +4289,7 @@ dependencies = [
  "chrono",
  "derive_more",
  "diesel",
+ "futures 0.3.21",
  "jsonwebtoken",
  "lazy_static",
  "log 0.4.16",

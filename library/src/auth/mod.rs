@@ -1,14 +1,16 @@
 use actix_web::{
-    dev::ServiceRequest, Error, HttpRequest,
+    dev::ServiceRequest, Error, HttpRequest, web,
 };
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web_httpauth::extractors::AuthenticationError;
 use argonautica::{Hasher, Verifier};
 use chrono::Utc;
 use crate::errors::ServiceError;
-use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+pub mod middleware;
 
 static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
 
@@ -65,6 +67,26 @@ pub async fn bearer_auth_validator(
     } else {
         Err(AuthenticationError::from(config).into())
     }
+}
+
+pub fn decode_token(token: String, secret: &[u8]) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
+    jsonwebtoken::decode::<Claims>(
+        &token,
+        &DecodingKey::from_secret(secret),
+        &Validation::default(),
+    )
+}
+
+pub fn verify_token(
+    token_data: &TokenData<Claims>,
+    _pool: &web::Data<crate::db::Pool>,
+) -> Result<String, String> {
+    Ok(token_data.claims.username.to_string())
+    //if User::is_valid_login_session(&token_data.claims, &pool.get().unwrap()) {
+    //    Ok(token_data.claims.user.to_string())
+    //} else {
+    //    Err("Invalid token".to_string())
+    //}
 }
 
 pub fn validate_token(token: &str, secret: &[u8]) -> Result<Claims, ServiceError> {

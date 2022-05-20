@@ -1,9 +1,10 @@
 use actix_web::{post, web, HttpRequest, HttpResponse};
 use diesel::{prelude::*, PgConnection};
 use serde::Deserialize;
+use library::db::Pool;
 
 //use crate::email_service::send_invitation;
-use crate::models::{Invitation, Pool};
+use crate::models::Invitation;
 use library::errors::ServiceError;
 use uuid::Uuid;
 

@@ -1,4 +1,4 @@
-use crate::{config::db::Pool, utils::token_utils};
+use crate::db::Pool;
 use actix_service::{Service, Transform};
 use actix_web::body::EitherBody;
 
@@ -99,10 +99,10 @@ where
                                 log::info!("Parsing token...");
                                 let token = authen_str[6..authen_str.len()].trim();
                                 if let Ok(token_data) =
-                                    token_utils::decode_token(token.to_string(), self.secret)
+                                    super::decode_token(token.to_string(), self.secret)
                                 {
                                     log::info!("Decoding token...");
-                                    if token_utils::verify_token(&token_data, pool).is_ok() {
+                                    if super::verify_token(&token_data, pool).is_ok() {
                                         log::info!("Valid token");
                                         authenticate_pass = true;
                                     } else {

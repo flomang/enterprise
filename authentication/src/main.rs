@@ -1,12 +1,10 @@
 extern crate diesel;
 
+use authentication::config;
 use actix_cors::Cors;
 use actix_web::{http, middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-
-use authentication::models;
-use authentication::config;
 
 const KEY: [u8; 16] = *include_bytes!("secret.key");
 const IGNORE_ROUTES: [&str; 3] = ["/api/ping", "/api/login", "/api/register"];
@@ -29,7 +27,7 @@ async fn main() -> std::io::Result<()> {
 
         // create db connection pool
         let manager = ConnectionManager::<PgConnection>::new(database_url);
-        let pool: models::Pool = r2d2::Pool::builder()
+        let pool: library::db::Pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
 
@@ -48,7 +46,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(middleware::Logger::default())
             // routes here need auth
-            .wrap(authentication::middleware::auth_middleware::Authentication::new(&KEY, &IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
+            .wrap(library::auth::middleware::Authentication::new(&KEY, &IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
             .configure(config::app::config_services)
             //.wrap(auth)
             //.wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))

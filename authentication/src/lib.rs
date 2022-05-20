@@ -6,7 +6,6 @@ extern crate dotenv;
 pub mod email_service;
 pub mod models;
 pub mod schema;
-pub mod middleware;
 pub mod config;
 pub mod api;
 pub mod constants;

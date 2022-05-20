@@ -4,9 +4,10 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use std::future::{ready, Ready};
 
-use crate::models::{Pool, SlimUser, UpdateUserPassword, User, Invitation};
+use crate::models::{SlimUser, UpdateUserPassword, User, Invitation};
 use library::errors::ServiceError;
 use library::auth::hash_password;
+use library::db::Pool;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};

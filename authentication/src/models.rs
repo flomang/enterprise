@@ -1,9 +1,7 @@
 use super::chrono;
 use super::schema::*;
-use diesel::{r2d2::ConnectionManager, PgConnection};
 use serde::{Deserialize, Serialize};
 
-pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 // TODO remove insertable here
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
