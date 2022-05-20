@@ -9,7 +9,6 @@ pub mod schema;
 pub mod config;
 pub mod api;
 pub mod constants;
-pub mod utils;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
