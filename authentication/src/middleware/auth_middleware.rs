@@ -18,9 +18,17 @@ use std::{
     task::{Context, Poll},
 };
 
-pub struct Authentication;
+pub struct Authentication<'a> {
+    secret: &'a [u8],
+}
 
-impl<S, B> Transform<S, ServiceRequest> for Authentication
+impl<'a> Authentication<'a> {
+    pub fn new(secret: &[u8]) -> Authentication {
+        Authentication { secret }
+    }
+}
+
+impl<'a, S, B> Transform<S, ServiceRequest> for Authentication<'a>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -29,18 +37,24 @@ where
     type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type InitError = ();
-    type Transform = AuthenticationMiddleware<S>;
+    type Transform = AuthenticationMiddleware<'a, S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(AuthenticationMiddleware { service })
+        ok(AuthenticationMiddleware {
+            service,
+            secret: self.secret,
+        })
     }
 }
-pub struct AuthenticationMiddleware<S> {
+
+pub struct AuthenticationMiddleware<'a, S> {
     service: S,
+
+    secret: &'a [u8],
 }
 
-impl<S, B> Service<ServiceRequest> for AuthenticationMiddleware<S>
+impl<'a, S, B> Service<ServiceRequest> for AuthenticationMiddleware<'a, S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -82,7 +96,8 @@ where
                             {
                                 log::info!("Parsing token...");
                                 let token = authen_str[6..authen_str.len()].trim();
-                                if let Ok(token_data) = token_utils::decode_token(token.to_string())
+                                if let Ok(token_data) =
+                                    token_utils::decode_token(token.to_string(), self.secret)
                                 {
                                     log::info!("Decoding token...");
                                     if token_utils::verify_token(&token_data, pool).is_ok() {
@@ -118,24 +133,5 @@ where
             // forwarded responses map to "left" body
             res.await.map(ServiceResponse::map_into_left_body)
         })
-
-        //if authenticate_pass {
-        //    let fut = self.service.call(req);
-        //    Box::pin(async move {
-        //        let res = fut.await?;
-        //        Ok(res)
-        //    })
-        //} else {
-        //    Box::pin(async move {
-        //        Ok(req.into_response(
-        //            HttpResponse::Unauthorized()
-        //                .json(ResponseBody::new(
-        //                    constants::MESSAGE_INVALID_TOKEN,
-        //                    constants::EMPTY,
-        //                ))
-        //                .into_body(),
-        //        ))
-        //    })
-        //}
     }
 }

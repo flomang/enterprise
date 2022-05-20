@@ -5,12 +5,12 @@ use library::auth::Claims;
 use actix_web::web;
 use jsonwebtoken::{DecodingKey, TokenData, Validation};
 
-pub static KEY: [u8; 16] = *include_bytes!("../secret.key");
+//pub static KEY: [u8; 16] = *include_bytes!("../secret.key");
 
-pub fn decode_token(token: String) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
+pub fn decode_token(token: String, secret: &[u8]) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
     jsonwebtoken::decode::<Claims>(
         &token,
-        &DecodingKey::from_secret(&KEY),
+        &DecodingKey::from_secret(secret),
         &Validation::default(),
     )
 }
