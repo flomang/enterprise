@@ -8,7 +8,8 @@ use diesel::r2d2::{self, ConnectionManager};
 use authentication::models;
 use authentication::config;
 
-static KEY: [u8; 16] = *include_bytes!("secret.key");
+const KEY: [u8; 16] = *include_bytes!("secret.key");
+const IGNORE_ROUTES: [&str; 3] = ["/api/ping", "/api/login", "/api/register"];
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
@@ -47,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(middleware::Logger::default())
             // routes here need auth
-            .wrap(authentication::middleware::auth_middleware::Authentication::new(&KEY)) // Comment this line of code if you want to integrate with yew-address-book-frontend
+            .wrap(authentication::middleware::auth_middleware::Authentication::new(&KEY, &IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
             .configure(config::app::config_services)
             //.wrap(auth)
             //.wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))

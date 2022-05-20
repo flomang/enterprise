@@ -1,4 +1,4 @@
-use crate::{config::db::Pool, constants, utils::token_utils};
+use crate::{config::db::Pool, utils::token_utils};
 use actix_service::{Service, Transform};
 use actix_web::body::EitherBody;
 
@@ -20,11 +20,12 @@ use std::{
 
 pub struct Authentication<'a> {
     secret: &'a [u8],
+    ignore_routes: &'a [&'a str],
 }
 
 impl<'a> Authentication<'a> {
-    pub fn new(secret: &[u8]) -> Authentication {
-        Authentication { secret }
+    pub fn new(secret: &'a[u8], ignore_routes: &'a[&'a str]) -> Authentication<'a> {
+        Authentication { secret, ignore_routes }
     }
 }
 
@@ -44,14 +45,15 @@ where
         ok(AuthenticationMiddleware {
             service,
             secret: self.secret,
+            ignore_routes: self.ignore_routes,
         })
     }
 }
 
 pub struct AuthenticationMiddleware<'a, S> {
     service: S,
-
     secret: &'a [u8],
+    ignore_routes: &'a [&'a str],
 }
 
 impl<'a, S, B> Service<ServiceRequest> for AuthenticationMiddleware<'a, S>
@@ -80,7 +82,7 @@ where
         if Method::OPTIONS == *req.method() {
             authenticate_pass = true;
         } else {
-            for ignore_route in constants::IGNORE_ROUTES.iter() {
+            for ignore_route in self.ignore_routes.iter() {
                 if req.path().starts_with(ignore_route) {
                     authenticate_pass = true;
                     break;
@@ -89,7 +91,7 @@ where
             if !authenticate_pass {
                 if let Some(pool) = req.app_data::<Data<Pool>>() {
                     log::info!("Connecting to database...");
-                    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+                    if let Some(authen_header) = req.headers().get("Authorization") {
                         log::info!("Parsing authorization header...");
                         if let Ok(authen_str) = authen_header.to_str() {
                             if authen_str.starts_with("bearer") || authen_str.starts_with("Bearer")
