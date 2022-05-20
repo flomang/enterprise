@@ -1,6 +1,8 @@
 use crate::api::*;
 use actix_web::web;
 
+pub const IGNORE_ROUTES: [&str; 3] = ["/api/ping", "/api/login", "/api/register"];
+
 pub fn config_services(cfg: &mut web::ServiceConfig) {
     log::info!("Configuring routes...");
     cfg.service(

@@ -30,7 +30,7 @@ mod tests {
                 .wrap(actix_web::middleware::Logger::default())
                 .wrap(crate::middleware::auth_middleware::Authentication)
                 .wrap_fn(|req, srv| srv.call(req).map(|res| res))
-                .configure(crate::config::app::config_services),
+                .configure(crate::config::config::config_services),
         )
         .await;
 
