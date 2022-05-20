@@ -20,7 +20,6 @@ async fn main() -> std::io::Result<()> {
     // Start http server
     HttpServer::new(move || {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        //let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
         let allowed_origin: String =
             std::env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "localhost:3001".to_string());
 
@@ -38,17 +37,12 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE])
             .max_age(3600);
 
-        //let auth = HttpAuthentication::bearer(library::auth::bearer_auth_validator);
-
         App::new()
             .app_data(web::Data::new(pool))
             .wrap(cors)
             .wrap(middleware::Logger::default())
-            // routes here need auth
             .wrap(library::auth::middleware::Authentication::new(&KEY, &config::IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
             .configure(config::config_services)
-            //.wrap(auth)
-            //.wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
             .app_data(web::JsonConfig::default().limit(4096))
     })
     .bind("127.0.0.1:3000")?
