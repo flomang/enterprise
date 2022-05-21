@@ -13,6 +13,7 @@ use uuid::Uuid;
 pub mod middleware;
 
 static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
+static ONE_DAY: i64 = 60 * 60 * 24; // in seconds
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
@@ -109,7 +110,7 @@ pub fn create_jwt(user_id: Uuid, username: String, secret: &[u8]) -> Result<Stri
     let payload = Claims {
             sub: user_id.to_string(),
             iat: now,
-            exp: now + ONE_WEEK,
+            exp: now + ONE_DAY,
             username,
         };
 
