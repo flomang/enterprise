@@ -6,7 +6,6 @@ use actix_web::{http, middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-const KEY: [u8; 16] = *include_bytes!("secret.key");
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
@@ -41,7 +40,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool))
             .wrap(cors)
             .wrap(middleware::Logger::default())
-            .wrap(library::auth::middleware::Authentication::new(&KEY, &config::IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
+            .wrap(library::auth::middleware::Authentication::new(&config::KEY, &config::IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
             .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })

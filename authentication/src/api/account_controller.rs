@@ -11,7 +11,6 @@ use library::db::Pool;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-pub static KEY: [u8; 16] = *include_bytes!("../secret.key");
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -62,7 +61,7 @@ pub async fn login(
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     let user = web::block(move || query(auth_data.into_inner(), pool)).await??;
-    let token = library::auth::create_jwt(user.id, user.username.clone(), &KEY)?;
+    let token = library::auth::create_jwt(user.id, user.username.clone(), &crate::config::KEY)?;
     identity.remember(token.clone());
 
     let session = Session {

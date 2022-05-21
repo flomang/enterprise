@@ -1,6 +1,7 @@
 use crate::api::*;
 use actix_web::web;
 
+pub const KEY: [u8; 16] = *include_bytes!("./secret.key");
 pub const IGNORE_ROUTES: [&str; 3] = ["/api/ping", "/api/login", "/api/register"];
 
 pub fn config_services(cfg: &mut web::ServiceConfig) {
