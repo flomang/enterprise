@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 pub mod middleware;
 
-static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
-static ONE_DAY: i64 = 60 * 60 * 24; // in seconds
+//static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
+const ONE_DAY: i64 = 60 * 60 * 24; // in seconds
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {

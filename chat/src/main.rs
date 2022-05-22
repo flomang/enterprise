@@ -8,16 +8,13 @@ use std::{
 
 use actix::*;
 use actix_files::{Files, NamedFile};
-use actix_identity::Identity;
 use actix_web::{
-    cookie::time::Duration, middleware::Logger, web, App, Error, HttpRequest, HttpResponse,
+    middleware::Logger, web, App, Error, HttpRequest, HttpResponse,
     HttpServer, Responder,
 };
 use actix_web_actors::ws;
-use authentication::models::SlimUser;
-use library::utils;
-use library::utils::errors::ServiceError;
 
+mod config;
 mod server;
 mod session;
 
@@ -27,21 +24,21 @@ async fn index() -> impl Responder {
 
 /// Entry point for our websocket route
 async fn chat_route(
-    id: Identity,
+    //id: Identity,
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<server::ChatServer>>,
 ) -> Result<HttpResponse, Error> {
-    let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
-    let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
-        log::debug!("slim user deserialization: {}", err);
-        ServiceError::Unauthorized
-    })?;
+    //let json_str = id.identity().ok_or(ServiceError::Unauthorized)?;
+    //let user: SlimUser = serde_json::from_str(&json_str).map_err(|err| {
+    //    log::debug!("slim user deserialization: {}", err);
+    //    ServiceError::Unauthorized
+    //})?;
 
     ws::start(
         session::WsChatSession {
             id: 0,
-            user,
+            //user,
             hb: Instant::now(),
             room: "Main".to_owned(),
             name: None,
@@ -68,10 +65,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let app_state = Arc::new(AtomicUsize::new(0));
         let server = server::ChatServer::new(app_state.clone()).start();
-        let domain: String = std::env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
 
         App::new()
-            .wrap(utils::auth::cookie_policy(domain, Duration::new(86400, 0)))
+            .wrap(library::auth::middleware::Authentication::new(&config::KEY, &config::IGNORE_ROUTES)) // Comment this line of code if you want to integrate with yew-address-book-frontend
             .wrap(Logger::default())
             .app_data(web::Data::from(app_state))
             .app_data(web::Data::new(server))
