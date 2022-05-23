@@ -4069,8 +4069,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "iot-one"
+name = "iot"
 version = "0.1.0"
+dependencies = [
+ "actix-cors 0.6.1",
+ "actix-identity",
+ "actix-rt 2.7.0",
+ "actix-service 2.0.2",
+ "actix-web 4.0.1",
+ "actix-web-httpauth",
+ "alcoholic_jwt",
+ "argonautica",
+ "chrono",
+ "derive_more",
+ "diesel",
+ "dotenv 0.15.0",
+ "env_logger 0.9.0",
+ "futures 0.3.21",
+ "jsonwebtoken",
+ "lazy_static",
+ "library",
+ "log 0.4.16",
+ "r2d2",
+ "rust-argon2",
+ "serde",
+ "serde_json",
+ "sparkpost",
+ "time 0.3.9",
+ "uuid",
+]
 
 [[package]]
 name = "iovec"
