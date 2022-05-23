@@ -34,7 +34,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::get().uri("/api/ping").to_request();
+        let req = test::TestRequest::get().uri("/api/healthz").to_request();
         let resp = test::call_service(&mut app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK);
