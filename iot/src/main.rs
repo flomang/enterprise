@@ -1,12 +1,13 @@
 extern crate diesel;
 
 use actix_cors::Cors;
-use actix_web::{http, middleware, web, App, HttpServer};
+use actix_web::{http, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-mod config;
 mod api;
+mod middleware;
+mod config;
 
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
@@ -41,7 +42,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool))
             .wrap(cors)
-            .wrap(middleware::Logger::default())
+            .wrap(actix_web::middleware::Logger::default())
+            .wrap(middleware::timer::ResponseTime)
             .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })
