@@ -9,6 +9,17 @@ table! {
 }
 
 table! {
+    health_checks (id) {
+        id -> Int4,
+        device_uuid -> Uuid,
+        data -> Jsonb,
+        user_id -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+table! {
     media_datas (id) {
         id -> Uuid,
         name -> Varchar,
@@ -29,5 +40,6 @@ joinable!(comments -> media_datas (media_item_id));
 
 allow_tables_to_appear_in_same_query!(
     comments,
+    health_checks,
     media_datas,
 );
