@@ -14,7 +14,7 @@ CREATE TABLE image_metadatas (
   exposure_time varchar null,
   f_number varchar null,
   aperture_value numeric null,
-  -- location geography(point, 4326) not null,     -- <1>
+  location geography(point, 4326) not null,    
   altitude numeric null,
   speed numeric null,
 
