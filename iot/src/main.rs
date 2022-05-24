@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate diesel;
 
 use actix_cors::Cors;
@@ -6,9 +7,11 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 mod api;
-mod middleware;
+mod database;
+mod errors;
 mod config;
-
+mod middleware;
+mod models;
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
