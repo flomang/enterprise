@@ -3,6 +3,7 @@ extern crate diesel;
 
 use actix_cors::Cors;
 use actix_web::{http, web, App, HttpServer};
+use clap::{AppSettings, ArgMatches, SubCommand, Parser};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
@@ -13,6 +14,13 @@ mod config;
 mod middleware;
 mod models;
 
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
+    #[clap(short, long, default_value_t = 3010)]
+    port: i32,
+}
+
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
 // This approach has good performance characteristics for workloads where the majority of tasks have similar runtime expense.
@@ -21,6 +29,7 @@ mod models;
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
+    let cli = Cli::parse();
 
     // Start http server
     HttpServer::new(move || {
@@ -50,7 +59,7 @@ async fn main() -> std::io::Result<()> {
             .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })
-    .bind("127.0.0.1:3000")?
+    .bind(format!("127.0.0.1:{}", cli.port))?
     .run()
     .await
 }

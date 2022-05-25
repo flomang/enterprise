@@ -46,3 +46,5 @@ error-chain = "0.12.2"
 enum-primitive-derive = "0.1.2"
 num-traits = "0.2.11"
 
+# For command line parsing
+clap = { version = "3.1.18", features = ["derive"] }
