@@ -1,3 +1,5 @@
+use crate::database::*;
+
 table! {
     comments (id) {
         id -> Int4,
@@ -20,6 +22,12 @@ table! {
 }
 
 table! {
+    // needed for our Geography item
+    use diesel::sql_types::*;
+    use diesel_geography::sql_types::*;
+    // added for this one
+    use bigdecimal::BigDecimal;
+
     image_metadatas (id) {
         id -> Int4,
         exif_version -> Nullable<Numeric>,
@@ -44,6 +52,12 @@ table! {
 }
 
 table! {
+    // TODO these will be overwritten by diesel 
+    use diesel::sql_types::*;
+    use super::Media_Enum_Map;
+    use super::Location_Enum_Map;
+    use super::Media_Audience_Enum_Map;
+
     media_datas (id) {
         id -> Uuid,
         name -> Varchar,
@@ -54,9 +68,9 @@ table! {
         device_id -> Uuid,
         created_at -> Timestamp,
         updated_at -> Timestamp,
-        media_type -> Nullable<Media_enum>,
-        location_type -> Location_enum,
-        media_audience_type -> Nullable<Array<Media_audience_enum>>,
+        media_type -> Media_Enum_Map, 
+        location_type -> Location_Enum_Map,
+        media_audience_type -> Array<Media_Audience_Enum_Map>,
     }
 }
 
