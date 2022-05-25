@@ -6,6 +6,7 @@ use actix_web::{http, web, App, HttpServer};
 use clap::{AppSettings, ArgMatches, SubCommand, Parser};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use dotenv;
 
 mod api;
 mod database;
@@ -17,7 +18,7 @@ mod models;
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    #[clap(short, long, default_value_t = 3010)]
+    #[clap(env, short, long, default_value_t = 3010)]
     port: i32,
 }
 
@@ -29,6 +30,7 @@ struct Cli {
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
+
     let cli = Cli::parse();
 
     // Start http server
