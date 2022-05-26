@@ -2,6 +2,7 @@ use actix_web::{get, HttpResponse};
 
 #[get("/healthz")]
 async fn healthz() -> HttpResponse {
+    debug!("health ping");
     HttpResponse::Ok().body("pong!".to_string())
 }
 

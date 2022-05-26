@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate diesel;
+#[macro_use] 
+extern crate log;
+extern crate pretty_env_logger;
 
 use actix_cors::Cors;
 use actix_web::{http, web, App, HttpServer};
@@ -29,7 +32,7 @@ struct Cli {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    env_logger::init();
+    pretty_env_logger::init();
 
     let cli = Cli::parse();
 
