@@ -23,6 +23,10 @@ mod models;
 struct Cli {
     #[clap(env, short, long, default_value_t = 3010)]
     port: i32,
+    #[clap(env, short, long)]
+    database_url: String,
+    #[clap(env, short, long)]
+    allowed_origin: String,
 }
 
 // Tokio-based single-threaded async runtime for the Actix ecosystem.
@@ -35,12 +39,14 @@ async fn main() -> std::io::Result<()> {
     pretty_env_logger::init();
 
     let cli = Cli::parse();
+    let port = cli.port;
 
     // Start http server
     HttpServer::new(move || {
-        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let allowed_origin: String =
-            std::env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "localhost:3001".to_string());
+        let database_url = cli.database_url.clone();
+        let allowed_origin = cli.allowed_origin.clone();
+        debug!("{}", database_url);
+        debug!("{}", allowed_origin);
 
         // create db connection pool
         let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -64,7 +70,7 @@ async fn main() -> std::io::Result<()> {
             .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })
-    .bind(format!("127.0.0.1:{}", cli.port))?
+    .bind(format!("127.0.0.1:{}", port))?
     .run()
     .await
 }
