@@ -11,18 +11,18 @@ use crate::database::schema::video_metadatas;
 
 use crate::models::media_data::NewMediaData;
 
-//use diesel_geography::types::GeogPoint; // <1>
+use diesel_geography::types::GeogPoint;
 use bigdecimal::BigDecimal;
 
-//use crate::database::schema::media_datas::dsl::*;
-//use crate::database::schema::image_metadatas::dsl::*;
+use crate::database::schema::media_datas::dsl::*;
+use crate::database::schema::image_metadatas::dsl::*;
 
 //use chrono::{Utc, DateTime as DT};
 //#[derive(Debug, Deserialize, Clone)]
 #[derive(Insertable, Associations, Debug, Deserialize, Clone)]
 #[belongs_to(NewMediaData, foreign_key="media_item_id")]
 #[table_name="image_metadatas"]
-pub struct Image {                      // <2>
+pub struct Image {                     
 //    pub id: i32,
     exif_version: Option<BigDecimal>,
     x_pixel_dimension: Option<i32>,
@@ -39,7 +39,7 @@ pub struct Image {                      // <2>
     exposure_time: Option<String>,
     f_number: Option<String>,
     aperture_value: Option<BigDecimal>,
-    //location: Option<GeogPoint>,     // <3>
+    location: Option<GeogPoint>,     
     altitude: Option<BigDecimal>,
     speed: Option<BigDecimal>,
     media_item_id: Uuid
@@ -51,7 +51,7 @@ pub struct Image {                      // <2>
 #[derive(Insertable, Associations, Debug, Deserialize, Clone)]
 #[belongs_to(NewMediaData, foreign_key="media_item_id")]
 #[table_name="video_metadatas"]
-pub struct Video {                  // <4>
+pub struct Video {                 
     video_duration: Option<BigDecimal>,
     video_width: Option<BigDecimal>,
     video_height: Option<BigDecimal>,

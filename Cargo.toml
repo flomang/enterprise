@@ -6,7 +6,7 @@ members = [
     "chat",
     "coinbase",
     "orderbook",
-    "iot",
+    "iot-retrieval-svc",
     "library",
     "ritual",
     "minigrep",
