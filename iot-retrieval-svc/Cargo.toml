@@ -10,10 +10,7 @@ library = { path = "../library" }
 alcoholic_jwt = "1.0.0"
 actix-cors = "0.6.1"
 actix-web = "4"
-actix-web-lab = "0.10"
-actix-web-httpauth = "0.6.0"
 actix-service = "2.0.2"
-jsonwebtoken = "8.1.0"
 
 argonautica = "0.2.0"
 chrono = { version = "0.4.10", features = ["serde"] }
@@ -39,7 +36,7 @@ uuid = { version = "0.8", features = ["serde", "v4"] }
 time = "0.3"
 
 # GraphQL support 
-juniper = "0.14"
+juniper = { git = "https://github.com/nusairat/juniper", branch = "v14.2/add-uuid" }
 
 ### Diesel only supports:: bigdecimal >= 0.0.10, < 0.0.15 optional
 bigdecimal = { version =  "0.1.0", features = ["serde"] }
@@ -49,7 +46,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # For error chaining
-error-chain = "0.12.2"
+anyhow = "1.0"
 
 # For the Derive foer the Enumerations
 enum-primitive-derive = "0.1.2"

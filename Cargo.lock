@@ -581,35 +581,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-web-lab"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2cd7a15518fb68eb657abc5b6b16c387f99b6db7f549f4884c72d05165139b8"
-dependencies = [
- "actix-files",
- "actix-http 3.0.4",
- "actix-service 2.0.2",
- "actix-utils 3.0.0",
- "actix-web 4.0.1",
- "bytes 1.1.0",
- "csv",
- "derive_more",
- "digest 0.10.3",
- "futures-core",
- "futures-util",
- "hmac 0.12.1",
- "local-channel",
- "log 0.4.16",
- "mime",
- "once_cell",
- "pin-project-lite 0.2.9",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "tokio 1.18.0",
-]
-
-[[package]]
 name = "actix_derive"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2318,18 +2289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bstr"
-version = "0.2.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
-dependencies = [
- "lazy_static",
- "memchr 2.4.1",
- "regex-automata",
- "serde",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2948,28 +2907,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "csv"
-version = "1.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22813a6dc45b335f9bade10bf7271dc477e81113e89eb251a0bc2a8a81c536e1"
-dependencies = [
- "bstr",
- "csv-core",
- "itoa 0.4.8",
- "ryu",
- "serde",
-]
-
-[[package]]
-name = "csv-core"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
-dependencies = [
- "memchr 2.4.1",
-]
-
-[[package]]
 name = "ctr"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3268,16 +3205,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad132dd8d0d0b546348d7d86cb3191aad14b34e5f979781fc005c80d4ac67ffd"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "error-chain"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d2f06b9cac1506ece98fe3231e3cc9c4410ec3d5b1f24ae1c8946f0742cdefc"
-dependencies = [
- "backtrace",
- "version_check 0.9.4",
 ]
 
 [[package]]
@@ -4227,9 +4154,8 @@ dependencies = [
  "actix-cors 0.6.1",
  "actix-service 2.0.2",
  "actix-web 4.0.1",
- "actix-web-httpauth",
- "actix-web-lab",
  "alcoholic_jwt",
+ "anyhow",
  "argonautica",
  "bigdecimal",
  "chrono",
@@ -4240,10 +4166,8 @@ dependencies = [
  "diesel-geography",
  "dotenv 0.15.0",
  "enum-primitive-derive",
- "error-chain",
  "futures 0.3.21",
  "futures-util",
- "jsonwebtoken",
  "juniper",
  "lazy_static",
  "library",
@@ -4353,8 +4277,7 @@ dependencies = [
 [[package]]
 name = "juniper"
 version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f662ba51e2fbc3d6dd1ca66be70b44963606a34473156abddcb0351fc6caa668"
+source = "git+https://github.com/nusairat/juniper?branch=v14.2/add-uuid#817c8a4b52e9d19a9c34a4514d7bbc8dfa59bca3"
 dependencies = [
  "chrono",
  "fnv",
@@ -4369,8 +4292,7 @@ dependencies = [
 [[package]]
 name = "juniper_codegen"
 version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d40af234d8e971a9d7dda93ffbcc8a44a93f17e69e3067f72ce7a6894c41d51b"
+source = "git+https://github.com/nusairat/juniper?branch=v14.2/add-uuid#817c8a4b52e9d19a9c34a4514d7bbc8dfa59bca3"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
