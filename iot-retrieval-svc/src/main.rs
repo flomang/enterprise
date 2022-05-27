@@ -33,8 +33,7 @@ struct Cli {
 // To achieve similar performance to multi-threaded, work-stealing runtimes, applications using actix-rt will create multiple, mostly disconnected, single-threaded runtimes.
 // This approach has good performance characteristics for workloads where the majority of tasks have similar runtime expense.
 // https://docs.rs/actix-rt/latest/actix_rt/index.html
-//#[actix_rt::main]
-#[actix_web::main]
+#[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     pretty_env_logger::init();

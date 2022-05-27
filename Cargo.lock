@@ -4152,6 +4152,7 @@ name = "iot-retrieval-svc"
 version = "0.1.0"
 dependencies = [
  "actix-cors 0.6.1",
+ "actix-rt 2.7.0",
  "actix-service 2.0.2",
  "actix-web 4.0.1",
  "alcoholic_jwt",

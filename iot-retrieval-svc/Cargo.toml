@@ -11,6 +11,7 @@ alcoholic_jwt = "1.0.0"
 actix-cors = "0.6.1"
 actix-web = "4"
 actix-service = "2.0.2"
+actix-rt = "2.7.0"
 
 argonautica = "0.2.0"
 chrono = { version = "0.4.10", features = ["serde"] }
