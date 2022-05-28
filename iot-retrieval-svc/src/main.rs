@@ -94,7 +94,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::timer::ResponseTime)
             .service(graph)
             .service(graphql_playground)
-            //.configure(config::config_services)
+            .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })
     .workers(1)
