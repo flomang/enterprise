@@ -3,22 +3,12 @@ resolver="2"
 
 members = [
     "authentication",
-    "chat",
     "coinbase",
-    "orderbook",
-    "iot-retrieval-svc",
     "library",
+    "iot-retrieval-svc",
     "ritual",
     "minigrep",
-    "sandbox-bevy",
     "paper-exchange",
-    "sandbox-smart-pointers",
-    "sandbox-snake",
-    "sandbox-threading",
-    "sandbox-one",
-    "sandbox-oop",
-    "sandbox-two",
-    "sandbox-three",
-    "sandbox-twenty",
-    "tarot"
 ]
+
+exclude = ["orderbook"]

@@ -12,6 +12,7 @@ actix-cors = "0.6.1"
 actix-web = "4"
 actix-service = "2.0.2"
 actix-rt = "2.7.0"
+actix-web-lab = "0.10"
 
 argonautica = "0.2.0"
 chrono = { version = "0.4.10", features = ["serde"] }
@@ -36,8 +37,10 @@ sparkpost = "0.5"
 uuid = { version = "0.8", features = ["serde", "v4"] }
 time = "0.3"
 
+
 # GraphQL support 
-juniper = { git = "https://github.com/nusairat/juniper", branch = "v14.2/add-uuid" }
+#juniper = { git = "https://github.com/nusairat/juniper", branch = "v14.2/add-uuid" }
+juniper = "0.15.9" 
 
 ### Diesel only supports:: bigdecimal >= 0.0.10, < 0.0.15 optional
 bigdecimal = { version =  "0.1.0", features = ["serde"] }
