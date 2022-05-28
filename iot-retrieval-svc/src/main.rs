@@ -25,7 +25,7 @@ mod graphql;
 
 
 /// GraphiQL playground UI
-#[get("/graphiql")]
+#[get("/playground")]
 async fn graphql_playground() -> impl Responder {
     Html(graphiql_source("/graphql", None))
 }
