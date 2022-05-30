@@ -1,10 +1,22 @@
-use actix_web::{get, post, HttpResponse, web};
+use actix_web::{get, post, web, HttpResponse};
+use diesel::PgConnection;
+use library::db::Pool;
 
-#[post("/{device_id}")]
-async fn upload(path: web::Path<u32>) -> HttpResponse {
-    let device_id = path.into_inner();
-    debug!("upload");
-    HttpResponse::Ok().body(format!("upload {}", device_id))
+use crate::actions::media_data::MediaDataAdd;
+//use crate::database::PgPooled;
+
+#[post("/add")]
+async fn add_media(data: web::Json<MediaDataAdd>, pool: web::Data<Pool>) -> HttpResponse {
+    debug!("-- add media data --");
+    debug!(">>>> JSON ::: {:?}", data);
+
+    web::block(move || {
+        let conn: &PgConnection = &pool.get().unwrap();
+        data.into_inner().save(conn);
+    })
+    .await;
+
+    HttpResponse::Ok().body(format!("OK"))
 }
 
 #[get("/{id}")]

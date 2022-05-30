@@ -66,9 +66,10 @@ use crate::database::PgPooled;
 use diesel::insert_into;
 use diesel::RunQueryDsl;
 use crate::errors::Success;
+use diesel::PgConnection;
 
 impl Image {
-    pub fn save(self: Self, conn: &PgPooled) -> Success {
+    pub fn save(self: Self, conn: &PgConnection) -> Success {
         use crate::database::schema::image_metadatas::dsl::*;
 
         insert_into(image_metadatas)
@@ -81,7 +82,7 @@ impl Image {
 }
 
 impl Video {
-    pub fn save(self: Self, conn: &PgPooled) {
+    pub fn save(self: Self, conn: &PgConnection) {
         use crate::database::schema::video_metadatas::dsl::*;
 
         insert_into(video_metadatas)

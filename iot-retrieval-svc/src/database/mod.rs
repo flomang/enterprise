@@ -35,4 +35,5 @@ pub mod schema;
 // Use when we need to get the connection passed through in pages.
 use diesel::r2d2::{Pool, ConnectionManager, PooledConnection};
 use diesel::pg::PgConnection;
+
 pub type PgPooled = PooledConnection<ConnectionManager<PgConnection>>;

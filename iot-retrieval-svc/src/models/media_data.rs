@@ -49,6 +49,7 @@ pub struct MediaData {
 }
 
 
+use diesel::PgConnection;
 use crate::database::schema::media_datas::dsl::*;
 use crate::database::PgPooled;
 use log::{debug};
@@ -60,7 +61,7 @@ impl MediaData { }
 impl NewMediaData {
     // adding the self: &Self to make it a method instead of associated ufction
     // https://doc.rust-lang.org/reference/items/associated-items.html
-    pub fn add(self: &Self, conn: &PgPooled) {
+    pub fn add(self: &Self, conn: &PgConnection) {
         use diesel::insert_into;
         use diesel::RunQueryDsl;
 

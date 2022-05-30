@@ -15,6 +15,7 @@ use actix_web_lab::respond::Html;
 use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
 
 
+mod actions;
 mod api;
 mod database;
 mod errors;
