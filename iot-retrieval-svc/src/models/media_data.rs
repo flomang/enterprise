@@ -1,16 +1,12 @@
-
-use crate::database::schema::media_datas;
-use crate::database::schema::comments;
-
 use chrono::NaiveDateTime;
 use serde::Deserialize;
-use crate::database::{MediaEnum, LocationEnum, MediaAudienceEnum};
-use diesel::Expression;
 use uuid::Uuid;
+use diesel::PgConnection;
 
-// tag::media_data[]
-use crate::models::metadata::{Image,Video};
-use crate::database::schema::image_metadatas;
+//use crate::models::metadata::{Image,Video};
+use crate::database::schema::media_datas::dsl::*;
+use crate::database::schema::media_datas;
+use crate::database::{MediaEnum, LocationEnum};
 
 // NewMediaData has to have Deserialize/Clone to work with bodyparser
 // #[derive(Debug, Deserialize, Clone)]
@@ -26,10 +22,7 @@ pub struct NewMediaData{
     pub size: i32,
     pub device_id: Uuid
 }
-// end::media_data[]
 
-
-use juniper::GraphQLObject;
 
 //#[derive(GraphQLObject)]
 //#[graphql(description = "Media objects for the application")]
@@ -49,15 +42,8 @@ pub struct MediaData {
 }
 
 
-use diesel::PgConnection;
-use crate::database::schema::media_datas::dsl::*;
-use crate::database::PgPooled;
-use log::{debug};
-use crate::errors::DbResult;
-
 impl MediaData { }
 
-// tag::impl_media[]
 impl NewMediaData {
     // adding the self: &Self to make it a method instead of associated ufction
     // https://doc.rust-lang.org/reference/items/associated-items.html
@@ -72,4 +58,3 @@ impl NewMediaData {
             .expect("Insertion of new media error");
     }
 }
-// end::impl_media[]

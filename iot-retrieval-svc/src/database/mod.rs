@@ -1,5 +1,11 @@
 use diesel_derive_enum::DbEnum;
+use diesel::r2d2::{ConnectionManager, PooledConnection};
+use diesel::pg::PgConnection;
 use serde::Deserialize;
+
+pub type PgPooled = PooledConnection<ConnectionManager<PgConnection>>;
+
+pub mod schema;
 
 // tag::db_enum_custom[]
 #[derive(DbEnum, Debug, Eq, PartialEq, Deserialize, Clone)] //<1>
@@ -29,11 +35,3 @@ pub enum MediaAudienceEnum {
     Family
 }
 // end::db_enum[]
-
-pub mod schema;
-
-// Use when we need to get the connection passed through in pages.
-use diesel::r2d2::{Pool, ConnectionManager, PooledConnection};
-use diesel::pg::PgConnection;
-
-pub type PgPooled = PooledConnection<ConnectionManager<PgConnection>>;

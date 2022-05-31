@@ -1,12 +1,16 @@
 
-use serde::Deserialize;
 use uuid::Uuid;
 use chrono::NaiveDateTime;
 use diesel::PgConnection;
-use crate::database::schema::comments;
+use juniper::GraphQLObject;
+use log::{info, warn};
 
-// tag::new_comment[]
-use diesel::Expression;
+use crate::database::schema::comments::dsl::*;
+use crate::database::PgPooled;
+use crate::database::schema::comments;
+use crate::errors::DbResult;
+use crate::models::media_data::MediaData;
+
 
 // need to bring in the comments module for this to work
 #[derive(Insertable, Queryable, PartialEq, Debug)]
@@ -15,13 +19,9 @@ pub struct NewComment {
     pub body: String,
     pub media_item_id: Uuid,
 }
-// end::new_comment[]
 
-use juniper::GraphQLObject;
-use crate::models::media_data::MediaData;
-
-//#[derive(GraphQLObject)]
-//#[graphql(description = "Media objects for the application")]
+#[derive(GraphQLObject)]
+#[graphql(description = "Media objects for the application")]
 #[derive(Queryable, Identifiable, Associations, PartialEq, Debug)]
 #[belongs_to(MediaData, foreign_key = "media_item_id")]
 pub struct Comment {
@@ -31,11 +31,6 @@ pub struct Comment {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime
 }
-
-use crate::database::schema::comments::dsl::*;
-use crate::database::PgPooled;
-use log::{info, warn};
-use crate::errors::DbResult;
 
 impl Comment {
     pub fn all(media_id: Uuid, conn: &PgPooled) -> Vec<Comment> {

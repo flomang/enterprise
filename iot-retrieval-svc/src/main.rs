@@ -4,10 +4,10 @@ extern crate diesel;
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::{io, sync::Arc};
+use std::sync::Arc;
 use actix_cors::Cors;
-use actix_web::{http, get, route, web::{self, Data}, App, HttpServer, HttpResponse, Responder};
-use clap::{AppSettings, ArgMatches, SubCommand, Parser};
+use actix_web::{get, route, web::{self, Data}, App, HttpServer, HttpResponse, Responder};
+use clap::Parser;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv;
@@ -68,7 +68,7 @@ async fn main() -> std::io::Result<()> {
     // Start http server
     HttpServer::new(move || {
         let database_url = cli.database_url.clone();
-        let allowed_origin = cli.allowed_origin.clone();
+        //let allowed_origin = cli.allowed_origin.clone();
 
         let schema = Arc::new(graphql::schema::create_schema());
 

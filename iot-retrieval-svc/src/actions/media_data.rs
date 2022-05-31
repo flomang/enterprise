@@ -4,7 +4,8 @@ use diesel::PgConnection;
 
 use crate::database::{MediaEnum, LocationEnum};
 use crate::models::metadata::{Image,Video};
-use crate::models::media_data::{MediaData, NewMediaData};
+use crate::models::media_data::NewMediaData;
+
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MediaDataAdd {

@@ -1,12 +1,11 @@
-
-/// Copied from the mqtt_service/src/actions/health.rs
-use chrono::prelude::*;
 use chrono::naive::serde::ts_milliseconds::deserialize as from_milli_ts;    // <1>
 use enum_primitive_derive::Primitive;
 use serde::{Serialize, Deserialize};
 use log::warn;
 use uuid::Uuid;
 use chrono::NaiveDateTime;
+use num_traits::cast::FromPrimitive;
+use diesel::PgConnection;
 
 #[derive(Serialize, Deserialize, Debug, Primitive, PartialEq)]
 pub enum Status {   // <2>
@@ -31,13 +30,9 @@ pub struct HealthData {
     pub peripherals: Vec<Peripheral>
 }
 
-// Created for chapter 5
-use chrono::{DateTime,Utc};
-use num_traits::cast::FromPrimitive;
-use crate::database::PgPooled;
 
 impl HealthData {
-    pub fn new(uuid: &str, user_id: &str, timestamp: u64, status: u16, msg: &str, ps: Vec<Peripheral>) -> HealthData {
+    pub fn new(uuid: &str, _user_id: &str, timestamp: u64, status: u16, msg: &str, ps: Vec<Peripheral>) -> HealthData {
         HealthData {
             uuid: Some(Uuid::parse_str(uuid).unwrap()),
             timestamp: HealthData::convert_time(timestamp),
@@ -49,8 +44,6 @@ impl HealthData {
     }
 
     fn convert_time(millis: u64) -> NaiveDateTime {
-        use chrono::NaiveDateTime;
-
         let seconds = (millis / 1000) as i64;
         let nanos = ((millis % 1000) * 1_000_000) as u32;
         //DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(seconds, nanos), Utc)
@@ -58,10 +51,9 @@ impl HealthData {
     }
 
     // tag::save[]
-    pub fn save(&self, conn: &PgPooled) -> i32 {
+    pub fn save(&self, conn: &PgConnection) -> i32 {
         use diesel::{RunQueryDsl, ExpressionMethods};
         use diesel::insert_into;
-        use serde_json::{Value};
         use crate::database::schema::health_checks::dsl::*;
 
         // Converts the application into a Uuid
@@ -86,7 +78,7 @@ impl HealthData {
     // end::save[]
 
     // Get the health  check for a particualr user
-    pub fn find(user: Uuid, conn: &PgPooled) -> Vec<Uuid> {
+    pub fn find(user: Uuid, conn: &PgConnection) -> Vec<Uuid> {
         use crate::database::schema::health_checks::dsl::*;
         use diesel::prelude::*;
 

@@ -1,21 +1,19 @@
 
 use chrono::NaiveDateTime;
-use chrono::{DateTime,Utc};
 use serde::Deserialize;
-use diesel::Expression;
 use uuid::Uuid;
+use diesel::{insert_into, RunQueryDsl, PgConnection};
+use diesel_geography::types::GeogPoint;
 
-// tag::structs[]
+//use crate::database::schema::media_datas::dsl::*;
+//use crate::database::schema::image_metadatas::dsl::*;
+//use crate::database::PgPooled;
 use crate::database::schema::image_metadatas;
 use crate::database::schema::video_metadatas;
-
+use crate::errors::Success;
 use crate::models::media_data::NewMediaData;
 
-use diesel_geography::types::GeogPoint;
 use bigdecimal::BigDecimal;
-
-use crate::database::schema::media_datas::dsl::*;
-use crate::database::schema::image_metadatas::dsl::*;
 
 //use chrono::{Utc, DateTime as DT};
 //#[derive(Debug, Deserialize, Clone)]
@@ -60,13 +58,6 @@ pub struct Video {
     audio_codec: Option<String>,
     media_item_id: Uuid
 }
-// end::structs[]
-
-use crate::database::PgPooled;
-use diesel::insert_into;
-use diesel::RunQueryDsl;
-use crate::errors::Success;
-use diesel::PgConnection;
 
 impl Image {
     pub fn save(self: Self, conn: &PgConnection) -> Success {

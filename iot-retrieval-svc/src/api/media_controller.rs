@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{post, web, HttpResponse};
 use diesel::PgConnection;
 use library::db::Pool;
 use serde::Deserialize;

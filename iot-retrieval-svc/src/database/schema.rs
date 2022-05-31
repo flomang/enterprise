@@ -26,7 +26,7 @@ table! {
     use diesel::sql_types::*;
     use diesel_geography::sql_types::*;
     // added for this one
-    use bigdecimal::BigDecimal;
+    //use bigdecimal::BigDecimal;
 
     image_metadatas (id) {
         id -> Int4,

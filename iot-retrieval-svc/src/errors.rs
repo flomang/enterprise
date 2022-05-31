@@ -2,7 +2,7 @@
 use anyhow::*;
 use std::result;
 
-use alcoholic_jwt::ValidationError;
+//use alcoholic_jwt::ValidationError;
 
 // // We can define our error chains in here
 // error_chain! {
@@ -27,6 +27,6 @@ use alcoholic_jwt::ValidationError;
 // Couple custom errors
 pub type Success = result::Result<(), Error>;
 //pub type UserResult = result::Result<String, crate::errors::ErrorKind>;
-pub type UserResult = result::Result<String, ValidationError>;
-pub type MyResult<T> = result::Result<T, Error>;
+//pub type UserResult = result::Result<String, ValidationError>;
+//pub type MyResult<T> = result::Result<T, Error>;
 pub type DbResult<T> = result::Result<T, diesel::result::Error>;
