@@ -2,6 +2,7 @@
 use serde::Deserialize;
 use uuid::Uuid;
 use chrono::NaiveDateTime;
+use diesel::PgConnection;
 use crate::database::schema::comments;
 
 // tag::new_comment[]
@@ -47,7 +48,7 @@ impl Comment {
     }
 
     // tag::comment_add[]
-    pub fn add(conn: &PgPooled, media_id: Uuid, bod: String) -> i32 {
+    pub fn add(conn: &PgConnection, media_id: Uuid, bod: String) -> i32 {
         use diesel::{RunQueryDsl, ExpressionMethods};
         use diesel::insert_into;
 

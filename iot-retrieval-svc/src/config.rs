@@ -10,6 +10,6 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             .service(ping_controller::healthz)
             .service(web::scope("/media").service(media_controller::add_media))
-            .service(web::scope("/download").service(media_controller::download)),
+            .service(web::scope("/comment").service(media_controller::add_comment)),
     );
 }
