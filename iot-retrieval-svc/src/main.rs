@@ -98,7 +98,6 @@ async fn main() -> std::io::Result<()> {
             .configure(config::config_services)
             .app_data(web::JsonConfig::default().limit(4096))
     })
-    .workers(1)
     .bind(format!("127.0.0.1:{}", port))?
     .run()
     .await
