@@ -1,7 +1,8 @@
 [workspace]
 resolver="2"
 
-members = [
+exclude = [
+    "orderbook",
     "authentication",
     "coinbase",
     "library",
@@ -9,6 +10,9 @@ members = [
     "ritual",
     "minigrep",
     "paper-exchange",
+    "sandbox-grin",
 ]
 
-exclude = ["orderbook"]
+members = [
+    "sandbox-grin",
+]

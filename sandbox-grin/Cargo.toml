@@ -1,0 +1,20 @@
+[package]
+name = "sandbox-grin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[dependencies]
+easy-jsonrpc-mw = "0.5.4"
+grin_api = { path = "../../grin/api" } 
+grin_pool = { path = "../../grin/pool" }
+#grin_api = "5.1.2"
+jsonrpc-core = "10.0.1"
+serde_json = "1"
+serde = "1"
+reqwest = "0.9.18"
+
