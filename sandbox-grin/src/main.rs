@@ -7,23 +7,28 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::{thread, time};
-
+use log::{info};
 
 // Demonstrate an example JSON-RCP call against grin.
-fn main() {
-    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
-    let result_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap());
-    println!("version: {:?}", result_version);
 
-    let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap());
-    println!("tip: {:?}", result_tip);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
+    pretty_env_logger::init();
+
+    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
+    let result_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap()).await;
+    info!("version: {:?}", result_version);
+
+    let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await;
+    info!("tip: {:?}", result_tip);
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
 
-    while let Ok(result) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()) {
-        let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap());
-        println!("tip: {:?}", result_tip);
+    while let Ok(result) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await {
+        let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await;
+        info!("tip: {:?}", result_tip);
 
         if let Ok(txns) = result {
              if all_txns.len() != txns.len() {
@@ -36,13 +41,13 @@ fn main() {
                     let outputs = txn.tx.body.outputs.len();
                     let kernels = txn.tx.body.kernels.len();
 
-                    println!("----");
-                    println!("\t at: {}", txn.tx_at);
-                    println!("\t src: {:?}", txn.src);
-                    println!("\t kernels: {:?}", kernels);
-                    println!("\t inputs: {:?}", inputs);
-                    println!("\t outputs: {:?}", outputs);
-                    println!("\t tx: {:?}", txn.tx);
+                    info!("----");
+                    info!("\t at: {}", txn.tx_at);
+                    info!("\t src: {:?}", txn.src);
+                    info!("\t kernels: {:?}", kernels);
+                    info!("\t inputs: {:?}", inputs);
+                    info!("\t outputs: {:?}", outputs);
+                    info!("\t tx: {:?}", txn.tx);
                  }
              }
         } else {
@@ -50,27 +55,32 @@ fn main() {
         }
         thread::sleep(delay);
     }
+
+    Ok(())
 }
 
 
-fn rpc<R: Deserialize<'static>>(
+async fn rpc<R: Deserialize<'static>>(
     addr: &SocketAddr,
     method: &BoundMethod<'_, R>,
 ) -> Result<R, RpcErr> {
     let (request, tracker) = method.call();
-    let json_response = post(addr, &request.as_request())?;
+    let json_response = post(addr, &request.as_request()).await?;
     let mut response = Response::from_json_response(json_response)?;
     Ok(tracker.get_return(&mut response)?)
 }
 
-fn post(addr: &SocketAddr, body: &Value) -> Result<Value, reqwest::Error> {
+async fn post(addr: &SocketAddr, body: &Value) -> Result<Value, reqwest::Error> {
     let client = Client::new();
-    client
+    let response = client
         .post(&format!("http://{}/v2/foreign", addr))
         .json(body)
-        .send()?
-        .error_for_status()?
-        .json()
+        .send()
+        .await?;
+
+    let thing = response.error_for_status()?
+    .json::<Value>().await?;
+    Ok(thing)
 }
 
 #[derive(Debug)]

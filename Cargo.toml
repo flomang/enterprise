@@ -13,6 +13,4 @@ exclude = [
     "sandbox-grin",
 ]
 
-members = [
-    "sandbox-grin",
-]
+members = []
