@@ -1,13 +1,13 @@
 //use grin_api::ForeignRpc;
 use easy_jsonrpc_mw::{BoundMethod, Response};
 use grin_api::foreign_rpc::foreign_rpc;
-use grin_pool::types::{PoolEntry};
+use grin_pool::types::PoolEntry;
+use log::info;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::{thread, time};
-use log::{info};
 
 // Demonstrate an example JSON-RCP call against grin.
 
@@ -20,58 +20,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let api_version = std::env::var("GRIN_API_VERSION").expect("GRIN_API_VERSION must be set!!");
     let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
-    let node_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap()).await??.node_version;
-    
+    let node_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap())
+        .await??
+        .node_version;
+
     if api_version != node_version {
-        panic!("expected node version: {} actual running instance is: {}", api_version, node_version)
+        panic!(
+            "expected node version: {} actual running instance is: {}",
+            api_version, node_version
+        )
     }
 
-    info!("version: {:?}", node_version);
+    info!("grin api version: {:?}", node_version);
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
 
     let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
     let mut current_height = grin_tip.height;
-    info!("at: {:?}", current_height);
+    info!("height at: {:?}", current_height);
 
-    while let Ok(result) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await {
+    while let Ok(txns) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await? {
         let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
 
         if current_height < grin_tip.height {
-           info!("new block: {:?}", grin_tip);
-           current_height = grin_tip.height;
+            info!("new block: {:?}", grin_tip);
+            current_height = grin_tip.height;
         }
 
-        if let Ok(txns) = result {
-             if all_txns.len() != txns.len() {
-                 all_txns = txns;
+        if all_txns.len() != txns.len() {
+            all_txns = txns;
+            for txn in all_txns.iter() {
+                let inputs = txn.tx.body.inputs.len();
+                let outputs = txn.tx.body.outputs.len();
+                let kernels = txn.tx.body.kernels.len();
 
-                 //let result = rpc(&server_addr, &foreign_rpc::get_pool_size().unwrap());
-                 //println!("size: {:?}", result);
-                 for txn in all_txns.iter() {
-                    let inputs = txn.tx.body.inputs.len();
-                    let outputs = txn.tx.body.outputs.len();
-                    let kernels = txn.tx.body.kernels.len();
-
-                    info!("----");
-                    info!("\t at: {}", txn.tx_at);
-                    info!("\t src: {:?}", txn.src);
-                    info!("\t kernels: {:?}", kernels);
-                    info!("\t inputs: {:?}", inputs);
-                    info!("\t outputs: {:?}", outputs);
-                    info!("\t tx: {:?}", txn.tx);
-                 }
-             }
-        } else {
-            println!("nope")
+                info!("----");
+                info!("\t at: {}", txn.tx_at);
+                info!("\t src: {:?}", txn.src);
+                info!("\t kernels: {:?}", kernels);
+                info!("\t inputs: {:?}", inputs);
+                info!("\t outputs: {:?}", outputs);
+                info!("\t tx: {:?}", txn.tx);
+            }
         }
         thread::sleep(delay);
     }
 
     Ok(())
 }
-
 
 async fn rpc<R: Deserialize<'static>>(
     addr: &SocketAddr,
@@ -91,16 +88,12 @@ async fn post(addr: &SocketAddr, body: &Value) -> Result<Value, reqwest::Error> 
         .send()
         .await?;
 
-    let json_response = response
-        .error_for_status()?
-        .json::<Value>()
-        .await?;
+    let json_response = response.error_for_status()?.json::<Value>().await?;
 
     Ok(json_response)
 }
 
 use std::fmt;
-
 
 #[derive(Debug)]
 enum RpcErr {
