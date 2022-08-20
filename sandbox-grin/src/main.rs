@@ -18,9 +18,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // color logs
     pretty_env_logger::init();
 
+    let api_version = std::env::var("GRIN_API_VERSION").expect("GRIN_API_VERSION must be set!!");
     let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
-    let result_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap()).await;
-    info!("version: {:?}", result_version.unwrap());
+    let node_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap()).await??.node_version;
+    
+    if api_version != node_version {
+        panic!("expected node version: {} actual running instance is: {}", api_version, node_version)
+    }
+
+    info!("version: {:?}", node_version);
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
@@ -85,6 +91,9 @@ async fn post(addr: &SocketAddr, body: &Value) -> Result<Value, reqwest::Error> 
     Ok(json_response)
 }
 
+use std::fmt;
+
+
 #[derive(Debug)]
 enum RpcErr {
     Http(reqwest::Error),
@@ -106,5 +115,23 @@ impl From<easy_jsonrpc_mw::ResponseFail> for RpcErr {
 impl From<reqwest::Error> for RpcErr {
     fn from(other: reqwest::Error) -> Self {
         RpcErr::Http(other)
+    }
+}
+
+impl fmt::Display for RpcErr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RpcErr::Http(e) => write!(f, "rpc encountered some http error: {}", e),
+            _ => write!(f, "InvalidResponse"),
+        }
+    }
+}
+
+impl std::error::Error for RpcErr {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            RpcErr::Http(e) => Some(e),
+            _ => Some(self),
+        }
     }
 }
