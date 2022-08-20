@@ -31,9 +31,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
 
+    let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
+    let mut current_height = grin_tip.height;
+    info!("at: {:?}", current_height);
+
     while let Ok(result) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await {
-        let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await;
-        info!("tip: {:?}", result_tip);
+        let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
+
+        if current_height < grin_tip.height {
+           info!("new block: {:?}", grin_tip);
+           current_height = grin_tip.height;
+        }
 
         if let Ok(txns) = result {
              if all_txns.len() != txns.len() {
