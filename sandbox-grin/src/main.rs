@@ -13,15 +13,14 @@ use log::{info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // init env from .env file
     dotenv::dotenv().ok();
+    // color logs
     pretty_env_logger::init();
 
     let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
     let result_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap()).await;
-    info!("version: {:?}", result_version);
-
-    let result_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await;
-    info!("tip: {:?}", result_tip);
+    info!("version: {:?}", result_version.unwrap());
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
@@ -78,9 +77,12 @@ async fn post(addr: &SocketAddr, body: &Value) -> Result<Value, reqwest::Error> 
         .send()
         .await?;
 
-    let thing = response.error_for_status()?
-    .json::<Value>().await?;
-    Ok(thing)
+    let json_response = response
+        .error_for_status()?
+        .json::<Value>()
+        .await?;
+
+    Ok(json_response)
 }
 
 #[derive(Debug)]
