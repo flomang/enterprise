@@ -12,7 +12,6 @@ path = "src/main.rs"
 dotenv = "0.15"
 easy-jsonrpc-mw = "0.5.4"
 log = "0.4.16"
-jsonrpc-core = "18.0.0"
 pretty_env_logger = "0.4.0"
 reqwest = { version = "0.11.11", features = ["json"] }
 serde = "1"
@@ -21,3 +20,5 @@ tokio = { version = "1.20.1", features = ["full"] }
 
 grin_api = { path = "../../grin/api" } 
 grin_pool = { path = "../../grin/pool" }
+#grin_api = { git = "https://github.com/flomang/grin.git" } 
+#grin_pool = "5.1.2"

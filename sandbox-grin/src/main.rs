@@ -1,4 +1,3 @@
-//use grin_api::ForeignRpc;
 use easy_jsonrpc_mw::{BoundMethod, Response};
 use grin_api::foreign_rpc::foreign_rpc;
 use grin_pool::types::PoolEntry;
@@ -6,7 +5,7 @@ use log::info;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::{thread, time};
 
 // Demonstrate an example JSON-RCP call against grin.
@@ -18,8 +17,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // color logs
     pretty_env_logger::init();
 
-    let api_version = std::env::var("GRIN_API_VERSION").expect("GRIN_API_VERSION must be set!!");
-    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3413);
+    let api_version = std::env::var("GRIN_FOREIGN_API_VERSION").expect("GRIN_API_VERSION must be set!!");
+    let server_addr: SocketAddr = "127.0.0.1:3413" 
+        .parse()
+        .unwrap();
+
     let node_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap())
         .await??
         .node_version;
@@ -31,21 +33,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
     }
 
-    info!("grin api version: {:?}", node_version);
+    info!("grin api: {:?}", node_version);
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
 
     let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
     let mut current_height = grin_tip.height;
-    info!("height at: {:?}", current_height);
+    info!("height: {:?}", current_height);
 
     while let Ok(txns) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await? {
         let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
 
         if current_height < grin_tip.height {
-            info!("new block: {:?}", grin_tip);
             current_height = grin_tip.height;
+            let block = rpc(&server_addr, &foreign_rpc::get_block(Some(current_height), None, None).unwrap()).await??;
+            info!("new block: {:?}", block);
         }
 
         if all_txns.len() != txns.len() {
