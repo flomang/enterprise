@@ -1,3 +1,4 @@
+use clap::Parser;
 use easy_jsonrpc_mw::{BoundMethod, Response};
 use grin_api::foreign_rpc::foreign_rpc;
 use grin_pool::types::PoolEntry;
@@ -8,8 +9,21 @@ use serde_json::Value;
 use std::net::SocketAddr;
 use std::{thread, time};
 
-// Demonstrate an example JSON-RCP call against grin.
 
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+   /// supported grin api version 
+   #[clap(long, env)]
+   grin_api_version: String,
+
+   /// supported grin api version 
+   #[clap(long, env)]
+   grin_api_addr: String,
+}
+
+
+// Demonstrate an example JSON-RCP call against grin.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // init env from .env file
@@ -17,37 +31,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // color logs
     pretty_env_logger::init();
 
-    let api_version = std::env::var("GRIN_FOREIGN_API_VERSION").expect("GRIN_API_VERSION must be set!!");
-    let server_addr: SocketAddr = "127.0.0.1:3413" 
+    let args = Args::parse();
+    info!("{:?}", args);
+
+    // this is the 
+    let grin_addr: SocketAddr = args.grin_api_addr
         .parse()
         .unwrap();
 
-    let node_version = rpc(&server_addr, &foreign_rpc::get_version().unwrap())
+    let grin_version = rpc(&grin_addr, &foreign_rpc::get_version().unwrap())
         .await??
         .node_version;
 
-    if api_version != node_version {
+    if args.grin_api_version != grin_version {
         panic!(
             "expected node version: {} actual running instance is: {}",
-            api_version, node_version
+            args.grin_api_version, grin_version
         )
     }
 
-    info!("grin api: {:?}", node_version);
+    info!("grin api: {:?}", grin_version);
 
     let delay = time::Duration::from_secs(1);
     let mut all_txns: Vec<PoolEntry> = vec![];
 
-    let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
+    let grin_tip = rpc(&grin_addr, &foreign_rpc::get_tip().unwrap()).await??;
     let mut current_height = grin_tip.height;
     info!("height: {:?}", current_height);
 
-    while let Ok(txns) = rpc(&server_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await? {
-        let grin_tip = rpc(&server_addr, &foreign_rpc::get_tip().unwrap()).await??;
+    while let Ok(txns) = rpc(&grin_addr, &foreign_rpc::get_unconfirmed_transactions().unwrap()).await? {
+        let grin_tip = rpc(&grin_addr, &foreign_rpc::get_tip().unwrap()).await??;
 
         if current_height < grin_tip.height {
             current_height = grin_tip.height;
-            let block = rpc(&server_addr, &foreign_rpc::get_block(Some(current_height), None, None).unwrap()).await??;
+            let block = rpc(&grin_addr, &foreign_rpc::get_block(Some(current_height), None, None).unwrap()).await??;
             info!("new block: {:?}", block);
         }
 
