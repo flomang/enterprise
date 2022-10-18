@@ -11,6 +11,7 @@ exclude = [
     "minigrep",
     "paper-exchange",
     "sandbox-grin",
+    "webrtc",
 ]
 
 members = []

@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if args.grin_api_version != grin_version {
         panic!(
-            "expected node version: {} actual running instance is: {}",
+            "expected grin version: {} actual running node instance is: {}",
             args.grin_api_version, grin_version
         )
     }
@@ -65,7 +65,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if current_height < grin_tip.height {
             current_height = grin_tip.height;
             let block = rpc(&grin_addr, &foreign_rpc::get_block(Some(current_height), None, None).unwrap()).await??;
-            info!("new block: {:?}", block);
+            info!("Supply: {}", block.header.height * 60 + 60);
+            info!("new block: {}\n{:#?}", block.header.height, block);
         }
 
         if all_txns.len() != txns.len() {
