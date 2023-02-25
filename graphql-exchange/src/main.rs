@@ -1,5 +1,6 @@
 
 #![allow(unused_must_use)]
+#![allow(dead_code)]
 
 #[macro_use]
 extern crate diesel;

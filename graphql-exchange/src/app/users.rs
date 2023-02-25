@@ -12,10 +12,10 @@ lazy_static! {
     static ref RE_USERNAME: Regex = Regex::new(r"^[_0-9a-zA-Z]+$").unwrap();
 }
 
-#[derive(Debug, Deserialize)]
-pub struct In<U> {
-    user: U,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct In<U> {
+//     user: U,
+// }
 
 // Client Messages ↓
 #[derive(async_graphql::InputObject)]

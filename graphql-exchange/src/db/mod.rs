@@ -1,20 +1,16 @@
-//mod articles;
 mod auth;
-//mod comments;
-//mod profiles;
-//mod tags;
+mod profiles;
 mod users;
 
 use crate::prelude::*;
 use actix::prelude::{Actor, SyncContext};
 use diesel::{
     pg::PgConnection,
-    r2d2::{self, ConnectionManager, Pool, PooledConnection},
+    r2d2::{self, ConnectionManager, Pool},
 };
 
 pub type Conn = PgConnection;
 pub type PgPool = Pool<ConnectionManager<Conn>>;
-pub type PooledConn = PooledConnection<ConnectionManager<Conn>>;
 
 pub struct DbExecutor(pub PgPool);
 

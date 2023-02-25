@@ -12,6 +12,15 @@ table! {
 }
 
 table! {
+    followers (user_id, follower_id) {
+        user_id -> Uuid,
+        follower_id -> Uuid,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+table! {
     orders (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -45,6 +54,7 @@ joinable!(orders -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     fills,
+    followers,
     orders,
     users,
 );
