@@ -1,5 +1,7 @@
 pub mod profiles;
 pub mod users;
+pub mod orders;
+
 mod mutation;
 mod query;
 
@@ -70,6 +72,7 @@ pub async fn start_server() -> std::io::Result<()> {
     HttpServer::new(move || {
         let state = AppState {
             db: database_address.clone(),
+            //order_book: Mutex::new(order_book),
         };
 
         let _cors = match frontend_origin {

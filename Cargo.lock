@@ -872,6 +872,7 @@ dependencies = [
  "js-sys",
  "num-integer",
  "num-traits",
+ "serde",
  "time 0.1.43",
  "wasm-bindgen",
  "winapi",
@@ -1698,6 +1699,7 @@ dependencies = [
  "libreauth",
  "log",
  "num_cpus",
+ "orderbook",
  "regex",
  "serde",
  "serde_derive",
@@ -2332,6 +2334,16 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "orderbook"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "rand",
+ "serde",
+ "uuid",
+]
 
 [[package]]
 name = "os_str_bytes"
@@ -3436,9 +3448,9 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.2.1"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "feb41e78f93363bb2df8b0e86a2ca30eed7806ea16ea0c790d757cf93f79be83"
+checksum = "1674845326ee10d37ca60470760d4288a6f80f304007d92e5c53bab78c9cfd79"
 dependencies = [
  "getrandom 0.2.7",
  "serde",
