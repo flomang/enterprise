@@ -75,6 +75,17 @@ pub enum Failed {
     OrderNotFound(Uuid),
 }
 
+impl std::fmt::Display for Failed {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Failed::ValidationFailed(msg) => write!(f, "validation failed: {}", msg),
+            Failed::DuplicateOrderID(id) => write!(f, "duplicate order id: {}", id),
+            Failed::NoMatch(id) => write!(f, "no match for order id: {}", id),
+            Failed::OrderNotFound(id) => write!(f, "order not found: {}", id),
+        }
+    }
+}
+
 pub struct Orderbook<Asset>
 where
     Asset: Debug + Clone + Copy + Eq,

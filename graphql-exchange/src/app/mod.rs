@@ -19,7 +19,8 @@ use actix_web::{
     web::Data,
     App, HttpRequest, HttpResponse, HttpServer, Result,
 };
-use std::env;
+use orderbook::{guid::orderbook::Orderbook, BrokerAsset};
+use std::{env, sync::Mutex};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use query::QueryRoot;
@@ -31,6 +32,7 @@ pub type GraphqlSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 pub struct AppState {
     pub db: Addr<DbExecutor>,
+    pub order_book: Mutex<Orderbook<BrokerAsset>>,
 }
 
 fn get_token_from_headers(headers: &HeaderMap) -> Option<Token> {
@@ -70,9 +72,11 @@ pub async fn start_server() -> std::io::Result<()> {
     log::info!("GraphiQL IDE: {}", bind_address);
 
     HttpServer::new(move || {
+        let order_book = Orderbook::new(BrokerAsset::BTC, BrokerAsset::USD);
+
         let state = AppState {
             db: database_address.clone(),
-            //order_book: Mutex::new(order_book),
+            order_book: Mutex::new(order_book),
         };
 
         let _cors = match frontend_origin {

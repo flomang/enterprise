@@ -1,4 +1,3 @@
-use async_graphql::OutputType;
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};

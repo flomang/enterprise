@@ -14,6 +14,12 @@ pub enum OrderSide {
 #[derive(Debug)]
 pub struct InvalidSideError;
 
+impl std::fmt::Display for InvalidSideError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "side must be bid or ask")
+    }
+}
+
 impl OrderSide {
     pub fn from_string(side: &str) -> Result<OrderSide, InvalidSideError> {
         let lower = side.to_lowercase();

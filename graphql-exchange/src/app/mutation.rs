@@ -1,4 +1,8 @@
+use std::time::SystemTime;
+
 use async_graphql::*;
+use bigdecimal::{BigDecimal, FromPrimitive};
+use orderbook::{BrokerAsset, guid::{domain::{OrderSide}, orders, orderbook::{Success, Failed}}};
 use validator::Validate;
 
 use crate::{
@@ -14,7 +18,12 @@ use super::{
     profiles::{FollowProfile, ProfileResponse, UnfollowProfile},
     Token,
 };
+
+
+type OrderProcessingResult = Vec<Result<Success<BrokerAsset>, Failed>>;
+
 pub struct MutationRoot;
+
 
 #[Object]
 impl MutationRoot {
@@ -92,42 +101,45 @@ impl MutationRoot {
         &self,
         ctx: &Context<'ctx>,
         params: OrderRequest,
-    ) -> Result<String> {
+    ) -> Result<serde_json::Value> {
         params.validate()?;
 
         let state = ctx.data_unchecked::<AppState>();
         let token = ctx.data::<Token>()?.0.clone();
         let _auth = authenticate_token(state, token).await?;
 
-        // let order_asset = BrokerAsset::from_string(&req.order_asset)?;
-        // let price_asset = BrokerAsset::from_string(&req.price_asset)?;
-        // let side = OrderSide::from_string(&req.side)?;
-        // let qty: BigDecimal = FromPrimitive::from_f64(req.qty).ok_or(ServiceError::BadRequest(
-        //     "qty cannot be converted to BigDecimal".to_string(),
-        // ))?;
+        let req: OrderRequest = params.into();
+        let order_asset = BrokerAsset::from_string(&req.order_asset)?;
+        let price_asset = BrokerAsset::from_string(&req.price_asset)?;
+        let side = OrderSide::from_string(&req.side)?;
+        let qty: BigDecimal = FromPrimitive::from_f64(req.qty).ok_or(
+             "qty cannot be converted to BigDecimal".to_string(),
+        )?;
     
-        // let order = match req.price {
-        //     Some(price) => {
-        //         let price: BigDecimal = FromPrimitive::from_f64(price).ok_or(
-        //             ServiceError::BadRequest("price cannot be converted to BigDecimal".to_string()),
-        //         )?;
+        let order = match req.price {
+            Some(price) => {
+                let price: BigDecimal = FromPrimitive::from_f64(price).ok_or(
+                   "price cannot be converted to BigDecimal".to_string())?;
     
-        //         orders::new_limit_order_request(
-        //             order_asset,
-        //             price_asset,
-        //             side,
-        //             price,
-        //             qty,
-        //             SystemTime::now(),
-        //         )
-        //     }
-        //     None => {
-        //         orders::new_market_order_request(order_asset, price_asset, side, qty, SystemTime::now())
-        //     }
-        // };
+                orders::new_limit_order_request(
+                    order_asset,
+                    price_asset,
+                    side,
+                    price,
+                    qty,
+                    SystemTime::now(),
+                )
+            }
+            None => {
+                orders::new_market_order_request(order_asset, price_asset, side, qty, SystemTime::now())
+            }
+        };
 
-        // let res = state.db.send(UnfollowProfile { auth, username }).await??;
-        println!("{:?}", params);
-        Ok("ok".to_string())
+        let mut book = state.order_book.lock().unwrap();
+        let results: OrderProcessingResult = book.process_order(order);
+
+        let json = serde_json::json!(results);
+        Ok(json)
+
     }
 }
