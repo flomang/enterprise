@@ -1,109 +1,206 @@
 mod mutation;
 mod query;
-pub mod users;
+pub mod server;
 
-use crate::{
-    db::{new_pool, DbExecutor},
-    utils::auth::Token,
-};
-use actix::prelude::{Addr, SyncArbiter};
-use actix_cors::Cors;
-use actix_http::header::HeaderMap;
-use actix_web::{
-    http::header::{AUTHORIZATION, CONTENT_TYPE},
-    middleware::Logger,
-    web,
-    web::Data,
-    App, HttpRequest, HttpResponse, HttpServer,
-};
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptySubscription, Schema};
-use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
-use mutation::MutationRoot;
-use query::QueryRoot;
-use std::env;
+use regex::Regex;
+use std::convert::From;
+use validator::{Validate, ValidationError};
 
-pub type GraphqlSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
+use crate::models::User;
+use crate::utils::{auth::Auth, jwt::CanGenerateJwt};
 
-pub struct AppState {
-    pub db: Addr<DbExecutor>,
+use server::AppState;
+
+lazy_static! {
+    static ref RE_USERNAME: Regex = Regex::new(r"^[_0-9a-zA-Z]+$").unwrap();
 }
 
-fn get_token_from_headers(headers: &HeaderMap) -> Option<Token> {
-    headers
-        .get("Token")
-        .and_then(|value| value.to_str().map(|s| Token(s.to_string())).ok())
+// #[derive(Debug, Deserialize)]
+// pub struct In<U> {
+//     user: U,
+// }
+
+// Client Messages ↓
+#[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
+pub struct RegisterUser {
+    #[validate(
+        length(min = 3, message = "must be at least 3 characters"),
+        custom(
+            function = "validate_unique_username",
+            arg = "&'v_a AppState",
+            message = "username already taken"
+        )
+    )]
+    pub username: String,
+    #[validate(
+        email(message = "not a valid email address"),
+        custom(
+            function = "validate_unique_email",
+            arg = "&'v_a AppState",
+            message = "email already registered"
+        )
+    )]
+    pub email: String,
+    #[validate(
+        length(min = 8, max = 72, message = "must be 8-72 characters"),
+        custom(
+            function = "validate_password",
+            message = "password must contain at least one uppercase letter, one lowercase letter, one number, one special character, and be at least 8 characters long"
+        )
+    )]
+    #[graphql(secret)]
+    pub password: String,
+    #[validate(length(min = 1, message = "cannot be empty"))]
+    pub first_name: String,
+    #[validate(length(min = 1, message = "cannot be empty"))]
+    pub last_name: String,
 }
 
-async fn index(
-    schema: web::Data<GraphqlSchema>,
-    req: HttpRequest,
-    gql_request: GraphQLRequest,
-) -> GraphQLResponse {
-    let mut request = gql_request.into_inner();
-    if let Some(token) = get_token_from_headers(req.headers()) {
-        request = request.data(token);
+// Validate unique username
+fn validate_unique_username(username: &str, state: &AppState) -> Result<(), ValidationError> {
+    let result = async_std::task::block_on(state.db.send(FindUser {
+        username: username.trim().to_string(),
+    }))
+    .unwrap();
+
+    match result {
+        Ok(_) => Err(ValidationError::new("invalid_username")),
+        Err(_) => Ok(()),
     }
-    schema.execute(request).await.into()
 }
 
-async fn index_playground() -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(playground_source(GraphQLPlaygroundConfig::new("/")))
+// Validate unique email
+fn validate_unique_email(email: &str, state: &AppState) -> Result<(), ValidationError> {
+    let result = async_std::task::block_on(state.db.send(FindEmail {
+        email: email.trim().to_string(),
+    }))
+    .unwrap();
+
+    match result {
+        Ok(_) => Err(ValidationError::new("invalid_username")),
+        Err(_) => Ok(()),
+    }
 }
 
-fn routes(app: &mut web::ServiceConfig) {
-    app.service(
-        web::resource("/")
-            .route(web::post().to(index))
-            .route(web::get().to(index_playground)),
-    );
+// Validate an email address
+fn validate_email_exists(email: &str, state: &AppState) -> Result<(), ValidationError> {
+    let result = async_std::task::block_on(state.db.send(FindEmail {
+        email: email.trim().to_string(),
+    }))
+    .unwrap();
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("invalid_username")),
+    }
 }
 
-#[actix_web::main]
-pub async fn start_server() -> std::io::Result<()> {
-    // set vars from .env file
-    let frontend_origin = env::var("FRONTEND_ORIGIN").ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let bind_address = env::var("BIND_ADDRESS").expect("BIND_ADDRESS is not set");
+// Validate password strength. Must contain at least one uppercase letter, one lowercase letter, one number, 
+// one special character
+fn validate_password(password: &str) -> Result<(), ValidationError> {
+    // and special characters
+    if password.chars().any(char::is_uppercase)
+        && password.chars().any(char::is_lowercase)
+        && password.chars().any(char::is_numeric)
+        && password.chars().any(|c| !c.is_alphanumeric())
+    {
+        Ok(())
+    } else {
+        Err(ValidationError::new("invalid_password"))
+    }
+}
 
-    let database_pool = new_pool(database_url).expect("Failed to create pool.");
-    let database_address =
-        SyncArbiter::start(num_cpus::get(), move || DbExecutor(database_pool.clone()));
+#[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
+pub struct LoginUser {
+    #[validate(email(message = "not a valid email address"))]
+    pub email: String,
+    #[graphql(secret)]
+    pub password: String,
+}
 
-    log::info!("GraphiQL IDE: {}", bind_address);
-    HttpServer::new(move || {
-        let state = AppState {
-            db: database_address.clone(),
-        };
+pub struct FindUser {
+    pub username: String,
+}
 
-        // allow wildcard for development purposes
-        let cors = match frontend_origin {
-            // TODO production should not be allowed to send wildcard
-            Some(ref origin) if origin != "*" => Cors::default()
-                .allowed_origin(origin)
-                .allowed_headers(vec![AUTHORIZATION, CONTENT_TYPE])
-                .max_age(3600),
-            _ => Cors::default()
-                .send_wildcard()
-                .allow_any_origin()
-                .allow_any_method()
-                .allow_any_header()
-                .max_age(3600),
-        };
+pub struct FindEmail {
+    pub email: String,
+}
 
-        let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
-            .data(state)
-            .finish();
+#[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
+pub struct ForgotPassword {
+    #[validate(
+        email(message = "not a valid email address"),
+        custom(
+            function = "validate_email_exists",
+            arg = "&'v_a AppState",
+            message = "no account matches this email address"
+        )
+    )]
+    pub email: String,
+}
 
-        App::new()
-            .app_data(Data::new(schema.clone()))
-            .wrap(Logger::default())
-            .wrap(cors)
-            .configure(routes)
-    })
-    .bind(&bind_address)?
-    .run()
-    .await
+#[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
+pub struct UpdateUser {
+    #[validate(
+        length(min = 3, message = "must be at least 3 characters long"),
+        custom(
+            function = "validate_unique_username",
+            arg = "&'v_a AppState",
+            message = "already taken"
+        )
+    )]
+    pub username: Option<String>,
+    #[validate(email)]
+    pub email: Option<String>,
+    pub email_verified: Option<bool>,
+    #[validate(length(min = 8, max = 72, message = "must be 8-72 characters long"))]
+    pub password: Option<String>,
+    #[validate(length(min = 1, message = "cannot be empty"))]
+    pub first_name: Option<String>,
+    #[validate(length(min = 1, message = "cannot be empty"))]
+    pub last_name: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct UpdateUserOuter {
+    pub auth: Auth,
+    pub update_user: UpdateUser,
+}
+
+// JSON response objects ↓
+
+#[derive(async_graphql::SimpleObject, Debug, Serialize)]
+pub struct UserResponse {
+    pub user: UserResponseInner,
+}
+
+#[derive(async_graphql::SimpleObject, Debug, Serialize)]
+pub struct UserResponseInner {
+    pub email: String,
+    pub token: String,
+    pub username: String,
+}
+
+impl From<User> for UserResponse {
+    fn from(user: User) -> Self {
+        UserResponse {
+            user: UserResponseInner {
+                token: user.generate_jwt().unwrap(),
+                email: user.email,
+                username: user.username,
+            },
+        }
+    }
+}
+
+impl UserResponse {
+    pub fn create_with_auth(auth: Auth) -> Self {
+        UserResponse {
+            user: UserResponseInner {
+                token: auth.token,
+                email: auth.user.email,
+                username: auth.user.username,
+            },
+        }
+    }
 }

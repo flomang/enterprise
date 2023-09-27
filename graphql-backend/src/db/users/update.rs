@@ -1,4 +1,4 @@
-use crate::{graphql::users::{UpdateUserOuter, UserResponse}, models::{UserChange, User}, utils::HASHER};
+use crate::{graphql::{UpdateUserOuter, UserResponse}, models::{UserChange, User}, utils::HASHER};
 
 use super::DbExecutor;
 use actix::prelude::*;

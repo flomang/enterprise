@@ -1,4 +1,4 @@
-use crate::graphql::AppState;
+use crate::graphql::server::AppState;
 use crate::models::User;
 use crate::prelude::*;
 

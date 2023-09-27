@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use crate::prelude::*;
 
 use super::DbExecutor;
-use crate::graphql::users::{RegisterUser, UserResponse};
+use crate::graphql::{RegisterUser, UserResponse};
 use crate::models::{NewUser, User};
 use crate::utils::HASHER;
 

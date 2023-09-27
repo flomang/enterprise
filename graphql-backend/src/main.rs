@@ -26,5 +26,5 @@ fn main() {
         env::set_var("RUST_LOG", "graphql_backend=debug,actix_web=info");
     }
     env_logger::init();
-    let _ = graphql::start_server();
+    let _ = graphql::server::start_server();
 }

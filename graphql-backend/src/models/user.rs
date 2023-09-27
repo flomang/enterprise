@@ -38,4 +38,3 @@ pub struct UserChange {
     pub last_name: Option<String>,
     pub hash: Option<String>,
 }
-
