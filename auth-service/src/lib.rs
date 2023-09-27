@@ -1,7 +1,12 @@
+#[macro_use]
+extern crate diesel;
+
+use actix::Addr;
 use actix_web::{web, HttpRequest, HttpResponse};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{Context, EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use db::DbExecutor;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 use diesel::PgConnection;
 use diesel_migrations::MigrationHarness;
@@ -9,13 +14,16 @@ use diesel_migrations::MigrationHarness;
 use crate::graphql::{AppSchema, Mutation, Query};
 use common_utils::PgPool;
 
-pub mod graphql;
 pub mod db;
+pub mod graphql;
 
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("./migrations");
 
 type AuthRole = common_utils::Role;
+pub struct AppState {
+    pub db: Addr<DbExecutor>,
+}
 
 pub fn configure_service(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -43,10 +51,17 @@ async fn index_playground() -> HttpResponse {
         .body(playground_source(GraphQLPlaygroundConfig::new("/")))
 }
 
-pub fn create_schema_with_context(pool: PgPool) -> Schema<Query, Mutation, EmptySubscription> {
+// pub fn create_schema_with_context(pool: PgPool) -> Schema<Query, Mutation, EmptySubscription> {
+//     Schema::build(Query, Mutation, EmptySubscription)
+//         .enable_federation()
+//         .data(pool)
+//         .finish()
+// }
+
+pub fn create_schema_with_context(state: AppState) -> Schema<Query, Mutation, EmptySubscription> {
     Schema::build(Query, Mutation, EmptySubscription)
         .enable_federation()
-        .data(pool)
+        .data(state)
         .finish()
 }
 
@@ -55,9 +70,9 @@ pub fn run_migrations(conn: &mut PooledConnection<ConnectionManager<PgConnection
         .expect("Failed to run database migrations");
 
     // if environment variable is set (in case of production environment), then update users' hash
-    if let Ok(hash) = std::env::var("SECURED_USER_PASSWORD_HASH") {
-        db::update_password_hash(hash, conn).expect("Failed to update password hash");
-    };
+    //if let Ok(hash) = std::env::var("SECURED_USER_PASSWORD_HASH") {
+    //    db::repository::update_password_hash(hash, conn).expect("Failed to update password hash");
+    //};
 }
 
 pub fn get_conn_from_ctx(ctx: &Context<'_>) -> PooledConnection<ConnectionManager<PgConnection>> {

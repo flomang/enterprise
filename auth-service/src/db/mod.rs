@@ -1,32 +1,11 @@
-//pub mod connection;
+use common_utils::PgPool;
+use actix::prelude::{Actor, SyncContext};
+
 pub mod model;
+//pub mod repository;
 mod schema;
+pub struct DbExecutor(pub PgPool);
 
-use diesel::prelude::*;
-
-use crate::db::model::{NewUserEntity, UserEntity};
-use crate::db::schema::users;
-
-pub fn get_all(conn: &mut PgConnection) -> QueryResult<Vec<UserEntity>> {
-    use crate::db::schema::users::dsl::*;
-
-    users.load(conn)
-}
-
-pub fn get_user(username: &str, conn: &mut PgConnection) -> QueryResult<UserEntity> {
-    users::table
-        .filter(users::username.eq(username))
-        .first(conn)
-}
-
-pub fn create(new_user: NewUserEntity, conn: &mut PgConnection) -> QueryResult<UserEntity> {
-    use crate::db::schema::users::dsl::*;
-
-    diesel::insert_into(users).values(new_user).get_result(conn)
-}
-
-pub fn update_password_hash(new_hash: String, conn: &mut PgConnection) -> QueryResult<usize> {
-    use crate::db::schema::users::dsl::*;
-
-    diesel::update(users).set(hash.eq(new_hash)).execute(conn)
+impl Actor for DbExecutor {
+    type Context = SyncContext<Self>;
 }

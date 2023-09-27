@@ -5,6 +5,7 @@ authors = ["Roman Kudryashov <rskudryashov@gmail.com>"]
 edition = "2021"
 
 [dependencies]
+async-graphql = "6.0.7"
 actix-web = "4.4.0"
 chrono = "0.4.31"
 diesel = { version = "2.1.1", features = ["postgres", "r2d2"] }

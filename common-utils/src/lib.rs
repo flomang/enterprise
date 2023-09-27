@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use strum::ParseError;
 use strum_macros::{Display, EnumString};
 
-use std::env;
+use std::{env, fmt};
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -45,6 +45,25 @@ pub enum Role {
     Master,
     Admin,
     User,
+}
+
+impl Role {
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Role::Master => 1,
+            Role::Admin => 2,
+            Role::User => 3,
+        }
+    }
+
+    pub fn from_i32(role_id: i32) -> Result<Self, CustomError> {
+        match role_id {
+            1 => Ok(Role::Master),
+            2 => Ok(Role::Admin),
+            3 => Ok(Role::User),
+            _ => Err("Invalid role id".into()),
+        }
+    }
 }
 
 pub fn get_jwt_secret_key() -> String {
@@ -126,6 +145,12 @@ pub struct CustomError {
     pub message: String,
 }
 
+impl fmt::Display for CustomError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Custom Error: {}", self.message)
+    }
+}
+
 impl From<ToStrError> for CustomError {
     fn from(source: ToStrError) -> Self {
         Self {
@@ -147,5 +172,20 @@ impl From<&str> for CustomError {
         Self {
             message: String::from(source),
         }
+    }
+}
+
+use chrono::NaiveDateTime;
+use serde::Serializer;
+
+// The Serialize trait is not impl'd for NaiveDateTime
+// This is a custom wrapper type to get around that
+#[derive(Debug, PartialEq)]
+pub struct CustomDateTime(pub NaiveDateTime);
+
+impl Serialize for CustomDateTime {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = self.0.format("%Y-%m-%dT%H:%M:%S.%3fZ");
+        serializer.serialize_str(&s.to_string())
     }
 }
