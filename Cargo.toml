@@ -1,10 +1,9 @@
 [workspace]
-resolver="2"
+resolver = "2"
 
 exclude = [
-    "orderbook",
+    "auth-service",
     "authentication",
-    "coinbase",
     "library",
     "iot-retrieval-svc",
     "ritual",
@@ -13,4 +12,8 @@ exclude = [
     "sandbox-grin",
 ]
 
-members = ["webrtc", "graphql-exchange"]
+members = [
+    "auth-service",
+    "common-utils",
+    "coinbase",
+]
