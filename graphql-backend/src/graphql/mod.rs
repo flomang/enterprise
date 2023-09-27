@@ -5,9 +5,9 @@ pub mod server;
 use regex::Regex;
 use std::convert::From;
 use validator::{Validate, ValidationError};
-
-use crate::models::User;
-use crate::utils::{auth::Auth, jwt::CanGenerateJwt};
+use crate::prelude::*;
+use crate::models::{User, Auth, Token, GenerateAuth};
+use crate::utils::jwt::CanGenerateJwt;
 
 use server::AppState;
 
@@ -109,6 +109,22 @@ fn validate_password(password: &str) -> Result<(), ValidationError> {
         Err(ValidationError::new("invalid_password"))
     }
 }
+
+pub async fn authenticate_token<'ctx>(
+    state: &AppState,
+    ctx: &async_graphql::Context<'ctx>,
+) -> Result<Auth, Error> {
+    let token = ctx.data::<Token>();
+    match token {
+        Ok(token) => {
+            let token = token.0.clone();
+            let auth = state.db.send(GenerateAuth { token }).await??;
+            Ok(auth)
+        }
+        Err(_) => Err(Error::Unauthorized("no authorization was provided".to_string())),
+    }
+}
+
 
 #[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
 pub struct LoginUser {

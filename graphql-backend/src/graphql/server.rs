@@ -1,7 +1,4 @@
-use crate::{
-    db::{new_pool, DbExecutor},
-    utils::auth::Token,
-};
+use crate::{db::{new_pool, DbExecutor}, models::Token};
 use actix::prelude::{Addr, SyncArbiter};
 use actix_cors::Cors;
 use actix_http::header::HeaderMap;

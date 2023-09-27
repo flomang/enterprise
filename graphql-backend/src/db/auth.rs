@@ -1,11 +1,9 @@
 use actix::prelude::*;
 use diesel::prelude::*;
 use crate::db::DbExecutor;
+use crate::models::{GenerateAuth, Auth};
 use crate::prelude::*;
-use crate::utils::{
-    auth::{Auth, GenerateAuth},
-    jwt::CanDecodeJwt,
-};
+use crate::utils::jwt::CanDecodeJwt;
 
 impl Message for GenerateAuth {
     type Result = Result<Auth>;

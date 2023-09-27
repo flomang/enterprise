@@ -1,5 +1,5 @@
-use super::{AppState, UserResponse, UpdateUserOuter, UpdateUser, ForgotPassword, RegisterUser, LoginUser};
-use crate::{error::validation_errors_to_error, utils::auth::authenticate_token};
+use super::{AppState, UserResponse, UpdateUserOuter, UpdateUser, ForgotPassword, RegisterUser, LoginUser, authenticate_token};
+use crate::error::validation_errors_to_error;
 use async_graphql::*;
 use regex::Regex;
 use validator::{Validate, ValidateArgs};

@@ -1,6 +1,5 @@
-use crate::utils::auth::authenticate_token;
 use async_graphql::*;
-use super::{UserResponse, server::AppState};
+use super::{UserResponse, server::AppState, authenticate_token};
 
 pub struct QueryRoot;
 
