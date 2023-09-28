@@ -1,12 +1,10 @@
-use super::{AppState, UserResponse, UpdateUserOuter, UpdateUser, ForgotPassword, RegisterUser, LoginUser, authenticate_token};
+use super::{authenticate_token, AppState};
 use crate::error::validation_errors_to_error;
+use crate::models::{
+    ForgotPassword, LoginUser, RegisterUser, UpdateUser, UpdateUserOuter, UserResponse,
+};
 use async_graphql::*;
-use regex::Regex;
 use validator::{Validate, ValidateArgs};
-
-lazy_static! {
-    static ref RE_USERNAME: Regex = Regex::new(r"^[_0-9a-zA-Z]+$").unwrap();
-}
 
 pub struct MutationRoot;
 

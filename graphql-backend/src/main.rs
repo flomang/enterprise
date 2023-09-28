@@ -16,7 +16,6 @@ mod error;
 mod models;
 mod prelude;
 mod utils;
-
 use std::env;
 
 fn main() {

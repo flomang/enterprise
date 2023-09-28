@@ -4,7 +4,8 @@ use actix::prelude::*;
 use diesel::prelude::*;
 use libreauth::pass::HashBuilder;
 use rand::{thread_rng, seq::SliceRandom};
-use crate::{prelude::*, graphql::{LoginUser, UserResponse}, models::User};
+use crate::prelude::*;
+use crate::models::{User, LoginUser, UserResponse};
 use crate::utils::{HASHER, PWD_SCHEME_VERSION};
 
 lazy_static! {

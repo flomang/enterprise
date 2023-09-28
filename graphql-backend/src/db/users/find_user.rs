@@ -1,8 +1,8 @@
-
 use super::DbExecutor;
+use crate::models::{FindEmail, FindUser, User, UserResponse};
+use crate::prelude::*;
 use actix::prelude::*;
 use diesel::prelude::*;
-use crate::{prelude::*, graphql::{FindUser, UserResponse, FindEmail}, models::User};
 
 impl Message for FindUser {
     type Result = Result<UserResponse>;

@@ -1,10 +1,9 @@
+use crate::prelude::*;
 use actix::prelude::*;
 use diesel::prelude::*;
-use crate::prelude::*;
 
 use super::DbExecutor;
-use crate::graphql::{RegisterUser, UserResponse};
-use crate::models::{NewUser, User};
+use crate::models::{NewUser, RegisterUser, User, UserResponse};
 use crate::utils::HASHER;
 
 impl Message for RegisterUser {
@@ -23,7 +22,7 @@ impl Handler<RegisterUser> for DbExecutor {
             last_name: msg.last_name.trim().to_string(),
             email: msg.email.clone(),
             hash: HASHER.hash(&msg.password)?,
-            role_id: 3,  // todo implement role system
+            role_id: 3, // todo implement role system
         };
 
         let conn = &mut self.0.get()?;

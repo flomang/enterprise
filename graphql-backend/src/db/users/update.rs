@@ -1,9 +1,12 @@
-use crate::{graphql::{UpdateUserOuter, UserResponse}, models::{UserChange, User}, utils::HASHER};
+use crate::{
+    models::{UpdateUserOuter, User, UserChange, UserResponse},
+    utils::HASHER,
+};
 
 use super::DbExecutor;
+use crate::prelude::*;
 use actix::prelude::*;
 use diesel::prelude::*;
-use crate::prelude::*;
 
 impl Message for UpdateUserOuter {
     type Result = Result<UserResponse>;

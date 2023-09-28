@@ -1,5 +1,9 @@
-use crate::{db::{new_pool, DbExecutor}, models::Token};
-use actix::prelude::{Addr, SyncArbiter};
+use super::{mutation::MutationRoot, query::QueryRoot, AppState, GraphqlSchema};
+use crate::{
+    db::{new_pool, DbExecutor},
+    models::Token,
+};
+use actix::prelude::SyncArbiter;
 use actix_cors::Cors;
 use actix_http::header::HeaderMap;
 use actix_web::{
@@ -12,22 +16,25 @@ use actix_web::{
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
-use super::mutation::MutationRoot;
-use super::query::QueryRoot;
 use std::env;
 
-pub type GraphqlSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
-
-pub struct AppState {
-    pub db: Addr<DbExecutor>,
-}
-
+// return token from auth header 
 fn get_token_from_headers(headers: &HeaderMap) -> Option<Token> {
     headers
-        .get("Token")
+        .get("Authorization")
         .and_then(|value| value.to_str().map(|s| Token(s.to_string())).ok())
 }
 
+// routes of the graphql server
+fn routes(app: &mut web::ServiceConfig) {
+    app.service(
+        web::resource("/")
+            .route(web::post().to(index))
+            .route(web::get().to(index_playground)),
+    );
+}
+
+// graphql endpoint
 async fn index(
     schema: web::Data<GraphqlSchema>,
     req: HttpRequest,
@@ -40,18 +47,11 @@ async fn index(
     schema.execute(request).await.into()
 }
 
+// HTML graphql playground
 async fn index_playground() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(playground_source(GraphQLPlaygroundConfig::new("/")))
-}
-
-fn routes(app: &mut web::ServiceConfig) {
-    app.service(
-        web::resource("/")
-            .route(web::post().to(index))
-            .route(web::get().to(index_playground)),
-    );
 }
 
 #[actix_web::main]
