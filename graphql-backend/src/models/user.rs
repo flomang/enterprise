@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::db::schema::users;
 
-// Diesel model for users table ↓
+// Diesel models for users table ↓
 #[derive(Debug, Queryable, Identifiable)]
 pub struct User {
     pub id: Uuid,
@@ -16,6 +16,32 @@ pub struct User {
     pub hash: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+}
+
+impl User {
+    pub fn token_response(&self) -> UserResponse {
+        UserResponse {
+            user: UserResponseInner {
+                token: Some(self.generate_jwt().unwrap()),
+                email: self.email.clone(),
+                username: self.username.clone(),
+                first_name: self.first_name.clone(),
+                last_name: self.last_name.clone(),
+            },
+        }
+    }
+
+    pub fn non_token_response(&self) -> UserResponse {
+        UserResponse {
+            user: UserResponseInner {
+                token: None,
+                email: self.email.clone(),
+                username: self.username.clone(),
+                first_name: self.first_name.clone(),
+                last_name: self.last_name.clone(),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Insertable)]
@@ -109,7 +135,7 @@ fn validate_unique_email(email: &str, state: &AppState) -> Result<(), Validation
     .unwrap();
 
     match result {
-        Ok(_) => Err(ValidationError::new("invalid_username")),
+        Ok(_) => Err(ValidationError::new("invalid_email")),
         Err(_) => Ok(()),
     }
 }
@@ -123,7 +149,7 @@ fn validate_email_exists(email: &str, state: &AppState) -> Result<(), Validation
 
     match result {
         Ok(_) => Ok(()),
-        Err(_) => Err(ValidationError::new("invalid_username")),
+        Err(_) => Err(ValidationError::new("invalid_email")),
     }
 }
 
@@ -181,7 +207,7 @@ pub struct UpdateUser {
         custom(
             function = "validate_unique_username",
             arg = "&'v_a AppState",
-            message = "already taken"
+            message = "username already taken"
         )
     )]
     pub username: Option<String>,
@@ -203,7 +229,6 @@ pub struct UpdateUserOuter {
 }
 
 // JSON response objects ↓
-
 #[derive(async_graphql::SimpleObject, Debug, Serialize)]
 pub struct UserResponse {
     pub user: UserResponseInner,
@@ -212,29 +237,21 @@ pub struct UserResponse {
 #[derive(async_graphql::SimpleObject, Debug, Serialize)]
 pub struct UserResponseInner {
     pub email: String,
-    pub token: String,
+    pub token: Option<String>,
     pub username: String,
-}
-
-impl From<User> for UserResponse {
-    fn from(user: User) -> Self {
-        UserResponse {
-            user: UserResponseInner {
-                token: user.generate_jwt().unwrap(),
-                email: user.email,
-                username: user.username,
-            },
-        }
-    }
+    pub first_name: String,
+    pub last_name: String,
 }
 
 impl UserResponse {
-    pub fn create_with_auth(auth: Auth) -> Self {
+    pub fn from_auth(auth: Auth) -> Self {
         UserResponse {
             user: UserResponseInner {
-                token: auth.token,
+                token: Some(auth.token),
                 email: auth.user.email,
                 username: auth.user.username,
+                first_name: auth.user.first_name,
+                last_name: auth.user.last_name
             },
         }
     }

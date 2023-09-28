@@ -17,7 +17,7 @@ impl Handler<FindUser> for DbExecutor {
         let conn = &mut self.0.get()?;
 
         let stored_user: User = users.filter(username.eq(msg.username)).first(conn)?;
-        Ok(stored_user.into())
+        Ok(stored_user.non_token_response())
     }
 }
 
@@ -34,6 +34,6 @@ impl Handler<FindEmail> for DbExecutor {
         let conn = &mut self.0.get()?;
 
         let stored_user: User = users.filter(email.eq(msg.email)).first(conn)?;
-        Ok(stored_user.into())
+        Ok(stored_user.non_token_response())
     }
 }

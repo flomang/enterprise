@@ -41,7 +41,7 @@ impl Handler<UpdateUserOuter> for DbExecutor {
             .set(&updated_user)
             .get_result::<User>(conn)
         {
-            Ok(user) => Ok(user.into()),
+            Ok(user) => Ok(user.non_token_response()),
             Err(e) => Err(e.into()),
         }
     }

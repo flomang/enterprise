@@ -31,7 +31,7 @@ impl Handler<RegisterUser> for DbExecutor {
             .values(new_user)
             .get_result::<User>(conn)
         {
-            Ok(user) => Ok(user.into()),
+            Ok(user) => Ok(user.token_response()),
             Err(e) => Err(e.into()),
         }
     }

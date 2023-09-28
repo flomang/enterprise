@@ -37,7 +37,7 @@ impl Handler<LoginUser> for DbExecutor {
 
         let conn = &mut self.0.get()?;
 
-        let stored_user: User = users
+        let mut stored_user: User = users
             .filter(email.eq(msg.email))
             .first(conn)
             .map_err(|_| Error::Unauthorized(get_random_message()))?;
@@ -55,13 +55,11 @@ impl Handler<LoginUser> for DbExecutor {
 
         if checker.needs_update(Some(PWD_SCHEME_VERSION)) {
             let new_password = HASHER.hash(provided_password_raw)?;
-            let updated_user = diesel::update(users.find(stored_user.id))
+            stored_user = diesel::update(users.find(stored_user.id))
                 .set(hash.eq(new_password))
                 .get_result::<User>(conn)
                 .map_err(|e| Error::from(e))?;
-
-            return Ok(updated_user.into());
         }
-        Ok(stored_user.into())
+        Ok(stored_user.token_response())
     }
 }
