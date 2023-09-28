@@ -1265,6 +1265,8 @@ dependencies = [
  "serde_json",
  "slab",
  "slug",
+ "strum",
+ "strum_macros",
  "uuid",
  "validator",
 ]

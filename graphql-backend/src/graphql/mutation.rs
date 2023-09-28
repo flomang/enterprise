@@ -1,8 +1,10 @@
 use super::{authenticate_token, AppState};
 use crate::error::validation_errors_to_error;
 use crate::models::{
-    ForgotPassword, LoginUser, RegisterUser, UpdateUser, UpdateUserOuter, UserResponse,
+    ForgotPassword, LoginUser, RegisterUser, UpdateUser, UpdateUserOuter, UpdateUserRole,
+    UserResponse,
 };
+use crate::models::{Role, RoleGuard};
 use async_graphql::*;
 use validator::{Validate, ValidateArgs};
 
@@ -73,6 +75,20 @@ impl MutationRoot {
                 update_user: params,
             })
             .await??;
+        Ok(res)
+    }
+
+    // update role
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+    async fn update_role<'ctx>(&self, ctx: &Context<'ctx>, params: UpdateUserRole) -> Result<UserResponse> {
+        let state = ctx.data_unchecked::<AppState>();
+        let _auth = authenticate_token(state, ctx).await?;
+
+        params
+            .validate_args(state)
+            .map_err(|e| validation_errors_to_error(e).extend())?;
+
+        let res = state.db.send(params).await??;
         Ok(res)
     }
 }

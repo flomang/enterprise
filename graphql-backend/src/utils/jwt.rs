@@ -10,6 +10,7 @@ use crate::prelude::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub id: Uuid,
+    pub sub: String,
     pub exp: i64,
 }
 
@@ -20,8 +21,7 @@ pub trait CanGenerateJwt {
 impl CanGenerateJwt for User {
     fn generate_jwt(&self) -> Result<String> {
         let exp = (Utc::now() + Duration::days(21)).timestamp();
-        let claims = Claims { id: self.id, exp };
-
+        let claims = Claims { id: self.id, exp, sub: self.username.clone() };
         let header = Header::default();
         let secret = &get_secret();
         let token = encode(&header, &claims, &EncodingKey::from_secret(secret.as_ref()))?;

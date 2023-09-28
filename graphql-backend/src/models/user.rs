@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::NaiveDateTime;
 use uuid::Uuid;
 
@@ -65,6 +67,13 @@ pub struct UserChange {
     pub last_name: Option<String>,
     pub hash: Option<String>,
 }
+
+#[derive(Debug, AsChangeset)]
+#[diesel(table_name = users)]
+pub struct UserRoleChange {
+    pub role_id: i32,
+}
+
 
 // GraphQL Client Messages ↓
 use super::auth::Auth;
@@ -153,6 +162,19 @@ fn validate_email_exists(email: &str, state: &AppState) -> Result<(), Validation
     }
 }
 
+fn validate_username_exists(username: &str, state: &AppState) -> Result<(), ValidationError> {
+    let result = async_std::task::block_on(state.db.send(FindUser {
+        username: username.trim().to_string(),
+    }))
+    .unwrap();
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("invalid_username")),
+    }
+   
+}
+
 // Validate password strength. Must contain:
 // * at least one uppercase letter
 // * one lowercase letter
@@ -168,6 +190,13 @@ fn validate_password(password: &str) -> Result<(), ValidationError> {
         Ok(())
     } else {
         Err(ValidationError::new("invalid_password"))
+    }
+}
+
+fn validate_role(role: &str) -> Result<(), ValidationError> {
+    match Role::from_str(&role.to_ascii_uppercase()) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("invalid_role")),
     }
 }
 
@@ -222,6 +251,25 @@ pub struct UpdateUser {
     pub last_name: Option<String>,
 }
 
+#[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
+pub struct UpdateUserRole {
+    #[validate(
+        custom(
+            function = "validate_username_exists",
+            arg = "&'v_a AppState",
+            message = "user not found"
+        )
+    )]
+    pub username: String,
+    #[validate(
+        custom(
+            function = "validate_role",
+            message = "param must be 'admin' or 'user'"
+        )
+    )]
+    pub role: String,
+}
+
 #[derive(Debug)]
 pub struct UpdateUserOuter {
     pub auth: Auth,
@@ -251,8 +299,37 @@ impl UserResponse {
                 email: auth.user.email,
                 username: auth.user.username,
                 first_name: auth.user.first_name,
-                last_name: auth.user.last_name
+                last_name: auth.user.last_name,
             },
+        }
+    }
+}
+
+use strum_macros::{Display, EnumString};
+
+#[derive(Eq, PartialEq, Display, EnumString)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum Role {
+    Master,
+    Admin,
+    User,
+}
+
+impl Role {
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Role::Master => 1,
+            Role::Admin => 2,
+            Role::User => 3,
+        }
+    }
+
+    pub fn from_i32(role_id: i32) -> Role {
+        // map these according to the database
+        match role_id {
+            1 => Role::Master,
+            2 => Role::Admin,
+            _ => Role::User,  // default to user
         }
     }
 }
