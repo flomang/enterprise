@@ -3,6 +3,9 @@ An auth GraphQL API that features:
 * signup
 * signin
 * update user
+* update user role (only 'admins' can execute)
+
+Users shall have a default role of 'user' in the system unless an admin updates their role. 
 
 ## Getting started
 * Install [Rust](https://www.rust-lang.org/)
