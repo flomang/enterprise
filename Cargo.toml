@@ -2,16 +2,11 @@
 resolver = "2"
 
 exclude = [
-    "auth-service",
-    "authentication",
-    "library",
-    "iot-retrieval-svc",
-    "ritual",
-    "minigrep",
-    "paper-exchange",
-    "sandbox-grin",
+    # exclude all experimental crates
+    "x-*"
 ]
 
 members = [
-    "graphql-backend",
+    "coinbase",
+    "gql-auth-service",
 ]

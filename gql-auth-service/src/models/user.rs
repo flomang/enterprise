@@ -66,11 +66,11 @@ pub struct UserChange {
     pub hash: Option<String>,
 }
 
-#[derive(Debug, AsChangeset)]
-#[diesel(table_name = users)]
-pub struct UserRoleChange {
-    pub role_id: i32,
-}
+// #[derive(Debug, AsChangeset)]
+// #[diesel(table_name = users)]
+// pub struct UserRoleChange {
+//     pub role_id: i32,
+// }
 
 
 // GraphQL Client Messages ↓
@@ -244,6 +244,7 @@ pub struct UpdateUser {
 }
 
 use super::auth::validate_role;
+
 #[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
 pub struct UpdateUserRole {
     #[validate(

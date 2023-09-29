@@ -1,5 +1,5 @@
 [package]
-name = "graphql-backend"
+name = "gql-auth-service"
 version = "0.1.0"
 edition = "2021"
 
