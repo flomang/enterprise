@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use chrono::NaiveDateTime;
 use uuid::Uuid;
 
@@ -162,6 +160,7 @@ fn validate_email_exists(email: &str, state: &AppState) -> Result<(), Validation
     }
 }
 
+// validate that a username exists
 fn validate_username_exists(username: &str, state: &AppState) -> Result<(), ValidationError> {
     let result = async_std::task::block_on(state.db.send(FindUser {
         username: username.trim().to_string(),
@@ -190,13 +189,6 @@ fn validate_password(password: &str) -> Result<(), ValidationError> {
         Ok(())
     } else {
         Err(ValidationError::new("invalid_password"))
-    }
-}
-
-fn validate_role(role: &str) -> Result<(), ValidationError> {
-    match Role::from_str(&role.to_ascii_uppercase()) {
-        Ok(_) => Ok(()),
-        Err(_) => Err(ValidationError::new("invalid_role")),
     }
 }
 
@@ -251,6 +243,7 @@ pub struct UpdateUser {
     pub last_name: Option<String>,
 }
 
+use super::auth::validate_role;
 #[derive(async_graphql::InputObject, Debug, Validate, Deserialize)]
 pub struct UpdateUserRole {
     #[validate(
@@ -301,35 +294,6 @@ impl UserResponse {
                 first_name: auth.user.first_name,
                 last_name: auth.user.last_name,
             },
-        }
-    }
-}
-
-use strum_macros::{Display, EnumString};
-
-#[derive(Eq, PartialEq, Display, EnumString)]
-#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
-pub enum Role {
-    Master,
-    Admin,
-    User,
-}
-
-impl Role {
-    pub fn to_i32(&self) -> i32 {
-        match self {
-            Role::Master => 1,
-            Role::Admin => 2,
-            Role::User => 3,
-        }
-    }
-
-    pub fn from_i32(role_id: i32) -> Role {
-        // map these according to the database
-        match role_id {
-            1 => Role::Master,
-            2 => Role::Admin,
-            _ => Role::User,  // default to user
         }
     }
 }

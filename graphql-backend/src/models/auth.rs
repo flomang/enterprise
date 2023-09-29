@@ -6,7 +6,7 @@ use crate::graphql::AppState;
 use crate::utils::jwt::CanDecodeJwt;
 
 use super::FindUser;
-use super::{User, Role};
+use super::User;
 
 // expand this as needed
 #[derive(Debug)]
@@ -23,6 +23,45 @@ pub struct GenerateAuth {
 
 pub struct Token(pub String);
 
+
+use std::str::FromStr;
+use validator::ValidationError;
+use strum_macros::{Display, EnumString};
+
+#[derive(Eq, PartialEq, Display, EnumString)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum Role {
+    Master,
+    Admin,
+    User,
+}
+
+impl Role {
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Role::Master => 1,
+            Role::Admin => 2,
+            Role::User => 3,
+        }
+    }
+
+    pub fn from_i32(role_id: i32) -> Role {
+        // map these according to the database
+        match role_id {
+            1 => Role::Master,
+            2 => Role::Admin,
+            _ => Role::User,  // default to user
+        }
+    }
+}
+
+// validator function that validates a role string
+pub fn validate_role(role: &str) -> Result<(), ValidationError> {
+    match Role::from_str(&role.to_ascii_uppercase()) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("invalid_role")),
+    }
+}
 
 pub struct RoleGuard {
     role: Role,
