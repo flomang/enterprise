@@ -1,8 +1,0 @@
-
-CREATE TABLE comments (
-  id SERIAL PRIMARY KEY,
-  body TEXT NOT NULL,
-  media_item_id UUID NOT NULL references media_datas(id),
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-)
