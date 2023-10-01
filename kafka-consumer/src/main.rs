@@ -1,6 +1,8 @@
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
 use tracing_subscriber;
+use dotenv::dotenv;
+use std::env;
 
 /// This program demonstrates consuming messages through a `Consumer`.
 /// This is a convenient client that will fit most use cases.  Note
@@ -8,10 +10,11 @@ use tracing_subscriber;
 /// only once delivery.
 fn main() {
     tracing_subscriber::fmt::init();
+    dotenv().ok();
 
-    let broker = "localhost:9092".to_owned();
-    let topic = "coinbase-events".to_owned();
-    let group = "my-group".to_owned();
+    let broker = env::var("KAFKA_BROKER").expect("KAFKA_BROKER must be set");
+    let topic = env::var("KAFKA_TOPIC").expect("KAFKA_TOPIC must be set");
+    let group = env::var("KAFKA_GROUP").expect("KAFKA_GROUP is not set");
 
     if let Err(e) = consume_messages(group, topic, vec![broker]) {
         println!("Failed consuming messages: {}", e);

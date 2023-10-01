@@ -1840,6 +1840,7 @@ name = "kafka-consumer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dotenv",
  "kafka",
  "tracing",
  "tracing-subscriber",
