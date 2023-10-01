@@ -4,16 +4,16 @@ A coinbase pro market feed kafka producer.
 Usage: coinbase [OPTIONS] --market <MARKET> --topic <TOPIC>
 
 Options:
-  -m, --market <MARKET>  The market to connect to e.g. 'BTC=USD'
-  -b, --broker <BROKER>  Kafka broker defaults to 'localhost:9092' [default: localhost:9092]
-  -t, --topic <TOPIC>    Kafka topic
-  -h, --help             Print help
-  -V, --version          Print version
+*  -m, --market <MARKET>  The market to connect to e.g. 'BTC=USD'
+*  -b, --broker <BROKER>  Kafka broker defaults to 'localhost:9092' [default: localhost:9092]
+*  -t, --topic <TOPIC>    Kafka topic
+*  -h, --help             Print help
+*  -V, --version          Print version
 
 ## Prequisites
 * [kafka](https://kafka.apache.org/quickstart)
 
-First install it:
+Install it:
 ```
 brew install kafka
 ```
@@ -23,7 +23,7 @@ This will install:
 * kafka-console-producer
 * kafka-console-consumer
 
-Then start it:
+Start it:
 ```
 brew services start zookeeper
 brew services start kafka 
