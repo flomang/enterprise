@@ -25,7 +25,6 @@ use chrono::{DateTime, Utc};
 use coinbase_pro_rs::structs::wsfeed::Ticker;
 use std::collections::BTreeMap;
 use bigdecimal::{BigDecimal, FromPrimitive};
-use bigdecimal::ToPrimitive;
 
 #[derive(Debug)]
 struct Candle {
@@ -34,8 +33,7 @@ struct Candle {
     high: f64,
     low: f64,
     close: f64,
-    // TODO change this to BigDecimal
-    volume: f64,
+    volume: BigDecimal,
     #[allow(unused)]
     time: DateTime<Utc>,
 }
@@ -47,7 +45,7 @@ impl Candle {
             high: price,
             low: price,
             close: price,
-            volume: 0.0,
+            volume: BigDecimal::from_f64(0.0).unwrap(),
             time,
         }
     }
@@ -55,7 +53,7 @@ impl Candle {
 
 impl std::fmt::Display for Candle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} -- O: {} H: {} L: {} C: {} V: {}", self.time, self.open, self.high, self.low, self.close, self.volume)
+        write!(f, "{} -- O: {} H: {} L: {} C: {} V: {:.8}", self.time, self.open, self.high, self.low, self.close, self.volume)
     }
 }
 
@@ -117,8 +115,7 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                         candle_entry.close = price;
 
                         // using BigDecimal to avoid floating point errors
-                        let volume = BigDecimal::from_f64(candle_entry.volume).unwrap() + BigDecimal::from_f64(last_size).unwrap();
-                        candle_entry.volume = volume.to_f64().unwrap();
+                        candle_entry.volume += BigDecimal::from_f64(last_size).unwrap();
                     }
 
                     // if we're working on a new candle then print the previous candle 
