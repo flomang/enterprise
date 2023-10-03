@@ -34,21 +34,21 @@ You will need to ensure that the kafka topic is created before running the utili
 
 Create topic:
 ```
-kafka-topics --create --topic coinbase-events --bootstrap-server localhost:9092
+kafka-topics --create --topic coinbase-BTC-USD --bootstrap-server localhost:9092
 ```
 
 ### To interact with kafka using the kafka utils:
 
 Produce some events:
 ```
-kafka-console-producer --topic coinbase-events --bootstrap-server localhost:9092
+kafka-console-producer --topic coinbase-BTC-USD  --bootstrap-server localhost:9092
 > Ding!
 > Dong!
 ```
 
 Consume:
 ```
-kafka-console-consumer --topic coinbase-events --from-beginning --bootstrap-server localhost:9092
+kafka-console-consumer --topic coinbase-BTC-USD  --from-beginning --bootstrap-server localhost:9092
 ```
 
 
@@ -61,12 +61,12 @@ cargo build
 
 From the workspace:
 ```
-cargo run -p coinbase -- --market BTC-USD -b localhost:9092 -t coinbase-events
+cargo run -p coinbase -- --market BTC-USD -b localhost:9092 -t coinbase-BTC-USD 
 ```
 
 
 From the project:
 ```
-cargo run -- -m ETH-USD -b localhost:9092 -t coinbase-events
+cargo run -- -m ETH-USD -b localhost:9092 -t coinbase-BTC-USD 
 ```
 
