@@ -9,5 +9,5 @@ exclude = [
 members = [
     "coinbase",
     "gql-auth-service",
-    "kafka-consumer"
+    "kafka-candle-strategy",
 ]

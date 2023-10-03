@@ -2,38 +2,39 @@ use dotenv::dotenv;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
 use std::env;
-use tracing_subscriber;
+use log::{info, error};
 
-/// This program demonstrates consuming messages through a `Consumer`.
-/// This is a convenient client that will fit most use cases.  Note
-/// that messages must be marked and committed as consumed to ensure
-/// only once delivery.
+// 60 seconds for candle interval
+static CANDLE_INTERVAL: i64 = 60;
+
 fn main() {
-    tracing_subscriber::fmt::init();
     dotenv().ok();
+    pretty_env_logger::init();
 
     let broker = env::var("KAFKA_BROKER").expect("KAFKA_BROKER must be set");
     let topic = env::var("KAFKA_TOPIC").expect("KAFKA_TOPIC must be set");
     let group = env::var("KAFKA_GROUP").expect("KAFKA_GROUP is not set");
 
     if let Err(e) = consume_messages(group, topic, vec![broker]) {
-        println!("Failed consuming messages: {}", e);
+        error!("Failed consuming messages: {}", e);
     }
 }
 
 use chrono::{DateTime, Utc};
 use coinbase_pro_rs::structs::wsfeed::Ticker;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 // use ta::indicators::ExponentialMovingAverage;
 // use ta::Next;
 
 #[derive(Debug)]
 struct Candle {
+    #[allow(unused)]
     open: f64,
     high: f64,
     low: f64,
     close: f64,
     volume: f64,
+    #[allow(unused)]
     time: DateTime<Utc>,
 }
 
@@ -58,12 +59,9 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
         .with_offset_storage(Some(GroupOffsetStorage::Kafka))
         .create()?;
 
-    // Define the candle interval in seconds (e.g., 60 seconds for 1 minute candles)
-    let candle_interval = 60;
-
-    // Create a HashMap to store OHLC candles, where the key is the candle start time
-    //let mut ohlc_candles: HashMap<DateTime<Utc>, (f64, f64, f64, f64)> = HashMap::new();
-    let mut ohlc_candles: HashMap<DateTime<Utc>, Candle> = HashMap::new();
+    // Create a BTreeMap to store OHLC candles, where the key is the candle start time
+    // we use a BTreeMap because it keeps the keys sorted
+    let mut ohlc_candles: BTreeMap<DateTime<Utc>, Candle> = BTreeMap::new();
 
     loop {
         let mss = con.poll()?;
@@ -73,27 +71,29 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                 let str = String::from_utf8(m.value.to_vec()).unwrap();
                 let trade: Ticker = serde_json::from_str(&str).unwrap();
 
-                match trade {
-                    Ticker::Full {
-                        trade_id: _,
-                        sequence: _,
-                        time,
-                        product_id: _,
-                        price,
-                        side: _,
-                        last_size,
-                        best_bid: _,
-                        best_ask: _,
-                    } => {
-                        //println!("Trade ID: {}", trade_id);
-                        // Get the candle start time based on the candle_interval
-                        let candle_start_time =
-                            time.timestamp() / candle_interval * candle_interval;
+                if let Ticker::Full {
+                    trade_id: _,
+                    sequence: _,
+                    time,
+                    product_id: _,
+                    price,
+                    side: _,
+                    last_size,
+                    best_bid: _,
+                    best_ask: _,
+                } = trade
+                {
+                    // Get the candle start time based on the candle_interval
+                    let candle_start_time = time.timestamp() / CANDLE_INTERVAL * CANDLE_INTERVAL;
 
-                        // Get or insert the OHLC candle for the current interval
-                        let dt = DateTime::<Utc>::from_timestamp(candle_start_time, 0)
-                            .expect("invalid timestamp");
+                    // Get or insert the OHLC candle for the current interval
+                    let dt = DateTime::<Utc>::from_timestamp(candle_start_time, 0)
+                        .expect("invalid timestamp");
 
+                    let len = ohlc_candles.len();
+
+                    // scope to limit mutable borrow
+                    {
                         let candle_entry = ohlc_candles
                             .entry(dt)
                             .or_insert(Candle::new(dt, price, last_size));
@@ -108,12 +108,16 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
 
                         candle_entry.close = price;
                         candle_entry.volume += last_size;
-
-                        println!("{:?}", candle_entry);
-                        // Access other fields as needed
                     }
-                    _ => {
-                        // Handle the Ticker::Empty variant if needed
+
+                    // if we're working on a new candle then print the previous candle 
+                    if len < ohlc_candles.len() && len > 0 {
+                        let sorted: Vec<&DateTime<Utc>> = ohlc_candles.keys().collect();
+
+                        let previous_candle = ohlc_candles.get(sorted[sorted.len()-2]).unwrap();
+                        // log previous candle as it should be finished
+                        info!("{:?}", previous_candle);
+
                     }
                 }
             }
