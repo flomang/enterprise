@@ -4,6 +4,7 @@ use kafka::error::Error as KafkaError;
 use std::env;
 use log::{info, error};
 
+
 // 60 seconds for candle interval
 static CANDLE_INTERVAL: i64 = 60;
 
@@ -23,6 +24,9 @@ fn main() {
 use chrono::{DateTime, Utc};
 use coinbase_pro_rs::structs::wsfeed::Ticker;
 use std::collections::BTreeMap;
+use bigdecimal::{BigDecimal, FromPrimitive};
+use bigdecimal::ToPrimitive;
+
 // use ta::indicators::ExponentialMovingAverage;
 // use ta::Next;
 
@@ -33,21 +37,28 @@ struct Candle {
     high: f64,
     low: f64,
     close: f64,
+    // TODO change this to BigDecimal
     volume: f64,
     #[allow(unused)]
     time: DateTime<Utc>,
 }
 
 impl Candle {
-    fn new(time: DateTime<Utc>, price: f64, volume: f64) -> Self {
+    fn new(time: DateTime<Utc>, price: f64) -> Self {
         Self {
             open: price,
             high: price,
             low: price,
             close: price,
-            volume,
+            volume: 0.0,
             time,
         }
+    }
+}
+
+impl std::fmt::Display for Candle {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} -- O: {} H: {} L: {} C: {} V: {}", self.time, self.open, self.high, self.low, self.close, self.volume)
     }
 }
 
@@ -96,7 +107,7 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                     {
                         let candle_entry = ohlc_candles
                             .entry(dt)
-                            .or_insert(Candle::new(dt, price, last_size));
+                            .or_insert(Candle::new(dt, price));
 
                         // Update OHLC values
                         if price > candle_entry.high {
@@ -107,7 +118,10 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                         }
 
                         candle_entry.close = price;
-                        candle_entry.volume += last_size;
+
+                        // using BigDecimal to avoid floating point errors
+                        let volume = BigDecimal::from_f64(candle_entry.volume).unwrap() + BigDecimal::from_f64(last_size).unwrap();
+                        candle_entry.volume = volume.to_f64().unwrap();
                     }
 
                     // if we're working on a new candle then print the previous candle 
@@ -116,7 +130,7 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
 
                         let previous_candle = ohlc_candles.get(sorted[sorted.len()-2]).unwrap();
                         // log previous candle as it should be finished
-                        info!("{:?}", previous_candle);
+                        info!("{}", previous_candle);
 
                     }
                 }
