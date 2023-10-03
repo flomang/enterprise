@@ -27,9 +27,6 @@ use std::collections::BTreeMap;
 use bigdecimal::{BigDecimal, FromPrimitive};
 use bigdecimal::ToPrimitive;
 
-// use ta::indicators::ExponentialMovingAverage;
-// use ta::Next;
-
 #[derive(Debug)]
 struct Candle {
     #[allow(unused)]
