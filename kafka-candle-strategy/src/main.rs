@@ -1,9 +1,9 @@
+use coinbase_pro_rs::structs::reqs::OrderSide;
 use dotenv::dotenv;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
+use log::{error, info};
 use std::env;
-use log::{info, error};
-
 
 // 60 seconds for candle interval
 static CANDLE_INTERVAL: i64 = 60;
@@ -21,10 +21,10 @@ fn main() {
     }
 }
 
+use bigdecimal::{BigDecimal, FromPrimitive, RoundingMode};
 use chrono::{DateTime, Utc};
 use coinbase_pro_rs::structs::wsfeed::Ticker;
 use std::collections::BTreeMap;
-use bigdecimal::{BigDecimal, FromPrimitive};
 
 #[derive(Debug)]
 struct Candle {
@@ -33,9 +33,11 @@ struct Candle {
     high: f64,
     low: f64,
     close: f64,
-    volume: BigDecimal,
+    bought: BigDecimal,
+    sold: BigDecimal,
     #[allow(unused)]
     time: DateTime<Utc>,
+    trades: Vec<usize>,
 }
 
 impl Candle {
@@ -45,15 +47,28 @@ impl Candle {
             high: price,
             low: price,
             close: price,
-            volume: BigDecimal::from_f64(0.0).unwrap(),
+            bought: BigDecimal::from_f64(0.0).unwrap(),
+            sold: BigDecimal::from_f64(0.0).unwrap(),
             time,
+            trades: Vec::new(),
         }
     }
 }
 
 impl std::fmt::Display for Candle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} -- O: {} H: {} L: {} C: {} V: {:.8}", self.time, self.open, self.high, self.low, self.close, self.volume)
+        write!(
+            f,
+            "{} -- O: {:.8} H: {:.8} L: {:.8} C: {:.8} B: {:.8} S: {:.8} V: {:.8}",
+            self.time,
+            self.open,
+            self.high,
+            self.low,
+            self.close,
+            self.bought,
+            self.sold,
+            (self.bought.clone() + self.sold.clone()).with_scale_round(8, RoundingMode::HalfUp),
+        )
     }
 }
 
@@ -78,12 +93,12 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                 let trade: Ticker = serde_json::from_str(&str).unwrap();
 
                 if let Ticker::Full {
-                    trade_id: _,
+                    trade_id,
                     sequence: _,
                     time,
                     product_id: _,
                     price,
-                    side: _,
+                    side,
                     last_size,
                     best_bid: _,
                     best_ask: _,
@@ -100,9 +115,14 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
 
                     // scope to limit mutable borrow
                     {
-                        let candle_entry = ohlc_candles
-                            .entry(dt)
-                            .or_insert(Candle::new(dt, price));
+                        let candle_entry = ohlc_candles.entry(dt).or_insert(Candle::new(dt, price));
+
+                        if candle_entry.trades.contains(&trade_id) {
+                            continue;
+                        }
+
+                        // record trade id
+                        candle_entry.trades.push(trade_id);
 
                         // Update OHLC values
                         if price > candle_entry.high {
@@ -114,18 +134,20 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
 
                         candle_entry.close = price;
 
-                        // using BigDecimal to avoid floating point errors
-                        candle_entry.volume += BigDecimal::from_f64(last_size).unwrap();
+                        if side == OrderSide::Buy {
+                            candle_entry.bought += BigDecimal::from_f64(last_size).unwrap();
+                        } else {
+                            candle_entry.sold += BigDecimal::from_f64(last_size).unwrap();
+                        }
                     }
 
-                    // if we're working on a new candle then print the previous candle 
+                    // if we're working on a new candle then print the previous candle
                     if len < ohlc_candles.len() && len > 0 {
                         let sorted: Vec<&DateTime<Utc>> = ohlc_candles.keys().collect();
 
-                        let previous_candle = ohlc_candles.get(sorted[sorted.len()-2]).unwrap();
+                        let previous_candle = ohlc_candles.get(sorted[sorted.len() - 2]).unwrap();
                         // log previous candle as it should be finished
                         info!("{}", previous_candle);
-
                     }
                 }
             }
