@@ -28,15 +28,23 @@ use std::collections::BTreeMap;
 
 #[derive(Debug)]
 struct Candle {
+    // OHLC
     #[allow(unused)]
     open: f64,
     high: f64,
     low: f64,
     close: f64,
-    bought: BigDecimal,
-    sold: BigDecimal,
+
+    // track candle volume and count
+    buy_count: usize,
+    buy_volume: BigDecimal,
+    sell_count: usize,
+    sell_volume: BigDecimal,
+
     #[allow(unused)]
     time: DateTime<Utc>,
+
+    // track trade ids
     trades: Vec<usize>,
 }
 
@@ -47,8 +55,10 @@ impl Candle {
             high: price,
             low: price,
             close: price,
-            bought: BigDecimal::from_f64(0.0).unwrap(),
-            sold: BigDecimal::from_f64(0.0).unwrap(),
+            buy_count:0,
+            buy_volume: BigDecimal::from_f64(0.0).unwrap(),
+            sell_count:0,
+            sell_volume: BigDecimal::from_f64(0.0).unwrap(),
             time,
             trades: Vec::new(),
         }
@@ -57,17 +67,20 @@ impl Candle {
 
 impl std::fmt::Display for Candle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let total_volume = self.buy_volume.clone() + self.sell_volume.clone();
         write!(
             f,
-            "{} -- O: {:.8} H: {:.8} L: {:.8} C: {:.8} B: {:.8} S: {:.8} V: {:.8}",
+            "{} -- O: {:.8} H: {:.8} L: {:.8} C: {:.8} BV: {:.8} SV: {:.8} TV: {} BC: {} SC: {}",
             self.time,
             self.open,
             self.high,
             self.low,
             self.close,
-            self.bought,
-            self.sold,
-            (self.bought.clone() + self.sold.clone()).with_scale_round(8, RoundingMode::HalfUp),
+            self.buy_volume,
+            self.sell_volume,
+            total_volume.with_scale_round(8, RoundingMode::HalfUp),
+            self.buy_count,
+            self.sell_count,
         )
     }
 }
@@ -117,11 +130,11 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
                     {
                         let candle_entry = ohlc_candles.entry(dt).or_insert(Candle::new(dt, price));
 
+                        // skip dupe trade ids 
                         if candle_entry.trades.contains(&trade_id) {
                             continue;
                         }
 
-                        // record trade id
                         candle_entry.trades.push(trade_id);
 
                         // Update OHLC values
@@ -134,10 +147,13 @@ fn consume_messages(group: String, topic: String, brokers: Vec<String>) -> Resul
 
                         candle_entry.close = price;
 
+                        // track side volumes and counts
                         if side == OrderSide::Buy {
-                            candle_entry.bought += BigDecimal::from_f64(last_size).unwrap();
+                            candle_entry.buy_count += 1;
+                            candle_entry.buy_volume += BigDecimal::from_f64(last_size).unwrap();
                         } else {
-                            candle_entry.sold += BigDecimal::from_f64(last_size).unwrap();
+                            candle_entry.sell_count += 1;
+                            candle_entry.sell_volume += BigDecimal::from_f64(last_size).unwrap();
                         }
                     }
 
